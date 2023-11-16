@@ -41,6 +41,10 @@ class block_crucible extends block_base {
     public function init() {
         $this->title = get_string('pluginname', 'block_crucible');
     }
+    
+    public function has_config() {
+        return true;
+    }
 
     /**
      * Gets the block contents.
