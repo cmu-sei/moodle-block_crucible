@@ -34,12 +34,6 @@ DM20-0196
 // This line protects the file from being accessed by a URL directly.
 defined('MOODLE_INTERNAL') || die();
 
-/*
-if ($hassiteconfig) {
-    $ADMIN->add('blockplugins', new admin_category('block_crucible_settings', new lang_string('crucible', 'block_crucible')));
-    $settingspage = new admin_settingpage('manageblockcrucible', new lang_string('manage', 'block_crucible'));
- */
-
     if ($ADMIN->fulltree) {
         //--- general settings -----------------------------------------------------------------------------------
 
@@ -70,6 +64,5 @@ if ($hassiteconfig) {
 
         $settings->add(new admin_setting_configtext('block_crucible/blueprintappurl',
             get_string('blueprintappurl', 'block_crucible'), get_string('configblueprintappurl', 'block_crucible'), "", PARAM_URL, 60));
-    }
-//}
+}
 
