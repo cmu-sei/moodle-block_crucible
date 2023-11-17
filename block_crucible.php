@@ -97,23 +97,40 @@ class block_crucible extends block_base {
         $this->content = new stdClass();
         $this->content->footer = '';
 
+	/* data for template */
         $data = new stdClass();
-        $data->player = get_config('block_crucible', 'playerappurl');
-        $data->blueprint = get_config('block_crucible', 'blueprintappurl');
 
         $crucible = new \block_crucible\crucible();
-        $crucible->setup();
-        $views = $crucible->get_player_views();
-        if (!$views) {
-            // user has no views in player
+        $crucible->setup_system();
+	$views = $crucible->get_player_views();
+	if ($views) {
+	    echo "we got views!<br>";
+	    $data->player = get_config('block_crucible', 'playerappurl');
+        } else if ($views == 0) {
+	    echo "no views in player<br>";
+	} else if ($views == -1) {
+	    echo "error from player<br>";
+	}
+/*
+	$msels = $crucible->get_blueprint_msels();
+	if ($msels) {
+	    echo "we got msels!<br>";
+	    $data->blueprint = get_config('block_crucible', 'blueprintappurl');
+	} else if ($msels == 0) {
+	    echo "no msels in blueprint<br>";
+	} else if ($msels = -1) {
+	    echo "error from blueprint<br>";
         }
-        $msels = $crucible->get_blueprint_msels();
-        if (!$msels) {
-            // user has no msels in blueprint
-        } else {
-            var_dump($msels);
+ */
+	$perms = $crucible->get_blueprint_permissions();
+        if ($perms) {
+            echo "we got permissions!<br>";
+            $data->blueprint = get_config('block_crucible', 'blueprintappurl');
+        } else if ($perms == 0) {
+            echo "no perms for user in blueprint<br>";
+        } else if ($perms = -1) {
+            echo "error from blueprint<br>";
         }
-
 	$this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
 
         return $this->content;

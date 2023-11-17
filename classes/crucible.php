@@ -59,10 +59,10 @@ class crucible {
         if ($client === false) {
             debugging('Cannot connect as system account', DEBUG_NORMAL);
             $details = 'Cannot connect as system account';
-            //throw new \Exception($details);
+            throw new \Exception($details);
             return false;
         }
-        $this->client = $client;
+	$this->client = $client;
     }
 
 
@@ -83,83 +83,160 @@ class crucible {
         if ($client) {
             if (!$client->is_logged_in()) {
                 debugging('not logged in', DEBUG_DEVELOPER);
-                //print_error('please re-authenticate your session');
+                print_error('please re-authenticate your session');
             }
-        }
-        debugging("setup client", DEBUG_DEVELOPER);
+	}
+	debugging("setup client", DEBUG_DEVELOPER);
+
         $this->client = $client;
     }
 
     function get_player_views() {
+	global $USER;
 
         if ($this->client == null) {
             print_error('session not setup');
             return;
-        }
-
-        // web request
-        $url = get_config('block_crucible', 'playerapiurl') . "/me/views";
-        //echo "GET $url<br>";
-
-        $response = $this->client->get($url);
-        if ($this->client->info['http_code'] !== 200) {
-            debugging('response code ' . $this->client->info['http_code'] . " for $url", DEBUG_DEVELOPER);
-
-             if ($this->client->info['http_code'] == 401) {
-                // user does not have any views
-             } else {
-
-                 print_error($this->client->info['http_code'] . " for $url ");
-            }
-        }
-
-        if (!$response) {
-                debugging('no response received by get_player_views', DEBUG_DEVELOPER);
-        }
-        //echo "response:<br><pre>$response</pre>";
-        $r = json_decode($response);
-
-        if (!$r) {
-            debugging("could not find views", DEBUG_DEVELOPER);
+	}
+	if (!$USER->idnumber) {
+	    print_error('user has no idnumber');
             return;
         }
 
+	// web request
+        $url = get_config('block_crucible', 'playerapiurl') . "/users/" . $USER->idnumber . "/views";
+        //echo "GET $url<br>";
+
+	$response = $this->client->get($url);
+
+	if ($this->client->info['http_code'] === 401) {
+	    print_error($this->client->info['http_code'] . " for $url ");
+	    return -1;
+	} else if ($this->client->info['http_code'] === 403) {
+	    print_error($this->client->info['http_code'] . " for $url ");
+	    return -1;
+        } else if ($this->client->info['http_code'] === 404) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+	} else if ($this->client->info['http_code'] !== 200) {
+	    print_error($this->client->info['http_code'] . " for $url ");
+	    return -1;
+        }
+
+        if (!$response) {
+	    debugging('no response received by get_player_views', DEBUG_DEVELOPER);
+	    //print_error($this->client->info['http_code'] . " for $url ");
+	    return 0;
+        }
+	//echo "response:<br><pre>$response</pre>";
+
+        $r = json_decode($response);
+        if (!$r) {
+	    debugging("could not find views", DEBUG_DEVELOPER);
+	    //print_error($this->client->info['http_code'] . " for $url ");
+            return 0;
+        }
         return $r;
     }
 
     function get_blueprint_msels() {
+	global $USER;
 
         if ($this->client == null) {
             print_error('session not setup');
             return;
         }
+        if (!$USER->idnumber) {
+            print_error('user has no idnumber');
+            return;
+        }
 
         // web request
-        $url = get_config('block_crucible', 'blueprintapiurl') . "/my-msels";
+        $url = get_config('block_crucible', 'blueprintapiurl') . "/msels?UserId=" . $USER->idnumber;
         //echo "GET $url<br>";
 
         $response = $this->client->get($url);
-        if ($this->client->info['http_code'] !== 200) {
-            debugging('response code ' . $this->client->info['http_code'] . " for $url", DEBUG_DEVELOPER);
 
-            if ($this->client->info['http_code'] == 401) {
-                // user does not have any msels
-            } else {
-                print_error($this->client->info['http_code'] . " for $url ");
-            }
+        if ($this->client->info['http_code'] === 401) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 403) {
+            print_error($this->client->info['http_code'] . " for $url ");
+	    return -1;
+	} else if ($this->client->info['http_code'] === 404) {
+	    print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] !== 200) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
         }
 
         if (!$response) {
             debugging('no response received by get_blueprint_msels', DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no response");
+            return 0;
         }
         //echo "response:<br><pre>$response</pre>";
-        $r = json_decode($response);
 
+        $r = json_decode($response);
         if (!$r) {
             debugging("could not find msels", DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+            return 0;
+        }
+        return $r;
+    }
+
+    function get_blueprint_permissions() {
+        global $USER;
+
+        if ($this->client == null) {
+            print_error('session not setup');
+            return;
+        }
+        if (!$USER->idnumber) {
+            print_error('user has no idnumber');
             return;
         }
 
-        return $r;
+        // web request
+        $url = get_config('block_crucible', 'blueprintapiurl') . "/users/" . $USER->idnumber;
+        //echo "GET $url<br>";
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 403) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 404) {
+	    //print_error($this->client->info['http_code'] . " for $url ");
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        }
+
+        if (!$response) {
+            debugging('no response received by get_blueprint_msels', DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no response");
+            return 0;
+        }
+        //echo "response:<br><pre>$response</pre>";
+
+        $r = json_decode($response);
+        if (!$r) {
+            debugging("could not find user data", DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+            return 0;
+	}
+	if (count($r->permissions)) {
+	    return $r->permissions;
+	}
+
+	/* user exists but no special perms */
+        return 0;
     }
 }
