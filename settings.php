@@ -42,6 +42,13 @@ if ($hassiteconfig) {
 
     if ($ADMIN->fulltree) {
         //--- general settings -----------------------------------------------------------------------------------
+        $options = [];
+        $issuers = core\oauth2\api::get_all_issuers();
+        foreach ($issuers as $issuer) {
+            $options[$issuer->get('id')] = s($issuer->get('name'));
+        }
+        $settings->add(new admin_setting_configselect('crucible/issuerid',
+            get_string('issuerid', 'block_crucible'), get_string('configissuerid', 'block_crucible'), 0, $options));
 
         $settings->add(new admin_setting_configtext('crucible/playerapiurl',
             get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));

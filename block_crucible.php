@@ -24,6 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+//require_once($CFG->libdir . '/outputcomponents.php');
+
 /**
  * Global search block.
  *
@@ -80,8 +82,12 @@ class block_crucible extends block_base {
             $data['hiddenfields'] = (object) ['name' => 'context', 'value' => $this->page->context->id];
         }
 	 */
-        //$this->content->text = $OUTPUT->render_from_template('core/search_input', $data);
-        $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
+	//$this->content->text = $OUTPUT->render_from_template('core/search_input', $data);
+	$data = [];
+	$this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
+
+	$crucible = new \block_crucible\crucible();
+	$client = $crucible->setup();
 
         return $this->content;
     }

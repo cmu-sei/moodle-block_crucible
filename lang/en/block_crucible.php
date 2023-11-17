@@ -34,4 +34,7 @@ $string['configplayerapiurl'] = 'Player API URL used to pull permissions';
 $string['configplayerappurl'] = 'Player UI URL used to redirect participants';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
 $string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
+$string['issuerid'] = 'Issuer Id';
+$string['configissuerid'] = 'OAUTH Issuer Id for Crucible Apps';
+
 
