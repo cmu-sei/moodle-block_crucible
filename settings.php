@@ -42,24 +42,33 @@ if ($hassiteconfig) {
 
     if ($ADMIN->fulltree) {
         //--- general settings -----------------------------------------------------------------------------------
-        $options = [];
-        $issuers = core\oauth2\api::get_all_issuers();
-        foreach ($issuers as $issuer) {
-            $options[$issuer->get('id')] = s($issuer->get('name'));
-        }
-        $settings->add(new admin_setting_configselect('crucible/issuerid',
+
+	$options = [];
+	$issuers = core\oauth2\api::get_all_issuers();
+	if ($issuers) {
+            foreach ($issuers as $issuer) {
+                $options[$issuer->get('id')] = s($issuer->get('name'));
+	    }
+	}
+        $settings->add(new admin_setting_configselect('block_crucible/issuerid',
             get_string('issuerid', 'block_crucible'), get_string('configissuerid', 'block_crucible'), 0, $options));
 
-        $settings->add(new admin_setting_configtext('crucible/playerapiurl',
+	$settings->add(new admin_setting_configcheckbox('block_crucible/enabled',
+	    get_string('enabled', 'block_crucible'), get_string('configenabled', 'block_crucible'), 0, 1, 0));
+
+	$settings->add(new admin_setting_configtext('block_crucible/playerapiurl',
             get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
-        $settings->add(new admin_setting_configtext('crucible/playerappurl',
+        $settings->add(new admin_setting_configtext('block_crucible/playerapiurl',
+            get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+        $settings->add(new admin_setting_configtext('block_crucible/playerappurl',
             get_string('playerappurl', 'block_crucible'), get_string('configplayerappurl', 'block_crucible'), "", PARAM_URL, 60));
 
-        $settings->add(new admin_setting_configtext('crucible/blueprintapiurl',
+        $settings->add(new admin_setting_configtext('block_crucible/blueprintapiurl',
             get_string('blueprintapiurl', 'block_crucible'), get_string('configblueprintapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
-        $settings->add(new admin_setting_configtext('crucible/blueprintappurl',
+        $settings->add(new admin_setting_configtext('block_crucible/blueprintappurl',
             get_string('blueprintappurl', 'block_crucible'), get_string('configblueprintappurl', 'block_crucible'), "", PARAM_URL, 60));
     }
 //}

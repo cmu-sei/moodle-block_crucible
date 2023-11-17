@@ -21,9 +21,9 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Crucible block plugin
  *
- * @package     block_crucible
- * @copyright   2023 Carnegie Mellon Univeristy
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package        block_crucible
+ * @copyright      2023 Carnegie Mellon Univeristy
+ * @license        http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 /**
@@ -39,83 +39,127 @@ DM20-0196
 
 class crucible {
 
-function setup_system() {
+    private $client;
 
-    $issuerid = get_config('crucible', 'issuerid');
-    if (!$issuerid) {
-        debugging("crucible does not have issuerid set", DEBUG_DEVELOPER);
-        return;
-    }
-    $issuer = \core\oauth2\api::get_issuer($issuerid);
+    function setup_system() {
 
-    try {
-        $client = \core\oauth2\api::get_system_oauth_client($issuer);
-    } catch (Exception $e) {
-        debugging("get_system_oauth_client failed with $e->errorcode", DEBUG_NORMAL);
-        $client = false;
-    }
-    if ($client === false) {
-        debugging('Cannot connect as system account', DEBUG_NORMAL);
-        $details = 'Cannot connect as system account';
-        //throw new \Exception($details);
-        return false;
-    }
-    return $client;
-}
-
-
-function setup() {
-    global $PAGE;
-    $issuerid = get_config('crucible', 'issuerid');
-    if (!$issuerid) {
-        //print_error('no issuer set for plugin');
-    }
-    $issuer = \core\oauth2\api::get_issuer($issuerid);
-
-    $wantsurl = $PAGE->url;
-    $returnparams = ['wantsurl' => $wantsurl, 'sesskey' => sesskey(), 'id' => $issuerid];
-    $returnurl = new \moodle_url('/auth/oauth2/login.php', $returnparams);
-
-    $client = \core\oauth2\api::get_user_oauth_client($issuer, $returnurl);
-
-    if ($client) {
-        if (!$client->is_logged_in()) {
-            debugging('not logged in', DEBUG_DEVELOPER);
-            //print_error('please re-authenticate your session');
+        $issuerid = get_config('block_crucible', 'issuerid');
+        if (!$issuerid) {
+            debugging("crucible does not have issuerid set", DEBUG_DEVELOPER);
+            return;
         }
+        $issuer = \core\oauth2\api::get_issuer($issuerid);
+
+        try {
+            $client = \core\oauth2\api::get_system_oauth_client($issuer);
+        } catch (Exception $e) {
+            debugging("get_system_oauth_client failed with $e->errorcode", DEBUG_NORMAL);
+            $client = false;
+        }
+        if ($client === false) {
+            debugging('Cannot connect as system account', DEBUG_NORMAL);
+            $details = 'Cannot connect as system account';
+            //throw new \Exception($details);
+            return false;
+        }
+        $this->client = $client;
     }
 
-    return $client;
-}
 
-function get_player_views($client) {
+    function setup() {
+        global $PAGE;
+        $issuerid = get_config('crucible', 'issuerid');
+        if (!$issuerid) {
+            //print_error('no issuer set for plugin');
+        }
+        $issuer = \core\oauth2\api::get_issuer($issuerid);
 
-    if ($client == null) {
-        print_error('could not setup session');
+        $wantsurl = $PAGE->url;
+        $returnparams = ['wantsurl' => $wantsurl, 'sesskey' => sesskey(), 'id' => $issuerid];
+        $returnurl = new \moodle_url('/auth/oauth2/login.php', $returnparams);
+
+        $client = \core\oauth2\api::get_user_oauth_client($issuer, $returnurl);
+
+        if ($client) {
+            if (!$client->is_logged_in()) {
+                debugging('not logged in', DEBUG_DEVELOPER);
+                //print_error('please re-authenticate your session');
+            }
+        }
+        debugging("setup client", DEBUG_DEVELOPER);
+        $this->client = $client;
     }
 
-    // web request
-    $url = get_config('crucible', 'playerapiurl') . "/me/views/";
-    //echo "GET $url<br>";
+    function get_player_views() {
 
-    $response = $client->get($url);
+        if ($this->client == null) {
+            print_error('session not setup');
+            return;
+        }
 
-    if ($client->info['http_code'] !== 200) {
-        debugging('response code ' . $client->info['http_code'] . " for $url", DEBUG_DEVELOPER);
-        print_error($client->info['http_code'] . " for $url " . $client->response['www-authenticate']);
+        // web request
+        $url = get_config('block_crucible', 'playerapiurl') . "/me/views";
+        //echo "GET $url<br>";
+
+        $response = $this->client->get($url);
+        if ($this->client->info['http_code'] !== 200) {
+            debugging('response code ' . $this->client->info['http_code'] . " for $url", DEBUG_DEVELOPER);
+
+             if ($this->client->info['http_code'] == 401) {
+                // user does not have any views
+             } else {
+
+                 print_error($this->client->info['http_code'] . " for $url ");
+            }
+        }
+
+        if (!$response) {
+                debugging('no response received by get_player_views', DEBUG_DEVELOPER);
+        }
+        //echo "response:<br><pre>$response</pre>";
+        $r = json_decode($response);
+
+        if (!$r) {
+            debugging("could not find views", DEBUG_DEVELOPER);
+            return;
+        }
+
+        return $r;
     }
 
-    if (!$response) {
-        debugging('no response received by get_player_views', DEBUG_DEVELOPER);
-    }
-    //echo "response:<br><pre>$response</pre>";
-    $r = json_decode($response);
+    function get_blueprint_msels() {
 
-    if (!$r) {
-        debugging("could not find item by id", DEBUG_DEVELOPER);
-        return;
-    }
+        if ($this->client == null) {
+            print_error('session not setup');
+            return;
+        }
 
-    return $r;
-}
+        // web request
+        $url = get_config('block_crucible', 'blueprintapiurl') . "/my-msels";
+        //echo "GET $url<br>";
+
+        $response = $this->client->get($url);
+        if ($this->client->info['http_code'] !== 200) {
+            debugging('response code ' . $this->client->info['http_code'] . " for $url", DEBUG_DEVELOPER);
+
+            if ($this->client->info['http_code'] == 401) {
+                // user does not have any msels
+            } else {
+                print_error($this->client->info['http_code'] . " for $url ");
+            }
+        }
+
+        if (!$response) {
+            debugging('no response received by get_blueprint_msels', DEBUG_DEVELOPER);
+        }
+        //echo "response:<br><pre>$response</pre>";
+        $r = json_decode($response);
+
+        if (!$r) {
+            debugging("could not find msels", DEBUG_DEVELOPER);
+            return;
+        }
+
+        return $r;
+    }
 }

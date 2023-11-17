@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Global search block.
+ * Crucible block.
  *
  * @package    block_crucible
  * @copyright  Carnegie Mellon University
@@ -24,7 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-//require_once($CFG->libdir . '/outputcomponents.php');
 
 /**
  * Global search block.
@@ -43,9 +42,42 @@ class block_crucible extends block_base {
     public function init() {
         $this->title = get_string('pluginname', 'block_crucible');
     }
-    
+
+    /*
+    function specialization() {
+        if (isset($this->config->title)) {
+            $this->title = format_string($this->config->title, true, ['context' => $this->context]);
+        } else {
+            $this->title = "no title set";
+            //$this->title = get_string('newhtmlblock', 'block_html');
+        }
+    }
+    */
+
+    /* enforce only one block per page (this should be default) */
+    public function instance_allow_multiple() {
+        return false;
+    }
+
+    /* enable use of the settings.php file for site wide config */
     public function has_config() {
         return true;
+    }
+
+    /**
+     * Defines in which pages this block can be added.
+     *
+     * @return array of the pages where the block can be added.
+     */
+
+    public function applicable_formats() {
+        return [
+            'admin' => false,
+            'site-index' => true,
+            'course-view' => false,
+            'mod' => false,
+            'my' => true,
+        ];
     }
 
     /**
@@ -65,29 +97,24 @@ class block_crucible extends block_base {
         $this->content = new stdClass();
         $this->content->footer = '';
 
-	/*
-        if (\core_search\manager::is_crucible_enabled() === false) {
-            $this->content->text = get_string('crucibledisabled', 'search');
-            return $this->content;
-        }
-	 */
-	/*
-        $data = [
-            'action' => new moodle_url('/search/index.php'),
-            'inputname' => 'q',
-            'searchstring' => get_string('search'),
-        ];
+        $data = new stdClass();
+        $data->player = get_config('block_crucible', 'playerappurl');
+        $data->blueprint = get_config('block_crucible', 'blueprintappurl');
 
-        if ($this->page->context && $this->page->context->contextlevel !== CONTEXT_SYSTEM) {
-            $data['hiddenfields'] = (object) ['name' => 'context', 'value' => $this->page->context->id];
+        $crucible = new \block_crucible\crucible();
+        $crucible->setup();
+        $views = $crucible->get_player_views();
+        if (!$views) {
+            // user has no views in player
         }
-	 */
-	//$this->content->text = $OUTPUT->render_from_template('core/search_input', $data);
-	$data = [];
+        $msels = $crucible->get_blueprint_msels();
+        if (!$msels) {
+            // user has no msels in blueprint
+        } else {
+            var_dump($msels);
+        }
+
 	$this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
-
-	$crucible = new \block_crucible\crucible();
-	$client = $crucible->setup();
 
         return $this->content;
     }
