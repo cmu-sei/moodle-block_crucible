@@ -122,15 +122,47 @@ class block_crucible extends block_base {
 	    echo "error from blueprint<br>";
         }
  */
-	$perms = $crucible->get_blueprint_permissions();
-        if ($perms) {
-            echo "we got permissions!<br>";
-            $data->blueprint = get_config('block_crucible', 'blueprintappurl');
-        } else if ($perms == 0) {
-            echo "no perms for user in blueprint<br>";
-        } else if ($perms = -1) {
-            echo "error from blueprint<br>";
-        }
+	$permsBlueprint = $crucible->get_blueprint_permissions();
+    if ($permsBlueprint) {
+        echo "we got permissions!<br>";
+        $data->blueprint = get_config('block_crucible', 'blueprintappurl');
+    } else if ($permsBlueprint == 0) {
+        echo "no perms for user in blueprint<br>";
+    } else if ($permsBlueprint = -1) {
+        echo "error from blueprint<br>";
+    }
+    
+    
+    $permsCite = $crucible->get_cite_permissions();
+    if ($permsCite) {
+        echo "we got permissions!<br>";
+        $data->cite = get_config('block_crucible', 'citeappurl');
+    } else if ($permsCite == 0) {
+        echo "no perms for user in cite<br>";
+    } else if ($permsCite = -1) {
+        echo "error from cite<br>";
+    }
+    
+    $permsGallery = $crucible->get_gallery_permissions();
+    if ($permsGallery) {
+        echo "we got permissions!<br>";
+        $data->gallery = get_config('block_crucible', 'galleryappurl');
+    } else if ($permsCite == 0) {
+        echo "no perms for user in gallery<br>";
+    } else if ($permsCite = -1) {
+        echo "error from gallery<br>";
+    }
+
+    $permsSteam = $crucible->get_steamfitter_permissions();
+    if ($permsSteam) {
+        echo "we got permissions!<br>";
+        $data->steamfitter = get_config('block_crucible', 'steamfitterappurl');
+    } else if ($permsSteam == 0) {
+        echo "no perms for user in steamfitter<br>";
+    } else if ($permsSteam = -1) {
+        echo "error from steamfitter<br>";
+    }
+
 	$this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
 
         return $this->content;

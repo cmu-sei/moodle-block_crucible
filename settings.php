@@ -20,7 +20,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
+/*
 Crucible Plugin for Moodle
 Copyright 2023 Carnegie Mellon University.
 NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
@@ -44,25 +44,49 @@ defined('MOODLE_INTERNAL') || die();
                 $options[$issuer->get('id')] = s($issuer->get('name'));
 	    }
 	}
-        $settings->add(new admin_setting_configselect('block_crucible/issuerid',
-            get_string('issuerid', 'block_crucible'), get_string('configissuerid', 'block_crucible'), 0, $options));
 
+    //OAUTH 
+    $settings->add(new admin_setting_configselect('block_crucible/issuerid',
+        get_string('issuerid', 'block_crucible'), get_string('configissuerid', 'block_crucible'), 0, $options));
+
+    //Enable/Disable plugin
 	$settings->add(new admin_setting_configcheckbox('block_crucible/enabled',
 	    get_string('enabled', 'block_crucible'), get_string('configenabled', 'block_crucible'), 0, 1, 0));
 
+    //Blueprint
+    $settings->add(new admin_setting_configtext('block_crucible/blueprintapiurl',
+        get_string('blueprintapiurl', 'block_crucible'), get_string('configblueprintapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/blueprintappurl',
+        get_string('blueprintappurl', 'block_crucible'), get_string('configblueprintappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    //CITE
+    $settings->add(new admin_setting_configtext('block_crucible/citeapiurl',
+        get_string('citeapiurl', 'block_crucible'), get_string('configciteapiurl', 'block_crucible'), "", PARAM_URL, 60));
+    
+    $settings->add(new admin_setting_configtext('block_crucible/citeappurl',
+        get_string('citeappurl', 'block_crucible'), get_string('configciteappurl', 'block_crucible'), "", PARAM_URL, 60));
+    
+    //Gallery
+    $settings->add(new admin_setting_configtext('block_crucible/galleryapiurl',
+        get_string('galleryapiurl', 'block_crucible'), get_string('configgalleryapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/galleryappurl',
+        get_string('galleryappurl', 'block_crucible'), get_string('configgalleryappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    //Player
 	$settings->add(new admin_setting_configtext('block_crucible/playerapiurl',
-            get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
+        get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
-        $settings->add(new admin_setting_configtext('block_crucible/playerapiurl',
-            get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
+    $settings->add(new admin_setting_configtext('block_crucible/playerappurl',
+        get_string('playerappurl', 'block_crucible'), get_string('configplayerappurl', 'block_crucible'), "", PARAM_URL, 60));
 
-        $settings->add(new admin_setting_configtext('block_crucible/playerappurl',
-            get_string('playerappurl', 'block_crucible'), get_string('configplayerappurl', 'block_crucible'), "", PARAM_URL, 60));
+    //Steamfitter
+    $settings->add(new admin_setting_configtext('block_crucible/steamfitterapiurl',
+      get_string('steamfitterapiurl', 'block_crucible'), get_string('configsteamfitterapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
-        $settings->add(new admin_setting_configtext('block_crucible/blueprintapiurl',
-            get_string('blueprintapiurl', 'block_crucible'), get_string('configblueprintapiurl', 'block_crucible'), "", PARAM_URL, 60));
-
-        $settings->add(new admin_setting_configtext('block_crucible/blueprintappurl',
-            get_string('blueprintappurl', 'block_crucible'), get_string('configblueprintappurl', 'block_crucible'), "", PARAM_URL, 60));
+    $settings->add(new admin_setting_configtext('block_crucible/steamfitterappurl',
+      get_string('steamfitterappurl', 'block_crucible'), get_string('configsteamfitterappurl', 'block_crucible'), "", PARAM_URL, 60));
 }
+
 

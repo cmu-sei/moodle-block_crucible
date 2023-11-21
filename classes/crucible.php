@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
  * @license        http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
+/*
 Crucible Plugin for Moodle
 Copyright 2020 Carnegie Mellon University.
 NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
@@ -221,6 +221,165 @@ class crucible {
 
         if (!$response) {
             debugging('no response received by get_blueprint_msels', DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no response");
+            return 0;
+        }
+        //echo "response:<br><pre>$response</pre>";
+
+        $r = json_decode($response);
+        if (!$r) {
+            debugging("could not find user data", DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+            return 0;
+	}
+	if (count($r->permissions)) {
+	    return $r->permissions;
+	}
+
+	/* user exists but no special perms */
+        return 0;
+    }
+
+    function get_cite_permissions() {
+        global $USER;
+
+        if ($this->client == null) {
+            print_error('session not setup');
+            return;
+        }
+        if (!$USER->idnumber) {
+            print_error('user has no idnumber');
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'citeapiurl') . "/users/" . $USER->idnumber;
+        //echo "GET $url<br>";
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 403) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 404) {
+	    //print_error($this->client->info['http_code'] . " for $url ");
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        }
+
+        if (!$response) {
+            debugging('no response received by get_cite_permissions', DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no response");
+            return 0;
+        }
+        //echo "response:<br><pre>$response</pre>";
+
+        $r = json_decode($response);
+        if (!$r) {
+            debugging("could not find user data", DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+            return 0;
+	}
+	if (count($r->permissions)) {
+	    return $r->permissions;
+	}
+
+	/* user exists but no special perms */
+        return 0;
+    }
+
+    function get_gallery_permissions() {
+        global $USER;
+
+        if ($this->client == null) {
+            print_error('session not setup');
+            return;
+        }
+        if (!$USER->idnumber) {
+            print_error('user has no idnumber');
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'galleryapiurl') . "/users/" . $USER->idnumber;
+        //echo "GET $url<br>";
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 403) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 404) {
+	    print_error($this->client->info['http_code'] . " for $url ");
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        }
+
+        if (!$response) {
+            debugging('no response received by get_gallery_permissions', DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no response");
+            return 0;
+        }
+        //echo "response:<br><pre>$response</pre>";
+
+        $r = json_decode($response);
+        if (!$r) {
+            debugging("could not find user data", DEBUG_DEVELOPER);
+            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+            return 0;
+	}
+	if (count($r->permissions)) {
+	    return $r->permissions;
+	}
+
+	/* user exists but no special perms */
+        return 0;
+    }
+
+    function get_steamfitter_permissions() {
+        global $USER;
+
+        if ($this->client == null) {
+            print_error('session not setup');
+            return;
+        }
+        if (!$USER->idnumber) {
+            print_error('user has no idnumber');
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'steamfitterapiurl') . "/users/" . $USER->idnumber;
+        echo "GET $url<br>";
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 403) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        } else if ($this->client->info['http_code'] === 404) {
+	    print_error($this->client->info['http_code'] . " for $url ");
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            print_error($this->client->info['http_code'] . " for $url ");
+            return -1;
+        }
+
+        if (!$response) {
+            debugging('no response received by get_steamfitter_permissions', DEBUG_DEVELOPER);
             //print_error($this->client->info['http_code'] . " for $url with no response");
             return 0;
         }
