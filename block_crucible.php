@@ -126,7 +126,7 @@ class block_crucible extends block_base {
     if ($permsBlueprint) {
         echo "we got permissions!<br>";
         $data->blueprint = get_config('block_crucible', 'blueprintappurl');
-    } else if ($permsBlueprint == 0) {
+    } else if ($views) {
         echo "no perms for user in blueprint<br>";
     } else if ($permsBlueprint = -1) {
         echo "error from blueprint<br>";
@@ -164,7 +164,6 @@ class block_crucible extends block_base {
     }
 
 	$this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
-
-        return $this->content;
-    }
+    return $this->content;
+}
 }
