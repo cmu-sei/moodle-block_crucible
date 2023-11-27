@@ -26,29 +26,45 @@ $string['crucible:addinstance'] = 'Add a new Crucible block';
 $string['crucible:myaddinstance'] = 'Add a new Crucible block to Dashboard';
 $string['pluginname'] = 'Crucible';
 $string['privacy:metadata'] = 'The Crucible plugin is part of the Crucible Framework.';
-$string['playerapiurl'] = 'Player API';
-$string['playerappurl'] = 'Player UI';
-$string['blueprintapiurl'] = 'Blueprint API';
-$string['blueprintappurl'] = 'Blueprint UI';
-$string['citeapiurl'] = 'CITE API';
-$string['citeappurl'] = 'CITE UI';
-$string['galleryapiurl'] = 'Gallery API';
-$string['galleryappurl'] = 'Gallery UI';
-$string['steamfitterapiurl'] = 'Steamfitter API';
-$string['steamfitterappurl'] = 'Steamfitter UI';
-$string['configplayerapiurl'] = 'Player API URL used to pull permissions';
-$string['configplayerappurl'] = 'Player UI URL used to redirect participants';
-$string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
-$string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
-$string['configciteapiurl'] = 'CITE API URL used to pull permissions';
-$string['configciteappurl'] = 'CITE UI URL used to redirect participants';
-$string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
-$string['configgalleryappurl'] = 'Gallery UI URL used to redirect participants';
-$string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
-$string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
 $string['issuerid'] = 'Issuer Id';
 $string['configissuerid'] = 'OAUTH Issuer Id for Crucible Apps';
 $string['enabled'] = 'Enabled';
 $string['configenabled'] = 'Enable permissions checking via OAUTH';
+
+
+//Player
+$string['playerapiurl'] = 'Player API';
+$string['playerappurl'] = 'Player UI';
+$string['playerdescription'] = 'Designing User Interfaces';
+$string['configplayerapiurl'] = 'Player API URL used to pull permissions';
+$string['configplayerappurl'] = 'Player UI URL used to redirect participants';
+
+//Blueprint
+$string['blueprintapiurl'] = 'Blueprint API';
+$string['blueprintappurl'] = 'Blueprint UI';
+$string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
+$string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
+$string['blueprintdescription'] = 'Building a MSEL';
+
+//CITE
+$string['citeapiurl'] = 'CITE API';
+$string['citeappurl'] = 'CITE UI';
+$string['configciteapiurl'] = 'CITE API URL used to pull permissions';
+$string['configciteappurl'] = 'CITE UI URL used to redirect participants';
+$string['citedescription'] = 'Evaluating Threats';
+
+//Gallery
+$string['galleryapiurl'] = 'Gallery API';
+$string['galleryappurl'] = 'Gallery UI';
+$string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
+$string['configgalleryappurl'] = 'Gallery UI URL used to redirect participants';
+$string['gallerydescription'] = 'Keeping You in the Know!';
+
+//Steamfitter
+$string['steamfitterapiurl'] = 'Steamfitter API';
+$string['steamfitterappurl'] = 'Steamfitter UI';
+$string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
+$string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
+$string['steamfitterdescription'] = 'Crafting a Scenario';
 
 

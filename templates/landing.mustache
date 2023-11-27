@@ -34,87 +34,76 @@
     }
 }}
 
-<style>
-    .applications-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-    }
-
-    .application-block {
-        border: 1px solid #ccc;
-        padding: 10px;
-    }
-
-    .application-title {
-        font-size: 16px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-
-    .application-link {
-        font-size: 14px;
-    }
-
-    .application-image {
-    max-width: 100%;
-    max-height: 100px; /* Adjust the max height as needed */
-    display: block;
-    margin: 0 auto; /* Center the image horizontally */
-    }
-</style>
-
-<p>Welcome to the Crucible enabled Moodle server!</p>
+<h5>Hello {{username}}! Welcome to the Crucible Application Dashboard. </h5> <br>
 
 <div class="applications-grid">
-{{#player}}
-    <div class="application-block" id="player">
-        <div class="application-title">Player</div>
-        <div class="application-link"><a href = "{{player}}">
-            <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-player.png" alt="Player">
+    {{#player}}
+        <div class="application-block" id="player">
+        <div class="application-details">
+            <div class="application-title">Player</div>
+            <div class="application-description">{{playerDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href="{{player}}">
+                <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-player.png" alt="Player">
             </a>
         </div>
-    </div>
-{{/player}}
+        </div>
+    {{/player}}
 
-{{#blueprint}}
-    <div class="application-block" id="blueprint">
-        <div class="application-title">Blueprint</div>
-        <div class="application-link"><a href = "{{blueprint}}">
-            <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-blueprint.png" alt="Blueprint">
+    {{#blueprint}}
+        <div class="application-block" id="blueprint">
+        <div class="application-details">
+            <div class="application-title">Blueprint</div>
+            <div class="application-description">{{blueprintDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href="{{blueprint}}">
+                <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-blueprint.png" alt="Blueprint">
             </a>
         </div>
-    </div>
-{{/blueprint}}
+        </div>
+    {{/blueprint}}
 
-{{#cite}}
-    <div class="application-block" id="cite">
-        <div class="application-title">CITE</div>
-        <div class="application-link"><a href = "{{cite}}">
-            <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-cite.png" alt="Cite">
+    {{#cite}}
+        <div class="application-block" id="cite">
+        <div class="application-details">
+            <div class="application-title">CITE</div>
+            <div class="application-description">{{citeDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href = "{{cite}}">
+                <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-cite.png" alt="Cite">
             </a>
         </div>
-    </div>
-{{/cite}}
+        </div>
+    {{/cite}}
 
-{{#gallery}}
-    <div class="application-block" id="gallery">
-        <div class="application-title">Gallery</div>
-        <div class="application-link"><a href = "{{gallery}}">
-            <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-gallery.png" alt="Gallery">
+    {{#gallery}}
+        <div class="application-block" id="gallery">
+        <div class="application-details">
+            <div class="application-title">Gallery</div>
+            <div class="application-description">{{galleryDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href = "{{gallery}}">
+                <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-gallery.png" alt="Gallery">
             </a>
         </div>
-    </div>
-{{/gallery}}
+        </div>
+    {{/gallery}}
 
-{{#steamfitter}}
-    <div class="application-block" id="steamfitter">
-        <div class="application-title">Steamfitter</div>
-        <div class="application-link"><a href = "{{steamfitter}}">
-            <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-steamfitter.png" alt="Steamfitter">
+    {{#steamfitter}}
+        <div class="application-block" id="steamfitter">
+        <div class="application-details">
+            <div class="application-title">Steamfitter</div>
+            <div class="application-description">{{steamfitterDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href = "{{steamfitter}}">
+                <img class="application-image" src="http://10.211.55.23/blocks/crucible/pics/crucible-icon-steamfitter.png" alt="Steamfitter">
             </a>
         </div>
-    </div>
-{{/steamfitter}}
-
+        </div>
+    {{/steamfitter}}
 </div>
