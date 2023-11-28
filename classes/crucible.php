@@ -41,8 +41,6 @@ class crucible {
 
     private $client;
 
-    const NOTIFY_TYPE = \core\output\notification::NOTIFY_ERROR;
-
     function setup_system() {
 
         $issuerid = get_config('block_crucible', 'issuerid');
@@ -72,7 +70,7 @@ class crucible {
         global $PAGE;
         $issuerid = get_config('crucible', 'issuerid');
         if (!$issuerid) {
-            //print_error('no issuer set for plugin');
+            debugging('no issues set for plugin', DEBUG_DEVELOPER);
         }
         $issuer = \core\oauth2\api::get_issuer($issuerid);
 
@@ -85,7 +83,6 @@ class crucible {
         if ($client) {
             if (!$client->is_logged_in()) {
                 debugging('not logged in', DEBUG_DEVELOPER);
-                print_error('please re-authenticate your session');
             }
 	}
 	debugging("setup client", DEBUG_DEVELOPER);
@@ -96,15 +93,17 @@ class crucible {
     //////////////////////PLAYER//////////////////////
 
     function get_player_views() {
+        
         global $USER;
+        $userID = $USER->idnumber;
     
         if ($this->client == null) {
-            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
+            debugging("Session not set up.", DEBUG_DEVELOPER);
             return;
         }
     
-        if (!$USER->idnumber) {
-            \core\notification::add("User has no idnumber", self::NOTIFY_TYPE);
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
     
@@ -113,50 +112,51 @@ class crucible {
         if (empty($url)) {
             return 0; 
         }
-    
+
         // Web request
-        $url .= "/users/" . $USER->idnumber . "/views";
+        $url .= "/users/" . $userID . "/views";
     
         $response = $this->client->get($url);
     
         if ($this->client->info['http_code'] === 401) {
-            \core\notification::add("Unauthorized access (401) for " . $url, self::NOTIFY_TYPE);
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            \core\notification::add("Forbidden (403) for " . $url, self::NOTIFY_TYPE);
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
-            \core\notification::add("Player Not Found (404) " . $url, self::NOTIFY_TYPE);
+            debugging("Player Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            \core\notification::add("Unable to Connect to Player Endpoint " . $url, self::NOTIFY_TYPE);
+            debugging("User: " . $userID . "is Unable to Connect to Player Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
     
         if (!$response) {
-            \core\notification::add("No response received from Player endpoint.", self::NOTIFY_TYPE);
+            debugging("No response received from Player endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
     
         $r = json_decode($response);
         if (!$r) {
-            \core\notification::add("No views found on Player.", self::NOTIFY_TYPE);
             return 0;
         }
-    
         return $r;
     }
 
    //////////////////////BLUEPRINT//////////////////////
     function get_blueprint_msels() {
-	global $USER;
+
+        global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
             \core\notification::add("Session not set up", self::NOTIFY_TYPE);
             return;
         }
-        if (!$USER->idnumber) {
-            \core\notification::add("User has no idnumber", self::NOTIFY_TYPE);
+
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
 
@@ -166,28 +166,26 @@ class crucible {
             return 0; 
         }
 
-        //$url .= "/msels?UserId=" . $USER->idnumber;
         $url .= "/my-msels";
-        //echo "GET $url<br>";
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            \core\notification::add("Unauthorized access (401) for " . $url, self::NOTIFY_TYPE);
+            debugging("Unauthorized access (401) for User: ". $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            \core\notification::add("Forbidden (403) for " . $url, self::NOTIFY_TYPE);
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
 	    } else if ($this->client->info['http_code'] === 404) {
-            \core\notification::add("Blueprint Not Found (404) " . $url, self::NOTIFY_TYPE);
+            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            \core\notification::add("Unable to Connect to Blueprint Endpoint " . $url, self::NOTIFY_TYPE);
+            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
         if (!$response) {
-            \core\notification::add("No response received from Blueprint endpoint.", self::NOTIFY_TYPE);
+            debugging("No response received from Blueprint endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -200,13 +198,14 @@ class crucible {
 
     function get_blueprint_permissions() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$USER->idnumber) {
-            print_error('user has no idnumber');
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
         
@@ -216,36 +215,33 @@ class crucible {
             return 0; 
         }
 
-        $url .= "/users/" . $USER->idnumber;
+        $url .= "/users/" . $userID;
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            \core\notification::add("Unauthorized access (401) for " . $url, self::NOTIFY_TYPE);
+            debugging("Unauthorized access (401) for User: " . $userid . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            \core\notification::add("Forbidden (403) for " . $url, self::NOTIFY_TYPE);
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
-            \core\notification::add("Blueprint Not Found (404) " . $url, self::NOTIFY_TYPE);
+            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            \core\notification::add("Unable to Connect to Blueprint Endpoint" . $url, self::NOTIFY_TYPE);
+            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
         
         if (!$response) {
-            \core\notification::add("No response received from endpoint.", self::NOTIFY_TYPE);
+            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
 
         $r = json_decode($response);
-        if (!$r) {
-            \core\notification::add("No user data found on Blueprint.", self::NOTIFY_TYPE);
-            return 0;
-	    }
-        if (empty($response->permissions)) {
+    
+        if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
@@ -258,13 +254,14 @@ class crucible {
     //////////////////////CITE//////////////////////
     function get_cite_permissions() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$USER->idnumber) {
-            \core\notification::add("User has no idnumber", self::NOTIFY_TYPE);
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
@@ -275,52 +272,101 @@ class crucible {
         }
 
         $url .= "/users/" . $USER->idnumber;
-        //echo "GET $url<br>";
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            \core\notification::add("Unauthorized access (401) for " . $url, self::NOTIFY_TYPE);
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            \core\notification::add("Forbidden (403) for " . $url, self::NOTIFY_TYPE);
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
-	       \core\notification::add("CITE Not Found (404) " . $url, self::NOTIFY_TYPE);
+	        debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            \core\notification::add("Unable to Connect to CITE Endpoint " . $url, self::NOTIFY_TYPE);
+            debugging("User: " . $userID . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
         if (!$response) {
-            \core\notification::add("No response received from endpoint.", self::NOTIFY_TYPE);
+            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
 
         $r = json_decode($response);
-        if (!$r) {
-            \core\notification::add("No user data found on CITE.", self::NOTIFY_TYPE);
+        
+	    if (empty($r->permissions)) {
             return 0;
-	}
-	if (count($r->permissions)) {
-	    return $r->permissions;
-	}
+        } else {
+            return $r->permissions;
+        }
 
 	/* user exists but no special perms */
         return 0;
     }
 
-    //////////////////////GALLERY//////////////////////
-    function get_gallery_permissions() {
+    function get_cite_evaluations() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
             \core\notification::add("Session not set up", self::NOTIFY_TYPE);
             return;
         }
-        if (!$USER->idnumber) {
-            \core\notification::add("User has no idnumber", self::NOTIFY_TYPE);
+
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'citeapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/my-evaluations";
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+	    } else if ($this->client->info['http_code'] === 404) {
+            debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        if (!$response) {
+            debugging("No response received from CITE endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+        if (!$r) {
+            return 0;
+        }
+        return $r;
+    }
+
+    //////////////////////GALLERY//////////////////////
+    function get_gallery_permissions() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
@@ -330,51 +376,100 @@ class crucible {
             return 0; 
         }
 
-        $url .= "/users/" . $USER->idnumber;
+        $url .= "/users/" . $userID;
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            \core\notification::add("Unauthorized access (401) for " . $url, self::NOTIFY_TYPE);
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            \core\notification::add("Forbidden (403) for " . $url, self::NOTIFY_TYPE);
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
-            \core\notification::add("Gallery Not Found (404) " . $url, self::NOTIFY_TYPE);
+            debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            \core\notification::add("Unable to Connect to Gallery Endpoint " . $url, self::NOTIFY_TYPE);
+            debugging("User: " . $userID . " is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
         if (!$response) {
-            \core\notification::add("No response received from Gallery endpoint.", self::NOTIFY_TYPE);
+            debugging("No response received from Gallery endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
 
         $r = json_decode($response);
-        if (!$r) {
-            \core\notification::add("No user data found on Gallery.", self::NOTIFY_TYPE);
+        
+	    if (empty($r->permissions)) {
             return 0;
-	}
-	if (count($r->permissions)) {
-	    return $r->permissions;
-	}
+        } else {
+            return $r->permissions;
+        }
 
 	/* user exists but no special perms */
         return 0;
     }
 
+    function get_gallery_exhibits() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'galleryapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/my-exhibits";
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+	    } else if ($this->client->info['http_code'] === 404) {
+            debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . "is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        if (!$response) {
+            debugging("No response received from Gallery endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+        if (!$r) {
+            return 0;
+        }
+        return $r;
+    }
+
     //////////////////////STEAMFITTER//////////////////////
     function get_steamfitter_permissions() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$USER->idnumber) {
+        if (!$userID) {
             \core\notification::add("User has no idnumber", self::NOTIFY_TYPE);
             return;
         }
@@ -385,39 +480,38 @@ class crucible {
             return 0; 
         }
 
-        $url .= "/users/" . $USER->idnumber;
+        $url .= "/users/" . $userID;
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            \core\notification::add("Unauthorized access (401) for " . $url, self::NOTIFY_TYPE);
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            \core\notification::add("Forbidden (403) for " . $url, self::NOTIFY_TYPE);
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
-            \core\notification::add("Steamfitter Not Found (404) " . $url, self::NOTIFY_TYPE);
+            debugging("Steamfitter Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            \core\notification::add("Unable to Connect to Steamfitter Endpoint " . $url, self::NOTIFY_TYPE);
+            debugging("User: " . $userID . "is unable to Connect to Steamfitter Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
         if (!$response) {
-            \core\notification::add("No response received from Steamfitter endpoint.", self::NOTIFY_TYPE);
+            debugging("No response received from Steamfitter endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
 
         $r = json_decode($response);
-        if (!$r) {
-            \core\notification::add("No user data found on Steamfitter.", self::NOTIFY_TYPE);
+        
+	    if (empty($r->permissions)) {
             return 0;
-	}
-	if (count($r->permissions)) {
-	    return $r->permissions;
-	}
+        } else {
+            return $r->permissions;
+        }
 
-	/* user exists but no special perms */
+	    /* user exists but no special perms */
         return 0;
     }
 }

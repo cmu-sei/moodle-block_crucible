@@ -23,7 +23,7 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-
+require_once(__DIR__ . '/../../config.php');
 
 /**
  * Global search block.
@@ -40,10 +40,12 @@ class block_crucible extends block_base {
      * @return void
      */
 
-    const NOTIFY_TYPE = \core\output\notification::NOTIFY_ERROR;
+    private $wwwroot;
 
     public function init() {
+        global $CFG;
         $this->title = get_string('pluginname', 'block_crucible');
+        $this->wwwroot = $CFG->wwwroot;
     }
 
     /*
@@ -106,12 +108,17 @@ class block_crucible extends block_base {
         $data ->username = $USER->firstname;
         $crucible = new \block_crucible\crucible();
         $crucible->setup_system();
+        $userID = $USER->idnumber;
 
     ////////////////////PLAYER/////////////////////////////
 	$views = $crucible->get_player_views();
 	if ($views) {
 	    $data->player = get_config('block_crucible', 'playerappurl');
         $data->playerDescription = get_string('playerdescription', 'block_crucible');
+        $data->playerLogo = $this->wwwroot . get_string('playerlogo', 'block_crucible');
+    } else if ($views == 0)
+    {
+        debugging("No views found on Player for User: " . $userID, DEBUG_DEVELOPER);
     }
 
     ////////////////////BLUEPRINT/////////////////////////////
@@ -121,49 +128,48 @@ class block_crucible extends block_base {
     if ($permsBlueprint || $msels) {
         $data->blueprint = get_config('block_crucible', 'blueprintappurl');
         $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
+        $data->blueprintLogo = $this->wwwroot . get_string('blueprintlogo', 'block_crucible');
     } else if ($permsBlueprint == 0){
-        \core\notification::add("No user data found on Blueprint.", self::NOTIFY_TYPE);
+        debugging("No user data found on Blueprint for User: " . $userID, DEBUG_DEVELOPER);
 	} else if ($msels == 0) {
-        \core\notification::add("No MSELs found on Blueprint.", self::NOTIFY_TYPE);
+        debugging("No MSELs found on Blueprint for User: " . $userID, DEBUG_DEVELOPER);
     }   
-    
-    
 
     ////////////////////CITE/////////////////////////////
     
     $permsCite = $crucible->get_cite_permissions();
-    if ($permsCite) {
-        //echo "we got permissions!<br>";
+    $evalsCite = $crucible->get_cite_evaluations();
+    if ($permsCite || $evalsCite) {
         $data->cite = get_config('block_crucible', 'citeappurl');
         $data->citeDescription = get_string('citedescription', 'block_crucible');
+        $data->citeLogo = $this->wwwroot . get_string('citelogo', 'block_crucible');
     } else if ($permsCite == 0) {
-        //echo "no perms for user in cite<br>";
-    } else if ($permsCite = -1) {
-        //echo "error from cite<br>";
+        debugging("No user data found on CITE for User: " . $userID, DEBUG_DEVELOPER);
+    } else if ($evalsCite= 0) {
+        debugging("No evaluations found on CITE for User: " . $userID, DEBUG_DEVELOPER);
     }
     
     ////////////////////GALLERY/////////////////////////////
     $permsGallery = $crucible->get_gallery_permissions();
-    if ($permsGallery) {
-        //echo "we got permissions!<br>";
+    $exhibitsGallery = $crucible->get_gallery_exhibits();
+    if ($permsGallery || $exhibitsGallery) {
         $data->gallery = get_config('block_crucible', 'galleryappurl');
         $data->galleryDescription = get_string('gallerydescription', 'block_crucible');
-    } else if ($permsCite == 0) {
-        //echo "no perms for user in gallery<br>";
-    } else if ($permsCite = -1) {
-        //echo "error from gallery<br>";
+        $data->galleryLogo = $this->wwwroot . get_string('gallerylogo', 'block_crucible');
+    } else if ($permsGallery == 0) {
+        debugging("No user data found on Gallery for User: " . $userID, DEBUG_DEVELOPER);
+    } else if ($exhibitsGallery = 0) {
+        debugging("No exhibits found on Gallery for User: " . $userID, DEBUG_DEVELOPER);
     }
 
     ////////////////////STEAMFITTER/////////////////////////////
     $permsSteam = $crucible->get_steamfitter_permissions();
     if ($permsSteam) {
-        //echo "we got permissions!<br>";
         $data->steamfitter = get_config('block_crucible', 'steamfitterappurl');
         $data->steamfitterDescription = get_string('steamfitterdescription', 'block_crucible');
+        $data->steamfitterLogo = $this->wwwroot . get_string('steamfitterlogo', 'block_crucible');
     } else if ($permsSteam == 0) {
-        //echo "no perms for user in steamfitter<br>";
-    } else if ($permsSteam = -1) {
-        //echo "error from steamfitter<br>";
+        debugging("No user data found on Steamfitter for User: " . $userID, DEBUG_DEVELOPER);
     }
 
 	$this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
