@@ -38,7 +38,6 @@ $string['playerappurl'] = 'Player UI';
 $string['playerdescription'] = 'Designing User Interfaces';
 $string['configplayerapiurl'] = 'Player API URL used to pull permissions';
 $string['configplayerappurl'] = 'Player UI URL used to redirect participants';
-$string['playerlogo'] = '/blocks/crucible/pics/crucible-icon-player.png';
 
 //Blueprint
 $string['blueprintapiurl'] = 'Blueprint API';
@@ -46,7 +45,6 @@ $string['blueprintappurl'] = 'Blueprint UI';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
 $string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
 $string['blueprintdescription'] = 'Building a MSEL';
-$string['blueprintlogo'] = '/blocks/crucible/pics/crucible-icon-blueprint.png';
 
 //CITE
 $string['citeapiurl'] = 'CITE API';
@@ -54,7 +52,6 @@ $string['citeappurl'] = 'CITE UI';
 $string['configciteapiurl'] = 'CITE API URL used to pull permissions';
 $string['configciteappurl'] = 'CITE UI URL used to redirect participants';
 $string['citedescription'] = 'Evaluating Threats';
-$string['citelogo'] = '/blocks/crucible/pics/crucible-icon-cite.png';
 
 //Gallery
 $string['galleryapiurl'] = 'Gallery API';
@@ -62,7 +59,6 @@ $string['galleryappurl'] = 'Gallery UI';
 $string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
 $string['configgalleryappurl'] = 'Gallery UI URL used to redirect participants';
 $string['gallerydescription'] = 'Keeping You in the Know!';
-$string['gallerylogo'] = '/blocks/crucible/pics/crucible-icon-gallery.png';
 
 //Steamfitter
 $string['steamfitterapiurl'] = 'Steamfitter API';
@@ -70,6 +66,5 @@ $string['steamfitterappurl'] = 'Steamfitter UI';
 $string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
 $string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
 $string['steamfitterdescription'] = 'Crafting a Scenario';
-$string['steamfitterlogo'] = '/blocks/crucible/pics/crucible-icon-steamfitter.png';
 
 

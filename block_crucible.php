@@ -23,7 +23,6 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-require_once(__DIR__ . '/../../config.php');
 
 /**
  * Global search block.
@@ -43,9 +42,7 @@ class block_crucible extends block_base {
     private $wwwroot;
 
     public function init() {
-        global $CFG;
         $this->title = get_string('pluginname', 'block_crucible');
-        $this->wwwroot = $CFG->wwwroot;
     }
 
     /*
@@ -115,7 +112,7 @@ class block_crucible extends block_base {
 	if ($views) {
 	    $data->player = get_config('block_crucible', 'playerappurl');
         $data->playerDescription = get_string('playerdescription', 'block_crucible');
-        $data->playerLogo = $this->wwwroot . get_string('playerlogo', 'block_crucible');
+        $data->playerLogo  = $OUTPUT->image_url('crucible-icon-player', 'block_crucible');
     } else if ($views == 0)
     {
         debugging("No views found on Player for User: " . $userID, DEBUG_DEVELOPER);
@@ -128,7 +125,7 @@ class block_crucible extends block_base {
     if ($permsBlueprint || $msels) {
         $data->blueprint = get_config('block_crucible', 'blueprintappurl');
         $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
-        $data->blueprintLogo = $this->wwwroot . get_string('blueprintlogo', 'block_crucible');
+        $data->blueprintLogo  = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
     } else if ($permsBlueprint == 0){
         debugging("No user data found on Blueprint for User: " . $userID, DEBUG_DEVELOPER);
 	} else if ($msels == 0) {
@@ -142,7 +139,7 @@ class block_crucible extends block_base {
     if ($permsCite || $evalsCite) {
         $data->cite = get_config('block_crucible', 'citeappurl');
         $data->citeDescription = get_string('citedescription', 'block_crucible');
-        $data->citeLogo = $this->wwwroot . get_string('citelogo', 'block_crucible');
+        $data->citeLogo  = $OUTPUT->image_url('crucible-icon-cite', 'block_crucible');
     } else if ($permsCite == 0) {
         debugging("No user data found on CITE for User: " . $userID, DEBUG_DEVELOPER);
     } else if ($evalsCite= 0) {
@@ -155,7 +152,7 @@ class block_crucible extends block_base {
     if ($permsGallery || $exhibitsGallery) {
         $data->gallery = get_config('block_crucible', 'galleryappurl');
         $data->galleryDescription = get_string('gallerydescription', 'block_crucible');
-        $data->galleryLogo = $this->wwwroot . get_string('gallerylogo', 'block_crucible');
+        $data->galleryLogo  = $OUTPUT->image_url('crucible-icon-gallery', 'block_crucible');
     } else if ($permsGallery == 0) {
         debugging("No user data found on Gallery for User: " . $userID, DEBUG_DEVELOPER);
     } else if ($exhibitsGallery = 0) {
@@ -167,7 +164,7 @@ class block_crucible extends block_base {
     if ($permsSteam) {
         $data->steamfitter = get_config('block_crucible', 'steamfitterappurl');
         $data->steamfitterDescription = get_string('steamfitterdescription', 'block_crucible');
-        $data->steamfitterLogo = $this->wwwroot . get_string('steamfitterlogo', 'block_crucible');
+        $data->steamfitterLogo  = $OUTPUT->image_url('crucible-icon-steamfitter', 'block_crucible');
     } else if ($permsSteam == 0) {
         debugging("No user data found on Steamfitter for User: " . $userID, DEBUG_DEVELOPER);
     }
