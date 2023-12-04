@@ -1,3 +1,59 @@
 .block_crucible .footer {
     text-align: center;
 }
+
+.card {
+    width: 1000px;
+}
+
+.main-inner{
+    margin-right: 450px !important;
+}
+
+.applications-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Add gap between items */
+}
+
+.application-block {
+    border: 1px solid #ccc;
+    padding: 20px;
+    display: flex;
+    width: 300px;
+    margin-bottom: 20px;
+}
+
+.application-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.application-link {
+    font-size: 10px;
+}
+
+.application-image {
+    max-width: 100%;
+    max-height: 90px; /* Adjust the max height as needed */
+    display: block;
+    margin: 0 auto; /* Center the image horizontally */
+    }
+
+.card-title {
+    font-size: 30px;
+}
+
+.application-content {
+    display: flex; /* Use flexbox to align items */
+}
+
+.application-details {
+    flex: 1; /* Take up available space, pushing the logo to the right */
+}
+
+.application-description {
+    font-size: 17px;
+    margin-bottom: 5px;
+}

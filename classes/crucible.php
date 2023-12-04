@@ -45,7 +45,7 @@ class crucible {
 
         $issuerid = get_config('block_crucible', 'issuerid');
         if (!$issuerid) {
-            debugging("crucible does not have issuerid set", DEBUG_DEVELOPER);
+            debugging("Crucible does not have issuerid set", DEBUG_DEVELOPER);
             return;
         }
         $issuer = \core\oauth2\api::get_issuer($issuerid);
@@ -70,7 +70,7 @@ class crucible {
         global $PAGE;
         $issuerid = get_config('crucible', 'issuerid');
         if (!$issuerid) {
-            //print_error('no issuer set for plugin');
+            debugging('no issues set for plugin', DEBUG_DEVELOPER);
         }
         $issuer = \core\oauth2\api::get_issuer($issuerid);
 
@@ -83,7 +83,6 @@ class crucible {
         if ($client) {
             if (!$client->is_logged_in()) {
                 debugging('not logged in', DEBUG_DEVELOPER);
-                print_error('please re-authenticate your session');
             }
 	}
 	debugging("setup client", DEBUG_DEVELOPER);
@@ -91,97 +90,107 @@ class crucible {
         $this->client = $client;
     }
 
+    //////////////////////PLAYER//////////////////////
+
     function get_player_views() {
-	global $USER;
-
+        
+        global $USER;
+        $userID = $USER->idnumber;
+    
         if ($this->client == null) {
-            print_error('session not setup');
-            return;
-	}
-	if (!$USER->idnumber) {
-	    print_error('user has no idnumber');
+            debugging("Session not set up.", DEBUG_DEVELOPER);
             return;
         }
+    
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
+            return;
+        }
+    
+        // Check if the URL is configured
+        $url = get_config('block_crucible', 'playerapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
 
-	// web request
-        $url = get_config('block_crucible', 'playerapiurl') . "/users/" . $USER->idnumber . "/views";
-        //echo "GET $url<br>";
-
-	$response = $this->client->get($url);
-
-	if ($this->client->info['http_code'] === 401) {
-	    print_error($this->client->info['http_code'] . " for $url ");
-	    return -1;
-	} else if ($this->client->info['http_code'] === 403) {
-	    print_error($this->client->info['http_code'] . " for $url ");
-	    return -1;
+        // Web request
+        $url .= "/users/" . $userID . "/views";
+    
+        $response = $this->client->get($url);
+    
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 404) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
-	} else if ($this->client->info['http_code'] !== 200) {
-	    print_error($this->client->info['http_code'] . " for $url ");
-	    return -1;
+            debugging("Player Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . "is Unable to Connect to Player Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
         }
-
+    
         if (!$response) {
-	    debugging('no response received by get_player_views', DEBUG_DEVELOPER);
-	    //print_error($this->client->info['http_code'] . " for $url ");
-	    return 0;
+            debugging("No response received from Player endpoint.", DEBUG_DEVELOPER);
+            return 0;
         }
-	//echo "response:<br><pre>$response</pre>";
-
+    
         $r = json_decode($response);
         if (!$r) {
-	    debugging("could not find views", DEBUG_DEVELOPER);
-	    //print_error($this->client->info['http_code'] . " for $url ");
             return 0;
         }
         return $r;
     }
 
+   //////////////////////BLUEPRINT//////////////////////
     function get_blueprint_msels() {
-	global $USER;
+
+        global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            print_error('session not setup');
+            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
             return;
         }
-        if (!$USER->idnumber) {
-            print_error('user has no idnumber');
+
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
 
         // web request
-        $url = get_config('block_crucible', 'blueprintapiurl') . "/msels?UserId=" . $USER->idnumber;
-        //echo "GET $url<br>";
+        $url = get_config('block_crucible', 'blueprintapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/my-msels";
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Unauthorized access (401) for User: ". $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            print_error($this->client->info['http_code'] . " for $url ");
-	    return -1;
-	} else if ($this->client->info['http_code'] === 404) {
-	    print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+	    } else if ($this->client->info['http_code'] === 404) {
+            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
         }
 
         if (!$response) {
-            debugging('no response received by get_blueprint_msels', DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no response");
+            debugging("No response received from Blueprint endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
-        //echo "response:<br><pre>$response</pre>";
 
         $r = json_decode($response);
         if (!$r) {
-            debugging("could not find msels", DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
             return 0;
         }
         return $r;
@@ -189,213 +198,320 @@ class crucible {
 
     function get_blueprint_permissions() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            print_error('session not setup');
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$USER->idnumber) {
-            print_error('user has no idnumber');
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
+        }
+        
+        // web request
+        $url = get_config('block_crucible', 'blueprintapiurl');
+        if (empty($url)) {
+            return 0; 
         }
 
-        // web request
-        $url = get_config('block_crucible', 'blueprintapiurl') . "/users/" . $USER->idnumber;
-        //echo "GET $url<br>";
+        $url .= "/users/" . $userID;
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Unauthorized access (401) for User: " . $userid . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 404) {
-	    //print_error($this->client->info['http_code'] . " for $url ");
+            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
-        }
-
-        if (!$response) {
-            debugging('no response received by get_blueprint_msels', DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no response");
+            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
-        //echo "response:<br><pre>$response</pre>";
+
+        
+        if (!$response) {
+            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
 
         $r = json_decode($response);
-        if (!$r) {
-            debugging("could not find user data", DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+    
+        if (empty($r->permissions)) {
             return 0;
-	}
-	if (count($r->permissions)) {
-	    return $r->permissions;
-	}
+        } else {
+            return $r->permissions;
+        }
 
 	/* user exists but no special perms */
         return 0;
     }
 
+    //////////////////////CITE//////////////////////
     function get_cite_permissions() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            print_error('session not setup');
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$USER->idnumber) {
-            print_error('user has no idnumber');
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
         // web request
-        $url = get_config('block_crucible', 'citeapiurl') . "/users/" . $USER->idnumber;
-        //echo "GET $url<br>";
+        $url = get_config('block_crucible', 'citeapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/users/" . $USER->idnumber;
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 404) {
-	    //print_error($this->client->info['http_code'] . " for $url ");
+	        debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("User: " . $userID . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
         }
 
         if (!$response) {
-            debugging('no response received by get_cite_permissions', DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no response");
+            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
-        //echo "response:<br><pre>$response</pre>";
 
         $r = json_decode($response);
-        if (!$r) {
-            debugging("could not find user data", DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+        
+	    if (empty($r->permissions)) {
             return 0;
-	}
-	if (count($r->permissions)) {
-	    return $r->permissions;
-	}
+        } else {
+            return $r->permissions;
+        }
 
 	/* user exists but no special perms */
         return 0;
     }
 
+    function get_cite_evaluations() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
+            return;
+        }
+
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'citeapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/my-evaluations";
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+	    } else if ($this->client->info['http_code'] === 404) {
+            debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        if (!$response) {
+            debugging("No response received from CITE endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+        if (!$r) {
+            return 0;
+        }
+        return $r;
+    }
+
+    //////////////////////GALLERY//////////////////////
     function get_gallery_permissions() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            print_error('session not setup');
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$USER->idnumber) {
-            print_error('user has no idnumber');
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
         // web request
-        $url = get_config('block_crucible', 'galleryapiurl') . "/users/" . $USER->idnumber;
-        //echo "GET $url<br>";
+        $url = get_config('block_crucible', 'galleryapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/users/" . $userID;
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 404) {
-	    print_error($this->client->info['http_code'] . " for $url ");
+            debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("User: " . $userID . " is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
         }
 
         if (!$response) {
-            debugging('no response received by get_gallery_permissions', DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no response");
+            debugging("No response received from Gallery endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
-        //echo "response:<br><pre>$response</pre>";
 
         $r = json_decode($response);
-        if (!$r) {
-            debugging("could not find user data", DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
+        
+	    if (empty($r->permissions)) {
             return 0;
-	}
-	if (count($r->permissions)) {
-	    return $r->permissions;
-	}
+        } else {
+            return $r->permissions;
+        }
 
 	/* user exists but no special perms */
         return 0;
     }
 
-    function get_steamfitter_permissions() {
+    function get_gallery_exhibits() {
         global $USER;
+        $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            print_error('session not setup');
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$USER->idnumber) {
-            print_error('user has no idnumber');
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
         // web request
-        $url = get_config('block_crucible', 'steamfitterapiurl') . "/users/" . $USER->idnumber;
-        echo "GET $url<br>";
+        $url = get_config('block_crucible', 'galleryapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/my-exhibits";
 
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
-        } else if ($this->client->info['http_code'] === 404) {
-	    print_error($this->client->info['http_code'] . " for $url ");
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+	    } else if ($this->client->info['http_code'] === 404) {
+            debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            print_error($this->client->info['http_code'] . " for $url ");
-            return -1;
+            debugging("User: " . $userID . "is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
         }
 
         if (!$response) {
-            debugging('no response received by get_steamfitter_permissions', DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no response");
+            debugging("No response received from Gallery endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
-        //echo "response:<br><pre>$response</pre>";
 
         $r = json_decode($response);
         if (!$r) {
-            debugging("could not find user data", DEBUG_DEVELOPER);
-            //print_error($this->client->info['http_code'] . " for $url with no decoded response");
             return 0;
-	}
-	if (count($r->permissions)) {
-	    return $r->permissions;
-	}
+        }
+        return $r;
+    }
 
-	/* user exists but no special perms */
+    //////////////////////STEAMFITTER//////////////////////
+    function get_steamfitter_permissions() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            \core\notification::add("User has no idnumber", self::NOTIFY_TYPE);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'steamfitterapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/users/" . $userID;
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 404) {
+            debugging("Steamfitter Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . "is unable to Connect to Steamfitter Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        if (!$response) {
+            debugging("No response received from Steamfitter endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+        
+	    if (empty($r->permissions)) {
+            return 0;
+        } else {
+            return $r->permissions;
+        }
+
+	    /* user exists but no special perms */
         return 0;
     }
 }

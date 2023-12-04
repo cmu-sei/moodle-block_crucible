@@ -24,26 +24,86 @@
     }
 }}
 
-<p>Welcome to the Crucible enabled Moodle server!</p>
+{{!
+    @template block_crucible/landing
 
-{{#player}}
-<div>
-    <a href="{{player}}" target="_blank">Participants, click here to access Player</a>
+    This template renders the cards view for the crucible block.
+
+    Example context (json):
+    {
+    }
+}}
+
+<h5>Hello {{username}}! Welcome to the Crucible Application Dashboard. </h5> <br>
+
+<div class="applications-grid">
+    {{#player}}
+        <div class="application-block" id="player">
+        <div class="application-details">
+            <div class="application-title">Player</div>
+            <div class="application-description">{{playerDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href="{{player}}">
+                <img class="application-image" src="{{playerLogo}}" alt="Player">
+            </a>
+        </div>
+        </div>
+    {{/player}}
+
+    {{#blueprint}}
+        <div class="application-block" id="blueprint">
+        <div class="application-details">
+            <div class="application-title">Blueprint</div>
+            <div class="application-description">{{blueprintDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href="{{blueprint}}">
+                <img class="application-image" src="{{blueprintLogo}}" alt="Blueprint">
+            </a>
+        </div>
+        </div>
+    {{/blueprint}}
+
+    {{#cite}}
+        <div class="application-block" id="cite">
+        <div class="application-details">
+            <div class="application-title">CITE</div>
+            <div class="application-description">{{citeDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href = "{{cite}}">
+                <img class="application-image" src="{{citeLogo}}" alt="Cite">
+            </a>
+        </div>
+        </div>
+    {{/cite}}
+
+    {{#gallery}}
+        <div class="application-block" id="gallery">
+        <div class="application-details">
+            <div class="application-title">Gallery</div>
+            <div class="application-description">{{galleryDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href = "{{gallery}}">
+                <img class="application-image" src="{{galleryLogo}}" alt="Gallery">
+            </a>
+        </div>
+        </div>
+    {{/gallery}}
+
+    {{#steamfitter}}
+        <div class="application-block" id="steamfitter">
+        <div class="application-details">
+            <div class="application-title">Steamfitter</div>
+            <div class="application-description">{{steamfitterDescription}}</div>
+        </div>
+        <div class="application-link">
+            <a href = "{{steamfitter}}">
+                <img class="application-image" src="{{steamfitterLogo}}" alt="Steamfitter">
+            </a>
+        </div>
+        </div>
+    {{/steamfitter}}
 </div>
-{{/player}}
-{{#blueprint}}
-    <div><a href="{{blueprint}}" target="_blank">Planning Group, click here to access Blueprint</a>
-</div>
-{{/blueprint}}
-{{#cite}}
-    <div><a href="{{cite}}" target="_blank">Participants, click here to access CITE</a>
-</div>
-{{/cite}}
-{{#gallery}}
-    <div><a href="{{gallery}}" target="_blank">Participants, click here to access Gallery</a>
-</div>
-{{/gallery}}
-{{#steamfitter}}
-    <div><a href="{{steamfitter}}" target="_blank">Planning Group, click here to access Steamfitter</a>
-</div>
-{{/steamfitter}}
