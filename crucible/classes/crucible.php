@@ -220,7 +220,7 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userid . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
