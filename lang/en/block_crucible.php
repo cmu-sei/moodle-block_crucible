@@ -22,7 +22,21 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['crucible:addinstance'] = 'Add a new crucible block';
-$string['crucible:myaddinstance'] = 'Add a new crucible block to Dashboard';
+$string['crucible:addinstance'] = 'Add a new Crucible block';
+$string['crucible:myaddinstance'] = 'Add a new Crucible block to Dashboard';
 $string['pluginname'] = 'Crucible';
 $string['privacy:metadata'] = 'The Crucible plugin is part of the Crucible Framework.';
+$string['playerapiurl'] = 'Player API';
+$string['playerappurl'] = 'Player UI';
+$string['blueprintapiurl'] = 'Blueprint API';
+$string['blueprintappurl'] = 'Blueprint UI';
+$string['configplayerapiurl'] = 'Player API URL used to pull permissions';
+$string['configplayerappurl'] = 'Player UI URL used to redirect participants';
+$string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
+$string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
+$string['issuerid'] = 'Issuer Id';
+$string['configissuerid'] = 'OAUTH Issuer Id for Crucible Apps';
+$string['enabled'] = 'Enabled';
+$string['configenabled'] = 'Enable permissions checking via OAUTH';
+
+
