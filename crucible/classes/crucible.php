@@ -62,7 +62,7 @@ class crucible {
             throw new \Exception($details);
             return false;
         }
-	$this->client = $client;
+        $this->client = $client;
     }
 
 
@@ -84,8 +84,8 @@ class crucible {
             if (!$client->is_logged_in()) {
                 debugging('not logged in', DEBUG_DEVELOPER);
             }
-	}
-	debugging("setup client", DEBUG_DEVELOPER);
+        }
+        debugging("setup client", DEBUG_DEVELOPER);
 
         $this->client = $client;
     }
@@ -119,10 +119,10 @@ class crucible {
         $response = $this->client->get($url);
     
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
             debugging("Player Not Found (404) " . $url, DEBUG_DEVELOPER);
@@ -171,12 +171,12 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: ". $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) for User: ". $userID . " on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
-	    } else if ($this->client->info['http_code'] === 404) {
+        } else if ($this->client->info['http_code'] === 404) {
             debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
@@ -220,10 +220,10 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
             debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
@@ -247,7 +247,7 @@ class crucible {
             return $r->permissions;
         }
 
-	/* user exists but no special perms */
+        /* user exists but no special perms */
         return 0;
     }
 
@@ -276,13 +276,13 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
-	        debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
+            debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
             debugging("User: " . $userID . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
@@ -296,13 +296,13 @@ class crucible {
 
         $r = json_decode($response);
         
-	    if (empty($r->permissions)) {
+        if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
         }
 
-	/* user exists but no special perms */
+        /* user exists but no special perms */
         return 0;
     }
 
@@ -331,12 +331,12 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
-	    } else if ($this->client->info['http_code'] === 404) {
+        } else if ($this->client->info['http_code'] === 404) {
             debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
@@ -381,10 +381,10 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
             debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
@@ -401,13 +401,13 @@ class crucible {
 
         $r = json_decode($response);
         
-	    if (empty($r->permissions)) {
+        if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
         }
 
-	/* user exists but no special perms */
+        /* user exists but no special perms */
         return 0;
     }
 
@@ -435,12 +435,12 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
-	    } else if ($this->client->info['http_code'] === 404) {
+        } else if ($this->client->info['http_code'] === 404) {
             debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
@@ -485,10 +485,10 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) for User: " . $userID . "on " . $url, DEBUG_DEVELOPER);
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 404) {
             debugging("Steamfitter Not Found (404) " . $url, DEBUG_DEVELOPER);
@@ -505,13 +505,13 @@ class crucible {
 
         $r = json_decode($response);
         
-	    if (empty($r->permissions)) {
+        if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
         }
 
-	    /* user exists but no special perms */
+        /* user exists but no special perms */
         return 0;
     }
 }
