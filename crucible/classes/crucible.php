@@ -165,8 +165,9 @@ class crucible {
         if (empty($url)) {
             return 0; 
         }
-
-        $url .= "/my-msels";
+        
+        //$url .= "/my-msels";
+        $url .= "/msels?UserId=" . $userID;
 
         $response = $this->client->get($url);
 
@@ -326,7 +327,8 @@ class crucible {
             return 0; 
         }
 
-        $url .= "/my-evaluations";
+        //$url .= "/my-evaluations";
+        $url .= "/evaluations?UserId=" . $userID;
 
         $response = $this->client->get($url);
 
