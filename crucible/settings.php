@@ -53,6 +53,10 @@ defined('MOODLE_INTERNAL') || die();
 	$settings->add(new admin_setting_configcheckbox('block_crucible/enabled',
 	    get_string('enabled', 'block_crucible'), get_string('configenabled', 'block_crucible'), 0, 1, 0));
 
+    //Blueprint Checkbox
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showallapps',
+        get_string('showallapps', 'block_crucible'), get_string('configappshow', 'block_crucible'), 0, 1, 0));
+
     //Blueprint
     $settings->add(new admin_setting_configtext('block_crucible/blueprintapiurl',
         get_string('blueprintapiurl', 'block_crucible'), get_string('configblueprintapiurl', 'block_crucible'), "", PARAM_URL, 60));
@@ -87,6 +91,27 @@ defined('MOODLE_INTERNAL') || die();
 
     $settings->add(new admin_setting_configtext('block_crucible/steamfitterappurl',
       get_string('steamfitterappurl', 'block_crucible'), get_string('configsteamfitterappurl', 'block_crucible'), "", PARAM_URL, 60));
-}
 
+    //Communications Checkbox
+    $settings->add(new admin_setting_configcheckbox('block_crucible/enablecommapps',
+        get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
+
+    //Rocketchat
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
+        get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatauthtoken',
+        get_string('rocketchatauthtoken', 'block_crucible'), get_string('configrocketchatauthtoken', 'block_crucible'), "", PARAM_RAW, 60));
+  
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatuserid',
+        get_string('rocketchatuserid', 'block_crucible'), get_string('configrocketchatuserid', 'block_crucible'), "", PARAM_RAW, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatappurl',
+        get_string('rocketchatappurl', 'block_crucible'), get_string('configrocketchatappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    //Roundcube
+    $settings->add(new admin_setting_configtext('block_crucible/roundcubeappurl',
+        get_string('roundcubeappurl', 'block_crucible'), get_string('configroundcubeappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+}
 

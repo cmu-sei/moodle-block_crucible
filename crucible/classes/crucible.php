@@ -330,7 +330,11 @@ class crucible {
         //$url .= "/my-evaluations";
         $url .= "/evaluations?UserId=" . $userID;
 
+        echo $url;
+
         $response = $this->client->get($url);
+
+        echo $response;
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
@@ -460,6 +464,66 @@ class crucible {
             return 0;
         }
         return $r;
+    }
+
+    //////////////////////Rocket.Chat//////////////////////
+    function get_rocketchat_user_info() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        $email = $USER->username;
+        $sanitizedEmail = filter_var($email, FILTER_SANITIZE_EMAIL);
+        $username = strstr($sanitizedEmail, '@', true);
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$username) {
+            \core\notification::add("User has no username", self::NOTIFY_TYPE);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'rocketchatapiurl');
+        $authToken = get_config('block_crucible', 'rocketchatauthtoken');
+        $adminUserId = get_config('block_crucible', 'rocketchatuserid');
+
+        if (empty($url) || empty($authToken) || empty($adminUserId)) {
+            return 0; 
+        }
+
+        $url .= "/users.info?username=" . $username;
+
+        $headers = [
+            'X-Auth-Token: ' . $authToken,
+            'X-User-Id: ' . $adminUserId,
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            debugging('Rocket Chat API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
+            return false;
+        }
+
+        curl_close($ch);
+
+        $r = json_decode($response);
+        
+        if ($r->success == false) {
+            return 0;
+        } else {
+            return $r;
+        }
+
+        /* user exists but no special perms */
+        return 0;
     }
 
     //////////////////////STEAMFITTER//////////////////////

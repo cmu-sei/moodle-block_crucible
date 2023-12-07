@@ -106,6 +106,8 @@ class block_crucible extends block_base {
         $crucible = new \block_crucible\crucible();
         $crucible->setup_system();
         $userID = $USER->idnumber;
+        $showapps = get_config('block_crucible', 'showallapps');
+        $showComms = get_config('block_crucible', 'enablecommapps');
 
         ////////////////////PLAYER/////////////////////////////
         $views = $crucible->get_player_views();
@@ -121,10 +123,16 @@ class block_crucible extends block_base {
 
         $msels = $crucible->get_blueprint_msels();
         $permsBlueprint = $crucible->get_blueprint_permissions();
-        if ($permsBlueprint || $msels) {
+        if (($msels && $showapps) || $permsBlueprint) {
             $data->blueprint = get_config('block_crucible', 'blueprintappurl');
             $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
-            $data->blueprintLogo  = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
+            $data->blueprintLogo = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
+        
+            if ($permsBlueprint && $showComms) {
+                $data->roundcube = get_config('block_crucible', 'roundcubeappurl');
+                $data->roundcubeDescription = get_string('roundcubedescription', 'block_crucible');
+                $data->roundcubeLogo = $OUTPUT->image_url('icon-roundcube', 'block_crucible');
+            }
         } else if ($permsBlueprint == 0){
             debugging("No user data found on Blueprint for User: " . $userID, DEBUG_DEVELOPER);
         } else if ($msels == 0) {
@@ -135,7 +143,7 @@ class block_crucible extends block_base {
     
         $permsCite = $crucible->get_cite_permissions();
         $evalsCite = $crucible->get_cite_evaluations();
-        if ($permsCite || $evalsCite) {
+        if (($evalsCite && $showapps) || $permsCite) {
             $data->cite = get_config('block_crucible', 'citeappurl');
             $data->citeDescription = get_string('citedescription', 'block_crucible');
             $data->citeLogo  = $OUTPUT->image_url('crucible-icon-cite', 'block_crucible');
@@ -148,7 +156,7 @@ class block_crucible extends block_base {
         ////////////////////GALLERY/////////////////////////////
         $permsGallery = $crucible->get_gallery_permissions();
         $exhibitsGallery = $crucible->get_gallery_exhibits();
-        if ($permsGallery || $exhibitsGallery) {
+        if (($exhibitsGallery && $showapps) || $permsGallery) {
             $data->gallery = get_config('block_crucible', 'galleryappurl');
             $data->galleryDescription = get_string('gallerydescription', 'block_crucible');
             $data->galleryLogo  = $OUTPUT->image_url('crucible-icon-gallery', 'block_crucible');
@@ -167,6 +175,18 @@ class block_crucible extends block_base {
         } else if ($permsSteam == 0) {
             debugging("No user data found on Steamfitter for User: " . $userID, DEBUG_DEVELOPER);
         }
+
+        ////////////////////RocketChat/////////////////////////////
+        $rocketchat = $crucible->get_rocketchat_user_info();
+        if ($rocketchat && $showComms) {
+            $data->rocket = get_config('block_crucible', 'rocketchatappurl');
+            $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
+            $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
+        } else if ($rocketchat == 0)
+        {
+            debugging("User not found in Rocket.Chat", DEBUG_DEVELOPER);
+        }
+        
 
         $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
         return $this->content;
