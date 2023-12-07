@@ -184,8 +184,7 @@ class block_crucible extends block_base {
             $data->rocket = get_config('block_crucible', 'rocketchatappurl');
             $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
             $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-        } else if ($rocketchat == 0)
-        {
+        } else if ($rocketchat == 0) {
             debugging("User not found in Rocket.Chat", DEBUG_DEVELOPER);
         }
         
@@ -195,8 +194,7 @@ class block_crucible extends block_base {
         $showLandingPage = (
         $crucible->get_player_views() || $crucible->get_blueprint_msels() || $crucible->get_cite_evaluations() || $crucible->get_rocketchat_user_info() );
     
-        if ($showLandingPage ==0)
-        {   
+        if ($showLandingPage ==0) {   
             $nodata ->username = $USER->firstname;
             $nodata->crucibleLogo  = $OUTPUT->image_url('crucible-icon', 'block_crucible');
             $this->content->text = $OUTPUT->render_from_template('block_crucible/no_accounts', $nodata);
