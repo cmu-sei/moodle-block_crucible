@@ -102,6 +102,7 @@ class block_crucible extends block_base {
 
         /* data for template */
         $data = new stdClass();
+        $nodata = new stdClass();
         $data ->username = $USER->firstname;
         $crucible = new \block_crucible\crucible();
         $crucible->setup_system();
@@ -165,6 +166,7 @@ class block_crucible extends block_base {
         } else if ($exhibitsGallery = 0) {
             debugging("No exhibits found on Gallery for User: " . $userID, DEBUG_DEVELOPER);
         }
+        
 
         ////////////////////STEAMFITTER/////////////////////////////
         $permsSteam = $crucible->get_steamfitter_permissions();
@@ -188,7 +190,26 @@ class block_crucible extends block_base {
         }
         
 
-        $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
+       // $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
+
+        $showLandingPage = (
+        $crucible->get_player_views() || $crucible->get_blueprint_msels() || $crucible->get_cite_evaluations() || $crucible->get_rocketchat_user_info() );
+    
+        if ($showLandingPage ==0)
+        {   
+            $nodata ->username = $USER->firstname;
+            $nodata->crucibleLogo  = $OUTPUT->image_url('crucible-icon', 'block_crucible');
+            $this->content->text = $OUTPUT->render_from_template('block_crucible/no_accounts', $nodata);
+
+        } else {
+            $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
+        }
+
+        /*
+        $this->content->text = $showLandingPage
+        ? $OUTPUT->render_from_template('block_crucible/landing', $data)
+        : $OUTPUT->render_from_template('block_crucible/no_accounts', ['username' => $USER->firstname]);
+        */
         return $this->content;
     }
 }

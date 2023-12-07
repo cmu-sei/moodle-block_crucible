@@ -57,3 +57,28 @@
     font-size: 17px;
     margin-bottom: 5px;
 }
+
+.center-message {
+    text-align: center;
+    margin: auto;
+    width: 60%; /* Adjust the width as needed */
+}
+
+/*
+.application-logo {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+*/
+
+.application-logo {
+    position: relative;
+}
+
+.crucible-image {
+    width: 150px; /* Adjust the width as needed */
+    height: auto; /* Maintain aspect ratio */
+    max-width: 100%;
+    max-height: 150px; 
+}

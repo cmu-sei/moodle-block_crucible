@@ -330,11 +330,7 @@ class crucible {
         //$url .= "/my-evaluations";
         $url .= "/evaluations?UserId=" . $userID;
 
-        echo $url;
-
         $response = $this->client->get($url);
-
-        echo $response;
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
