@@ -3,25 +3,35 @@
 }
 
 .card {
-    width: 1000px;
+    width: 100%;
+    max-width: 1000px; /* Set a maximum width if needed */
+    margin: 0 auto; /* Center the card */
 }
 
-.main-inner{
-    margin-right: 450px !important;
+.main-inner {
+    margin-right: 10%; /* Adjust margin as needed */
+    max-width: calc(100% - 20%); /* Set a maximum width and adjust margin */
 }
+
 
 .applications-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px; /* Add gap between items */
+    gap: 20px; 
 }
 
 .application-block {
+    flex-shrink: 0;
+    width: calc((100% - 40px) / 3); 
+    height: 125px; 
     border: 1px solid #ccc;
     padding: 20px;
-    display: flex;
-    width: 300px;
     margin-bottom: 20px;
+}
+
+.application-content {
+    display: flex;
+    flex-direction: row; /* Align items horizontally */
 }
 
 .application-title {
@@ -35,11 +45,11 @@
 }
 
 .application-image {
-    max-width: 100%;
-    max-height: 90px; /* Adjust the max height as needed */
-    display: block;
-    margin: 0 auto; /* Center the image horizontally */
-    }
+    max-width: 80%;
+    max-height: 80px; 
+    display: flex;
+    margin: 0 auto; 
+}
 
 .card-title {
     font-size: 30px;
@@ -54,31 +64,58 @@
 }
 
 .application-description {
-    font-size: 17px;
+    font-size: 15px;
     margin-bottom: 5px;
 }
 
 .center-message {
     text-align: center;
     margin: auto;
-    width: 60%; /* Adjust the width as needed */
+    width: 60%; 
 }
-
-/*
-.application-logo {
-    position: absolute;
-    top: 0;
-    right: 0;
-}
-*/
 
 .application-logo {
-    position: relative;
+    display: flex;
+    /*align-items: flex-end;*/
 }
 
-.crucible-image {
-    width: 150px; /* Adjust the width as needed */
-    height: auto; /* Maintain aspect ratio */
-    max-width: 100%;
-    max-height: 150px; 
+
+.application-image {
+    width: 80px;
+    display: block;
+    height: 80px;
+    margin-right: 10px; /* Add spacing between text and logo */
 }
+
+
+@media screen and (min-width: 400px) {
+    .applications-grid {
+        flex-wrap: wrap;
+    }
+    
+    .application-block {
+        width: calc(100% - 80px); /* One column with gap */
+    }
+}
+
+@media screen and (min-width: 600px) {
+    .applications-grid {
+        flex-wrap: wrap;
+    }
+
+    .application-block {
+        width: calc(50% - 20px); /* Two columns with some gap in between */
+    }
+}
+
+@media screen and (min-width: 900px) {
+    .applications-grid {
+        flex-wrap: wrap;
+    }
+
+    .application-block {
+        width: calc((100% - 40px) / 3)/* Two columns with some gap in between */
+    }
+}
+
+

@@ -90,6 +90,8 @@ class crucible {
         $this->client = $client;
     }
 
+    //
+
     //////////////////////PLAYER//////////////////////
 
     function get_player_views() {

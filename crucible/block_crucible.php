@@ -134,6 +134,9 @@ class block_crucible extends block_base {
                 $data->roundcubeDescription = get_string('roundcubedescription', 'block_crucible');
                 $data->roundcubeLogo = $OUTPUT->image_url('icon-roundcube', 'block_crucible');
             }
+            else {
+                debugging("Roundcube not enabled", DEBUG_DEVELOPER);
+            }
         } else if ($permsBlueprint == 0){
             debugging("No user data found on Blueprint for User: " . $userID, DEBUG_DEVELOPER);
         } else if ($msels == 0) {
@@ -179,23 +182,23 @@ class block_crucible extends block_base {
         }
 
         ////////////////////RocketChat/////////////////////////////
-        $rocketchat = $crucible->get_rocketchat_user_info();
-        if ($rocketchat && $showComms) {
-            $data->rocket = get_config('block_crucible', 'rocketchatappurl');
-            $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-            $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-        } else if ($rocketchat == 0) {
-            debugging("User not found in Rocket.Chat", DEBUG_DEVELOPER);
+        if ($showComms) {
+            $rocketchat = $crucible->get_rocketchat_user_info();
+            if ($rocketchat) {
+                $data->rocket = get_config('block_crucible', 'rocketchatappurl');
+                $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
+                $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
+            } else if ($rocketchat == 0) {
+                debugging("User not found in Rocket.Chat", DEBUG_DEVELOPER);
+            }    
+        } else if ($showComms == 0){
+            debugging("Rocket.Chat not enabled", DEBUG_DEVELOPER);
         }
-        
-
-       // $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
 
         $showLandingPage = (
         $crucible->get_player_views() || $crucible->get_blueprint_msels() || $crucible->get_cite_evaluations() || $crucible->get_rocketchat_user_info() );
     
-        if ($showLandingPage ==0) {   
-            $nodata ->username = $USER->firstname;
+        if ($showLandingPage == 0) {   
             $nodata->crucibleLogo  = $OUTPUT->image_url('crucible-icon', 'block_crucible');
             $this->content->text = $OUTPUT->render_from_template('block_crucible/no_accounts', $nodata);
 
@@ -203,11 +206,6 @@ class block_crucible extends block_base {
             $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
         }
 
-        /*
-        $this->content->text = $showLandingPage
-        ? $OUTPUT->render_from_template('block_crucible/landing', $data)
-        : $OUTPUT->render_from_template('block_crucible/no_accounts', ['username' => $USER->firstname]);
-        */
         return $this->content;
     }
 }
