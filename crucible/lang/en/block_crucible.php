@@ -30,7 +30,10 @@ $string['issuerid'] = 'Issuer Id';
 $string['configissuerid'] = 'OAUTH Issuer Id for Crucible Apps';
 $string['enabled'] = 'Enabled';
 $string['configenabled'] = 'Enable permissions checking via OAUTH';
-
+$string['showallapps'] = 'Show All Apps to Users';
+$string['enablecommapps'] = 'Enable Communication Apps';
+$string['configappshow'] = 'Enable User Access to all Apps';
+$string['configcommshow'] = 'Enable Access to Communication Apps';
 
 //Player
 $string['playerapiurl'] = 'Player API';
@@ -66,5 +69,22 @@ $string['steamfitterappurl'] = 'Steamfitter UI';
 $string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
 $string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
 $string['steamfitterdescription'] = 'Crafting a Scenario';
+
+//Rocketchat
+$string['rocketchatapiurl'] = 'Rocket.Chat API';
+$string['rocketchatappurl'] = 'Rocket.Chat UI';
+$string['rocketchatauthtoken'] = 'Rocket.Chat Auth Token';
+$string['configrocketchatapiurl'] = 'Rocket.Chat API URL used to pull permissions';
+$string['configrocketchatappurl'] = 'Rocket.Chat UI URL used to redirect participants';
+$string['configrocketchatauthtoken'] = 'Add Admin\'s Auth Token for API Calls';
+$string['rocketchatdescription'] = 'Communications Platform';
+$string['rocketchatuserid'] = 'Rocket.Chat User Id';
+$string['configrocketchatuserid'] = 'Add Admin\'s User Id for API Calls';
+
+//Roundcube
+$string['roundcubeappurl'] = 'Roundcube UI';
+$string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
+$string['roundcubedescription'] = 'Open Source Webmail';
+
 
 
