@@ -153,7 +153,7 @@ class crucible {
         $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
 
@@ -314,7 +314,7 @@ class crucible {
         $userID = $USER->idnumber;
 
         if ($this->client == null) {
-            \core\notification::add("Session not set up", self::NOTIFY_TYPE);
+            debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
 
@@ -478,7 +478,7 @@ class crucible {
             return;
         }
         if (!$username) {
-            \core\notification::add("User has no username", self::NOTIFY_TYPE);
+            debugging("User has no username", DEBUG_DEVELOPER);
             return;
         }
 
@@ -537,7 +537,7 @@ class crucible {
             return;
         }
         if (!$userID) {
-            \core\notification::add("User has no idnumber", self::NOTIFY_TYPE);
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
