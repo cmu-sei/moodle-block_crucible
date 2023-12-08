@@ -184,13 +184,22 @@ class block_crucible extends block_base {
         ////////////////////RocketChat/////////////////////////////
         if ($showComms) {
             $rocketchat = $crucible->get_rocketchat_user_info();
+
             if ($rocketchat) {
-                $data->rocket = get_config('block_crucible', 'rocketchatappurl');
-                $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-                $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-            } else if ($rocketchat == 0) {
-                debugging("User not found in Rocket.Chat", DEBUG_DEVELOPER);
-            }    
+                $rocketPerms = $rocketchat->user->roles;
+                
+                if ($showapps) {
+                    $data->rocket = get_config('block_crucible', 'rocketchatappurl');
+                    $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
+                    $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
+                } else if (in_array("admin", $rocketPerms)) {
+                    $data->rocket = get_config('block_crucible', 'rocketchatappurl');
+                    $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
+                    $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
+                }
+            } else if ($rocketchat == -1) {
+                debugging("Rocket.Chat is not configured", DEBUG_DEVELOPER);
+            }  
         } else if ($showComms == 0){
             debugging("Rocket.Chat not enabled", DEBUG_DEVELOPER);
         }

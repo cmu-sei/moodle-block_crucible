@@ -488,7 +488,7 @@ class crucible {
         $adminUserId = get_config('block_crucible', 'rocketchatuserid');
 
         if (empty($url) || empty($authToken) || empty($adminUserId)) {
-            return 0; 
+            return -1; 
         }
 
         $url .= "/users.info?username=" . $username;
@@ -513,12 +513,15 @@ class crucible {
         curl_close($ch);
 
         $r = json_decode($response);
-        
-        if ($r->success == false) {
-            return 0;
+
+        if ($r->success === false) {
+            debugging($r->error, DEBUG_DEVELOPER);
+        } else if (property_exists($r, 'status') && $r->status === "error") {
+            debugging($r->message, DEBUG_DEVELOPER);
         } else {
             return $r;
         }
+        
 
         /* user exists but no special perms */
         return 0;
