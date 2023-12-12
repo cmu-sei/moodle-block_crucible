@@ -50,12 +50,14 @@ class crucible {
         }
         $issuer = \core\oauth2\api::get_issuer($issuerid);
 
+
         try {
             $client = \core\oauth2\api::get_system_oauth_client($issuer);
         } catch (Exception $e) {
             debugging("get_system_oauth_client failed with $e->errorcode", DEBUG_NORMAL);
             $client = false;
         }
+
         if ($client === false) {
             debugging('Cannot connect as system account', DEBUG_NORMAL);
             $details = 'Cannot connect as system account';
@@ -70,7 +72,7 @@ class crucible {
         global $PAGE;
         $issuerid = get_config('crucible', 'issuerid');
         if (!$issuerid) {
-            debugging('no issues set for plugin', DEBUG_DEVELOPER);
+            debugging('no issuer set for plugin', DEBUG_DEVELOPER);
         }
         $issuer = \core\oauth2\api::get_issuer($issuerid);
 
@@ -79,6 +81,7 @@ class crucible {
         $returnurl = new \moodle_url('/auth/oauth2/login.php', $returnparams);
 
         $client = \core\oauth2\api::get_user_oauth_client($issuer, $returnurl);
+
 
         if ($client) {
             if (!$client->is_logged_in()) {
