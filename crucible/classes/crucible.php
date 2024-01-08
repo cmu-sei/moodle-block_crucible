@@ -50,12 +50,19 @@ class crucible {
         }
         $issuer = \core\oauth2\api::get_issuer($issuerid);
 
-
         try {
             $client = \core\oauth2\api::get_system_oauth_client($issuer);
         } catch (Exception $e) {
             debugging("get_system_oauth_client failed with $e->errorcode", DEBUG_NORMAL);
             $client = false;
+        }
+
+        $userinfo = $client->get_userinfo();
+
+        // Check if 'idnumber' field is present in the user information
+        if (!isset($userinfo['idnumber'])) {
+            debugging('Identity provider does not have a mapping for idnumber', DEBUG_NORMAL);
+            return;
         }
 
         if ($client === false) {
@@ -66,34 +73,6 @@ class crucible {
         }
         $this->client = $client;
     }
-
-
-    function setup() {
-        global $PAGE;
-        $issuerid = get_config('crucible', 'issuerid');
-        if (!$issuerid) {
-            debugging('no issuer set for plugin', DEBUG_DEVELOPER);
-        }
-        $issuer = \core\oauth2\api::get_issuer($issuerid);
-
-        $wantsurl = $PAGE->url;
-        $returnparams = ['wantsurl' => $wantsurl, 'sesskey' => sesskey(), 'id' => $issuerid];
-        $returnurl = new \moodle_url('/auth/oauth2/login.php', $returnparams);
-
-        $client = \core\oauth2\api::get_user_oauth_client($issuer, $returnurl);
-
-
-        if ($client) {
-            if (!$client->is_logged_in()) {
-                debugging('not logged in', DEBUG_DEVELOPER);
-            }
-        }
-        debugging("setup client", DEBUG_DEVELOPER);
-
-        $this->client = $client;
-    }
-
-    //
 
     //////////////////////PLAYER//////////////////////
 
@@ -149,6 +128,66 @@ class crucible {
         return $r;
     }
 
+    function get_player_permissions() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
+            return;
+        }
+        
+        // web request
+        $url = get_config('block_crucible', 'playerapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/users/" . $userID;
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 404) {
+            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        
+        if (!$response) {
+            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+    
+        if (empty($r->permissions)) {
+            return 0;
+        } else {
+            // Iterate through permissions array to find "SystemAdmin" key with value "true"
+            foreach ($r->permissions as $permission) {
+                if ($permission->key === "SystemAdmin") {
+                    return $r->permissions;   
+                }
+            }
+            return 0;
+        }
+        
+        return 0;
+    }
+
    //////////////////////BLUEPRINT//////////////////////
     function get_blueprint_msels() {
 
@@ -171,9 +210,7 @@ class crucible {
             return 0; 
         }
         
-        //$url .= "/my-msels";
-        $url .= "/msels?UserId=" . $userID;
-
+        $url .= "/users/" . $userID . "/msels";
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
@@ -251,6 +288,62 @@ class crucible {
             return 0;
         } else {
             return $r->permissions;
+        }
+
+        /* user exists but no special perms */
+        return 0;
+    }
+
+    //////////////////////CASTER//////////////////////
+
+    function get_caster_permissions() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
+            return;
+        }
+        
+        // web request
+        $url = get_config('block_crucible', 'casterapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/users/" . $userID . "/permissions";
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 404) {
+            debugging("Caster Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . "is Unable to Connect to Caster Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        
+        if (!$response) {
+            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+
+        if (empty($r)) {
+            return 0;
+        } else {
+            return $r;
         }
 
         /* user exists but no special perms */
@@ -437,8 +530,7 @@ class crucible {
             return 0; 
         }
 
-        $url .= "/my-exhibits";
-
+        $url .= "/users/" . $userID . '/exhibits';
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {

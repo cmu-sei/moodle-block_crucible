@@ -120,8 +120,16 @@ class block_crucible extends block_base {
             debugging("No views found on Player for User: " . $userID, DEBUG_DEVELOPER);
         }
 
+        ////////////////////PLAYER/////////////////////////////
+        $permsPlayer = $crucible->get_player_permissions();
+        if ($permsPlayer) {
+            $data->alloy = get_config('block_crucible', 'alloyappurl');
+            $data->alloyDescription = get_string('alloydescription', 'block_crucible');
+            $data->alloyLogo  = $OUTPUT->image_url('crucible-icon-alloy', 'block_crucible');
+        } else if ($views == 0) {
+            debugging("No permissions found on Player for User: " . $userID, DEBUG_DEVELOPER);
+        }
         ////////////////////BLUEPRINT/////////////////////////////
-
         $msels = $crucible->get_blueprint_msels();
         $permsBlueprint = $crucible->get_blueprint_permissions();
         if (($msels && $showapps) || $permsBlueprint) {
@@ -141,6 +149,16 @@ class block_crucible extends block_base {
             debugging("No user data found on Blueprint for User: " . $userID, DEBUG_DEVELOPER);
         } else if ($msels == 0) {
             debugging("No MSELs found on Blueprint for User: " . $userID, DEBUG_DEVELOPER);
+        }
+
+        ////////////////////CASTER/////////////////////////////
+        $permsCaster = $crucible->get_caster_permissions();
+        if ($permsCaster) {
+            $data->caster = get_config('block_crucible', 'casterappurl');
+            $data->casterDescription = get_string('casterdescription', 'block_crucible');
+            $data->casterLogo  = $OUTPUT->image_url('crucible-icon-caster', 'block_crucible');
+        } else if ($permsCaster == 0) {
+            debugging("No user data found on Caster for User: " . $userID, DEBUG_DEVELOPER);
         }
 
         ////////////////////CITE/////////////////////////////

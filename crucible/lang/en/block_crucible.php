@@ -42,12 +42,26 @@ $string['playerdescription'] = 'Designing User Interfaces';
 $string['configplayerapiurl'] = 'Player API URL used to pull permissions';
 $string['configplayerappurl'] = 'Player UI URL used to redirect participants';
 
+//Alloy
+$string['alloyapiurl'] = 'Alloy API';
+$string['alloyappurl'] = 'Alloy UI';
+$string['configalloyapiurl'] = 'Alloy API URL used to pull permissions';
+$string['configalloyappurl'] = 'Alloy UI used to redirect content developers';
+$string['alloydescription'] = 'Conducting a Simulation';
+
 //Blueprint
 $string['blueprintapiurl'] = 'Blueprint API';
 $string['blueprintappurl'] = 'Blueprint UI';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
 $string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
 $string['blueprintdescription'] = 'Building a MSEL';
+
+//Caster
+$string['casterapiurl'] = 'Caster API';
+$string['casterappurl'] = 'Caster UI';
+$string['configcasterapiurl'] = 'Caster API URL used to pull permissions';
+$string['configcasterappurl'] = 'Caster UI used to redirect content developers';
+$string['casterdescription'] = 'Coding a Topology';
 
 //CITE
 $string['citeapiurl'] = 'CITE API';
