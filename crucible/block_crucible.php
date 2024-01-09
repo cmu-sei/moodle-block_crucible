@@ -222,16 +222,25 @@ class block_crucible extends block_base {
             debugging("Rocket.Chat not enabled", DEBUG_DEVELOPER);
         }
 
+        ////////////////////TOPOMOJO////////////////////////////
+        $permsTopomojo = $crucible->get_topomojo_permissions();
+        if ($permsTopomojo) {
+            $data->topomojo = get_config('block_crucible', 'topomojoappurl');
+            $data->topomojoDescription = get_string('topomojodescription', 'block_crucible');
+            $data->topomojoLogo  = $OUTPUT->image_url('topomojo-logo', 'block_crucible');
+        } else if ($permsTopomojo == 0) {
+            debugging("No user data found on Topomojo for User: " . $userID, DEBUG_DEVELOPER);
+        }
+
         $showLandingPage = (
         $crucible->get_player_views() || $crucible->get_blueprint_msels() || $crucible->get_cite_evaluations() || $crucible->get_rocketchat_user_info() );
     
         if ($showLandingPage == 0) {   
-            $nodata->crucibleLogo  = $OUTPUT->image_url('crucible-icon', 'block_crucible');
-            $this->content->text = $OUTPUT->render_from_template('block_crucible/no_accounts', $nodata);
-
-        } else {
-            $this->content->text = $OUTPUT->render_from_template('block_crucible/landing', $data);
+            $data->crucibleLogo  = $OUTPUT->image_url('crucible-icon', 'block_crucible');
         }
+        
+        $this->content->text = $OUTPUT->render_from_template('block_crucible/landing_parent', $data);
+    
 
         return $this->content;
     }

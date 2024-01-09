@@ -100,5 +100,12 @@ $string['roundcubeappurl'] = 'Roundcube UI';
 $string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
 $string['roundcubedescription'] = 'Open Source Webmail';
 
+//Topomojo
+$string['topomojoapiurl'] = 'TopoMojo API';
+$string['topomojoappurl'] = 'TopoMojo UI';
+$string['configtopomojoapiurl'] = 'TopoMojo API URL used to pull permissions';
+$string['configtopomojoappurl'] = 'TopoMojo UI URL used to redirect participants';
+$string['topomojodescription'] = 'Virtual Lab Builder';
+
 
 

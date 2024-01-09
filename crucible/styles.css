@@ -52,6 +52,16 @@
     margin-right: 10px; /* Add spacing between image and text */
 }
 
+.topo-image {
+    display: flex;
+    max-width: 100px;
+    max-height: 100px;
+    margin-left: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
 .card-title {
     font-size: 30px;
 }
@@ -77,6 +87,8 @@
 
 .application-logo {
     display: flex;
+    justify-content: center;
+    align-items: center;
     /*align-items: flex-end;*/
 }
 

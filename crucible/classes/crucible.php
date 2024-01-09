@@ -676,4 +676,58 @@ class crucible {
         /* user exists but no special perms */
         return 0;
     }
+
+     //////////////////////TopoMojo//////////////////////
+     function get_topomojo_permissions() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'topomojoapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/user/" . $userID;
+
+        $response = $this->client->get($url);
+
+        if ($this->client->info['http_code'] === 401) {
+            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 403) {
+            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] === 404) {
+            debugging("Topomojo Not Found (404) " . $url, DEBUG_DEVELOPER);
+            return 0;
+        } else if ($this->client->info['http_code'] !== 200) {
+            debugging("User: " . $userID . "is unable to Connect to Topomojo Endpoint " . $url, DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        if (!$response) {
+            debugging("No response received from Topomojo endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+
+        
+        if ($r->isAdmin || $r->isObserver || $r->isCreator || $r->isBuilder) {
+            return $r;
+        }
+        return 0;
+
+    }
+    
 }

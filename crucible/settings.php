@@ -106,6 +106,13 @@ defined('MOODLE_INTERNAL') || die();
     $settings->add(new admin_setting_configtext('block_crucible/steamfitterappurl',
       get_string('steamfitterappurl', 'block_crucible'), get_string('configsteamfitterappurl', 'block_crucible'), "", PARAM_URL, 60));
 
+    //Topomojo
+    $settings->add(new admin_setting_configtext('block_crucible/topomojoapiurl',
+      get_string('topomojoapiurl', 'block_crucible'), get_string('configtopomojoapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/topomojoappurl',
+      get_string('topomojoappurl', 'block_crucible'), get_string('configtopomojoappurl', 'block_crucible'), "", PARAM_URL, 60));
+
     //Communications Checkbox
     $settings->add(new admin_setting_configcheckbox('block_crucible/enablecommapps',
         get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
