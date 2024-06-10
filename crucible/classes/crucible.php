@@ -565,9 +565,8 @@ class crucible {
         $userID = $USER->idnumber;
 
         $email = $USER->username;
-        $sanitizedEmail = filter_var($email, FILTER_SANITIZE_EMAIL);
-        $username = strstr($sanitizedEmail, '@', true);
-   
+        $username = $USER->username;
+
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
