@@ -229,27 +229,27 @@ class block_crucible extends block_base {
         }
 
         ////////////////////TOPOMOJO////////////////////////////
-        $permsTopomojo = $crucible->get_topomojo_permissions();
-        if ($permsTopomojo) {
-            $data->topomojo = get_config('block_crucible', 'topomojoappurl');
-            $data->topomojoDescription = get_string('topomojodescription', 'block_crucible');
-            $data->topomojoLogo  = $OUTPUT->image_url('topomojo-logo', 'block_crucible');
-        } else if ($permsTopomojo == 0) {
-            debugging("No user data found on Topomojo for User: " . $userID, DEBUG_DEVELOPER);
-        }
+        // $permsTopomojo = $crucible->get_topomojo_permissions();
+        // if ($permsTopomojo) {
+        $data->topomojo = get_config('block_crucible', 'topomojoappurl');
+        $data->topomojoDescription = get_string('topomojodescription', 'block_crucible');
+        $data->topomojoLogo  = $OUTPUT->image_url('topomojo-logo', 'block_crucible');
+        // } else if ($permsTopomojo == 0) {
+        //     debugging("No user data found on Topomojo for User: " . $userID, DEBUG_DEVELOPER);
+        // }
 
         ////////////////////GAMEBOARD/////////////////////////////
-        $permsGameboard = $crucible->get_gameboard_permissions();
-        $activeChallenges = $crucible->get_active_challenges();
-        if (($activeChallenges && $showapps) || $permsGameboard) {
-            $data->gameboard = get_config('block_crucible', 'gameboardappurl');
-            $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
-            $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
-        } else if ($permsGameboard == 0) {
-            debugging("No user data found on Gameboard for User: " . $userID, DEBUG_DEVELOPER);
-        } else if ($activeChallenges = 0) {
-            debugging("No active challenges found on Gameboard for User: " . $userID, DEBUG_DEVELOPER);
-        }
+        // $permsGameboard = $crucible->get_gameboard_permissions();
+        // $activeChallenges = $crucible->get_active_challenges();
+        // if (($activeChallenges && $showapps) || $permsGameboard) {
+        $data->gameboard = get_config('block_crucible', 'gameboardappurl');
+        $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
+        $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
+        // } else if ($permsGameboard == 0) {
+        //     debugging("No user data found on Gameboard for User: " . $userID, DEBUG_DEVELOPER);
+        // } else if ($activeChallenges = 0) {
+        //     debugging("No active challenges found on Gameboard for User: " . $userID, DEBUG_DEVELOPER);
+        // }
 
         ////////////////////MISP/////////////////////////////
         $permsMISP = $crucible->get_misp_permissions();
