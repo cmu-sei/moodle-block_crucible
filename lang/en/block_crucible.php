@@ -22,12 +22,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['crucible:addinstance'] = 'Add a new Crucible block';
-$string['crucible:myaddinstance'] = 'Add a new Crucible block to Dashboard';
-$string['pluginname'] = 'Crucible';
-$string['privacy:metadata'] = 'The Crucible plugin is part of the Crucible Framework.';
+$string['crucible:addinstance'] = 'Add a new Application block';
+$string['crucible:myaddinstance'] = 'Add a new Application block to Dashboard';
+$string['pluginname'] = 'Applications';
 $string['issuerid'] = 'Issuer Id';
-$string['configissuerid'] = 'OAUTH Issuer Id for Crucible Apps';
+$string['configissuerid'] = 'OAUTH Issuer Id for Applications';
 $string['enabled'] = 'Enabled';
 $string['configenabled'] = 'Enable permissions checking via OAUTH';
 $string['showallapps'] = 'Show All Apps to Users';
@@ -103,9 +102,26 @@ $string['roundcubedescription'] = 'Open Source Webmail';
 //Topomojo
 $string['topomojoapiurl'] = 'TopoMojo API';
 $string['topomojoappurl'] = 'TopoMojo UI';
+$string['topomojoapikey'] = 'Topomojo API Key';
 $string['configtopomojoapiurl'] = 'TopoMojo API URL used to pull permissions';
 $string['configtopomojoappurl'] = 'TopoMojo UI URL used to redirect participants';
+$string['configtopomojoapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['topomojodescription'] = 'Virtual Lab Builder';
 
+//Gameboard
+$string['gameboardapiurl'] = 'Gameboard API';
+$string['gameboardappurl'] = 'Gameboard UI';
+$string['configgameboardapiurl'] = 'Gameboard API URL used to pull permissions';
+$string['configgameboardappurl'] = 'Gameboard UI URL used to redirect participants';
+$string['gameboarddescription'] = 'Virtual Lab Training and Competition Platform';
+$string['configgameboardapikey'] = 'Add Admin\'s API Key for API Calls';
+$string['gameboardapikey'] = 'Gameboard API Key';
+
+//MISP
+$string['mispappurl'] = 'MISP UI';
+$string['configmispappurl'] = 'MISP UI URL used to redirect participants';
+$string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
+$string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
+$string['mispapikey'] = 'MISP API Key';
 
 

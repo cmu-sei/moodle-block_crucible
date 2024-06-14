@@ -26,9 +26,54 @@
     }
 }}
 
-<h5>Hello {{username}}! Welcome to the Crucible Application Dashboard. </h5> <br>
+<h5>Hello {{username}}! Welcome to {{sitename}}. </h5> <br>
 
 <div class="applications-grid">
+    {{#topomojo}}
+        <div class="application-block" id="topoMojo">
+            <div class="application-content">
+                <div class="application-details">
+                    <div class="application-title">TopoMojo</div>
+                    <div class="application-description">{{topomojoDescription}}</div>
+                </div>
+                <div class="application-link">
+                    <a href = "{{topomojo}}" target="_blank">
+                        <img class="topo-image" src="{{topomojoLogo}}" alt="TopoMojo">
+                    </a>
+                </div>
+            </div>
+        </div>
+    {{/topomojo}}
+    {{#gameboard}}
+        <div class="application-block" id="gameboard">
+            <div class="application-content">
+                <div class="application-details">
+                    <div class="application-title">Gameboard</div>
+                    <div class="gameboard-description">{{gameboardDescription}}</div>
+                </div>
+                <div class="application-link">
+                    <a href = "{{gameboard}}" target="_blank">
+                        <img class="gameboard-image" src="{{gameboardLogo}}" alt="Gameboard">
+                    </a>
+                </div>
+            </div>
+        </div>
+    {{/gameboard}}
+    {{#misp}}
+        <div class="application-block" id="misp">
+            <div class="application-content">
+                <div class="application-details">
+                    <div class="application-title">MISP</div>
+                    <div class="misp-description">{{mispDescription}}</div>
+                </div>
+                <div class="application-link">
+                    <a href = "{{misp}}" target="_blank">
+                        <img class="misp-icon" src="{{mispLogo}}" alt="Misp">
+                    </a>
+                </div>
+            </div>
+        </div>
+    {{/misp}}
     {{#player}}
         <div class="application-block" id="player">
             <div class="application-content">
@@ -172,20 +217,4 @@
             </div>
         </div>
     {{/steamfitter}}
-
-    {{#topomojo}}
-        <div class="application-block" id="topoMojo">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">TopoMojo</div>
-                    <div class="application-description">{{topomojoDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{topomojo}}" target="_blank">
-                        <img class="topo-image" src="{{topomojoLogo}}" alt="TopoMojo">
-                    </a>
-                </div>
-            </div>
-        </div>
-    {{/topomojo}}
 </div>

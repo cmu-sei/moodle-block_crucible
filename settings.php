@@ -112,13 +112,26 @@ defined('MOODLE_INTERNAL') || die();
 
     $settings->add(new admin_setting_configtext('block_crucible/topomojoappurl',
       get_string('topomojoappurl', 'block_crucible'), get_string('configtopomojoappurl', 'block_crucible'), "", PARAM_URL, 60));
+    
+    $settings->add(new admin_setting_configtext('block_crucible/topomojoapikey',
+      get_string('topomojoapikey', 'block_crucible'), get_string('configtopomojoapikey', 'block_crucible'), "", PARAM_RAW, 60));
+
+    //Gameboard
+    $settings->add(new admin_setting_configtext('block_crucible/gameboardapiurl',
+      get_string('gameboardapiurl', 'block_crucible'), get_string('configgameboardapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/gameboardappurl',
+      get_string('gameboardappurl', 'block_crucible'), get_string('configgameboardappurl', 'block_crucible'), "", PARAM_URL, 60));
+    
+    $settings->add(new admin_setting_configtext('block_crucible/gameboardapikey',
+      get_string('gameboardapikey', 'block_crucible'), get_string('configgameboardapikey', 'block_crucible'), "", PARAM_RAW, 60));
 
     //Communications Checkbox
     $settings->add(new admin_setting_configcheckbox('block_crucible/enablecommapps',
         get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
 
     //Rocketchat
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl', 
         get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'), "", PARAM_URL, 60));
     
     $settings->add(new admin_setting_configtext('block_crucible/rocketchatappurl',
@@ -133,6 +146,13 @@ defined('MOODLE_INTERNAL') || die();
     //Roundcube
     $settings->add(new admin_setting_configtext('block_crucible/roundcubeappurl',
         get_string('roundcubeappurl', 'block_crucible'), get_string('configroundcubeappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    //MISP
+    $settings->add(new admin_setting_configtext('block_crucible/mispappurl',
+      get_string('mispappurl', 'block_crucible'), get_string('configmispappurl', 'block_crucible'), "", PARAM_URL, 60));
+    
+    $settings->add(new admin_setting_configtext('block_crucible/mispapikey',
+      get_string('mispapikey', 'block_crucible'), get_string('configmispapikey', 'block_crucible'), "", PARAM_RAW, 60));
 
 }
 

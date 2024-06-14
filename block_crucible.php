@@ -23,7 +23,9 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/../../config.php');
 
+// Get the site name
 /**
  * Global search block.
  *
@@ -44,6 +46,8 @@ class block_crucible extends block_base {
     public function init() {
         $this->title = get_string('pluginname', 'block_crucible');
     }
+
+    
 
     /*
     function specialization() {
@@ -93,6 +97,7 @@ class block_crucible extends block_base {
     public function get_content() {
         global $OUTPUT;
         global $USER;
+        global $SITE;
         if ($this->content !== null) {
             return $this->content;
         }
@@ -103,6 +108,7 @@ class block_crucible extends block_base {
         /* data for template */
         $data = new stdClass();
         $nodata = new stdClass();
+        $data ->sitename = $SITE->fullname;
         $data ->username = $USER->firstname;
         $crucible = new \block_crucible\crucible();
         $crucible->setup_system();
@@ -230,6 +236,32 @@ class block_crucible extends block_base {
             $data->topomojoLogo  = $OUTPUT->image_url('topomojo-logo', 'block_crucible');
         } else if ($permsTopomojo == 0) {
             debugging("No user data found on Topomojo for User: " . $userID, DEBUG_DEVELOPER);
+        }
+
+        ////////////////////GAMEBOARD/////////////////////////////
+        $permsGameboard = $crucible->get_gameboard_permissions();
+        $activeChallenges = $crucible->get_active_challenges();
+        if (($activeChallenges && $showapps) || $permsGameboard) {
+            $data->gameboard = get_config('block_crucible', 'gameboardappurl');
+            $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
+            $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
+        } else if ($permsGameboard == 0) {
+            debugging("No user data found on Gameboard for User: " . $userID, DEBUG_DEVELOPER);
+        } else if ($activeChallenges = 0) {
+            debugging("No active challenges found on Gameboard for User: " . $userID, DEBUG_DEVELOPER);
+        }
+
+        ////////////////////MISP/////////////////////////////
+        $permsMISP = $crucible->get_misp_permissions();
+        $userMISP = $crucible->get_misp_user();
+        if (($userMISP && $showapps) || $permsMISP) {
+            $data->misp = get_config('block_crucible', 'mispappurl');
+            $data->mispDescription = get_string('mispdescription', 'block_crucible');
+            $data->mispLogo  = $OUTPUT->image_url('misp-icon', 'block_crucible');
+        } else if ($permsMISP == 0) {
+            debugging("No user data found on MISP for User: " . $userID, DEBUG_DEVELOPER);
+        } else if ($userMISP = 0) {
+            debugging("No user data found on MISP for User: " . $userID, DEBUG_DEVELOPER);
         }
 
         $showLandingPage = (

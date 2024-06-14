@@ -564,9 +564,7 @@ class crucible {
         global $USER;
         $userID = $USER->idnumber;
 
-        $email = $USER->username;
-        $sanitizedEmail = filter_var($email, FILTER_SANITIZE_EMAIL);
-        $username = strstr($sanitizedEmail, '@', true);
+        $username = $USER->username;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
@@ -698,21 +696,42 @@ class crucible {
         }
 
         $url .= "/user/" . $userID;
+        $apiKey = get_config('block_crucible', 'topomojoapikey');
 
-        $response = $this->client->get($url);
+        if ($apiKey != null) {
+            $headers = [
+                'x-api-key: ' . $apiKey,
+            ];
+    
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    
+            $response = curl_exec($ch);
+    
+            if (curl_errno($ch)) {
+                debugging('Topomojo API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
+                return false;
+            }
+    
+            curl_close($ch);
+        } else {
+            $response = $this->client->get($url);
 
-        if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 404) {
-            debugging("Topomojo Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is unable to Connect to Topomojo Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            if ($this->client->info['http_code'] === 401) {
+                debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] === 403) {
+                debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] === 404) {
+                debugging("Topomojo Not Found (404) " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] !== 200) {
+                debugging("User: " . $userID . "is unable to Connect to Topomojo Endpoint " . $url, DEBUG_DEVELOPER);
+                return 0;
+            }
         }
 
         if (!$response) {
@@ -729,5 +748,253 @@ class crucible {
         return 0;
 
     }
+    //////////////////////Gameboard//////////////////////
+    function get_gameboard_permissions() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'gameboardapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/user/" . $userID;
+        $apiKey = get_config('block_crucible', 'gameboardapikey');
+
+        if ($apiKey != null) {
+            $headers = [
+                'x-api-key: ' . $apiKey,
+            ];
     
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    
+            $response = curl_exec($ch);
+    
+            if (curl_errno($ch)) {
+                debugging('Gameboard API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
+                return false;
+            }
+    
+            curl_close($ch);
+        } else {
+            $response = $this->client->get($url);
+
+            if ($this->client->info['http_code'] === 401) {
+                debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] === 403) {
+                debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] === 404) {
+                debugging("Gameboard Not Found (404) " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] !== 200) {
+                debugging("User: " . $userID . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
+                return 0;
+            }
+        }
+
+        if (!$response) {
+            debugging("No response received from Gamebaord endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+
+        
+        if ($r->isAdmin || $r->isDirector || $r->isDesigner || $r->isObserver || $r->isTester || $r->isSupport || $r->isRegistrar) {
+            return $r;
+        }
+        return 0;
+
+    }
+
+    function get_active_challenges() {
+        global $USER;
+        $userID = $USER->idnumber;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$userID) {
+            debugging("User has no idnumber", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'gameboardapiurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/user/" . $userID . "/challenges/active";
+        $apiKey = get_config('block_crucible', 'gameboardapikey');
+
+        if ($apiKey != null) {
+            $headers = [
+                'x-api-key: ' . $apiKey,
+            ];
+    
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    
+            $response = curl_exec($ch);
+    
+            if (curl_errno($ch)) {
+                debugging('Gameboard API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
+                return false;
+            }
+    
+            curl_close($ch);
+        } else {
+            $response = $this->client->get($url);
+
+            if ($this->client->info['http_code'] === 401) {
+                debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] === 403) {
+                debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] === 404) {
+                debugging("Gameboard Not Found (404) " . $url, DEBUG_DEVELOPER);
+                return 0;
+            } else if ($this->client->info['http_code'] !== 200) {
+                debugging("User: " . $userID . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
+                return 0;
+            }
+        }
+
+        if (!$response) {
+            debugging("No response received from Gamebaord endpoint.", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        $r = json_decode($response);
+        if (!$r) {
+            return 0;
+        }
+        return $r;
+    }
+
+    function get_misp_permissions() {
+        global $USER;
+        $email = $USER->email;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$email) {
+            debugging("User has no email", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'mispappurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/admin/users";
+        $apiKey = get_config('block_crucible', 'mispapikey');
+
+        $headers = [
+            'Authorization: ' . $apiKey,
+            'Accept: application/json',
+            'Content-Type: application/json',
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        $response = curl_exec($ch);
+
+        $users = json_decode($response, true);
+        $userFound = false;
+
+        foreach ($users as $user) {
+            if (isset($user['User']['email']) && $user['User']['email'] === $email) {
+                $userFound = true;
+                if (isset($user['Role']['name']) && $user['Role']['name'] === 'admin') {
+                    return $user;
+                }
+            }
+        }
+
+        if (!$userFound) {
+            debugging("User with email {$email} not found.", DEBUG_DEVELOPER);
+            return 0;
+        }
+        return 0;
+    }
+
+    function get_misp_user() {
+        global $USER;
+        $email = $USER->email;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+        if (!$email) {
+            debugging("User has no email", DEBUG_DEVELOPER);
+            return;
+        }
+
+        // web request
+        $url = get_config('block_crucible', 'mispappurl');
+        if (empty($url)) {
+            return 0; 
+        }
+
+        $url .= "/admin/users";
+        $apiKey = get_config('block_crucible', 'mispapikey');
+
+        $headers = [
+            'Authorization: ' . $apiKey,
+            'Accept: application/json',
+            'Content-Type: application/json',
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        $response = curl_exec($ch);
+
+        $users = json_decode($response, true);
+        $userFound = false;
+
+        foreach ($users as $user) {
+            if (isset($user['User']['email']) && $user['User']['email'] === $email) {
+                $userFound = true;
+                return $user;
+            }
+        }
+
+        if (!$userFound) {
+            debugging("User with email {$email} not found.", DEBUG_DEVELOPER);
+            return 0;
+        }
+        return 0;
+    }
 }
