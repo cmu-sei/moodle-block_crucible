@@ -721,8 +721,7 @@ class crucible {
         global $USER;
         $userid = $USER->idnumber;
 
-        //$username = $USER->username;
-        $username = 'npacheco';
+        $username = $USER->username;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
