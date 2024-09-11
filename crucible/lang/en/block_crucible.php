@@ -124,4 +124,6 @@ $string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
 $string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['mispapikey'] = 'MISP API Key';
 
+// privacy
+$string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';
 
