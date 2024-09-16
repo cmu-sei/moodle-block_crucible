@@ -34,56 +34,56 @@ $string['enablecommapps'] = 'Enable Communication Apps';
 $string['configappshow'] = 'Enable User Access to all Apps';
 $string['configcommshow'] = 'Enable Access to Communication Apps';
 
-//Player
+// Player
 $string['playerapiurl'] = 'Player API';
 $string['playerappurl'] = 'Player UI';
 $string['playerdescription'] = 'Designing User Interfaces';
 $string['configplayerapiurl'] = 'Player API URL used to pull permissions';
 $string['configplayerappurl'] = 'Player UI URL used to redirect participants';
 
-//Alloy
+// Alloy
 $string['alloyapiurl'] = 'Alloy API';
 $string['alloyappurl'] = 'Alloy UI';
 $string['configalloyapiurl'] = 'Alloy API URL used to pull permissions';
 $string['configalloyappurl'] = 'Alloy UI used to redirect content developers';
 $string['alloydescription'] = 'Conducting a Simulation';
 
-//Blueprint
+// Blueprint
 $string['blueprintapiurl'] = 'Blueprint API';
 $string['blueprintappurl'] = 'Blueprint UI';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
 $string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
 $string['blueprintdescription'] = 'Building a MSEL';
 
-//Caster
+// Caster
 $string['casterapiurl'] = 'Caster API';
 $string['casterappurl'] = 'Caster UI';
 $string['configcasterapiurl'] = 'Caster API URL used to pull permissions';
 $string['configcasterappurl'] = 'Caster UI used to redirect content developers';
 $string['casterdescription'] = 'Coding a Topology';
 
-//CITE
+// CITE
 $string['citeapiurl'] = 'CITE API';
 $string['citeappurl'] = 'CITE UI';
 $string['configciteapiurl'] = 'CITE API URL used to pull permissions';
 $string['configciteappurl'] = 'CITE UI URL used to redirect participants';
 $string['citedescription'] = 'Evaluating Threats';
 
-//Gallery
+// Gallery
 $string['galleryapiurl'] = 'Gallery API';
 $string['galleryappurl'] = 'Gallery UI';
 $string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
 $string['configgalleryappurl'] = 'Gallery UI URL used to redirect participants';
 $string['gallerydescription'] = 'Keeping You in the Know!';
 
-//Steamfitter
+// Steamfitter
 $string['steamfitterapiurl'] = 'Steamfitter API';
 $string['steamfitterappurl'] = 'Steamfitter UI';
 $string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
 $string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
 $string['steamfitterdescription'] = 'Crafting a Scenario';
 
-//Rocketchat
+// Rocketchat
 $string['rocketchatapiurl'] = 'Rocket.Chat API';
 $string['rocketchatappurl'] = 'Rocket.Chat UI';
 $string['rocketchatauthtoken'] = 'Rocket.Chat Auth Token';
@@ -94,12 +94,12 @@ $string['rocketchatdescription'] = 'Communications Platform';
 $string['rocketchatuserid'] = 'Rocket.Chat User Id';
 $string['configrocketchatuserid'] = 'Add Admin\'s User Id for API Calls';
 
-//Roundcube
+// Roundcube
 $string['roundcubeappurl'] = 'Roundcube UI';
 $string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
 $string['roundcubedescription'] = 'Open Source Webmail';
 
-//Topomojo
+// Topomojo
 $string['topomojoapiurl'] = 'TopoMojo API';
 $string['topomojoappurl'] = 'TopoMojo UI';
 $string['topomojoapikey'] = 'Topomojo API Key';
@@ -108,7 +108,7 @@ $string['configtopomojoappurl'] = 'TopoMojo UI URL used to redirect participants
 $string['configtopomojoapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['topomojodescription'] = 'Virtual Lab Builder';
 
-//Gameboard
+// Gameboard
 $string['gameboardapiurl'] = 'Gameboard API';
 $string['gameboardappurl'] = 'Gameboard UI';
 $string['configgameboardapiurl'] = 'Gameboard API URL used to pull permissions';
@@ -117,7 +117,7 @@ $string['gameboarddescription'] = 'Virtual Lab Training and Competition Platform
 $string['configgameboardapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['gameboardapikey'] = 'Gameboard API Key';
 
-//MISP
+// MISP
 $string['mispappurl'] = 'MISP UI';
 $string['configmispappurl'] = 'MISP UI URL used to redirect participants';
 $string['mispdescription'] = 'Threat Intelligence and Sharing Platform';

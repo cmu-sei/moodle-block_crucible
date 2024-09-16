@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version = 2024012909;
+$plugin->version = 2024081502;
 $plugin->requires  = 2021051100;
 $plugin->component = 'block_crucible';
 $plugin->maturity = MATURITY_ALPHA;

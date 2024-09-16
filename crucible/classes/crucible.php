@@ -18,14 +18,6 @@ namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Crucible block plugin
- *
- * @package        block_crucible
- * @copyright      2023 Carnegie Mellon Univeristy
- * @license        http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 /*
 Crucible Plugin for Moodle
 Copyright 2020 Carnegie Mellon University.
@@ -37,71 +29,125 @@ This Software includes and/or makes use of the following Third-Party Software su
 DM20-0196
  */
 
+/**
+ * Crucible block plugin
+ *
+ * @package        block_crucible
+ * @copyright      2023 Carnegie Mellon Univeristy
+ * @license        http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class crucible {
 
+    /**
+     * The client used for interacting with external services or APIs.
+     *
+     * @var object The client object, typically an instance of a class responsible for communication with external services.
+     */
     private $client;
 
-    function setup_system() {
-
+    /**
+     * Sets up the system by configuring the OAuth client.
+     *
+     * This method retrieves the issuer ID from the configuration, attempts to obtain the issuer
+     * object, and then retrieves the system OAuth client. It performs checks to ensure that
+     * the issuer and client are valid and that the necessary user information is available.
+     *
+     * If the setup is successful, the client is stored in the class property `$client`.
+     * Otherwise, the method returns false to indicate that setup failed.
+     *
+     * @return bool True if the setup is successful, false otherwise.
+     */
+    public function setup_system() {
+        // Retrieve the issuer ID from the configuration
         $issuerid = get_config('block_crucible', 'issuerid');
         if (!$issuerid) {
             debugging("Crucible does not have issuerid set", DEBUG_DEVELOPER);
-            return;
+            return false; // Exit if issuer ID is not set
         }
+
+        // Attempt to get the issuer object
         $issuer = \core\oauth2\api::get_issuer($issuerid);
+        if (!$issuer) {
+            debugging("Unable to retrieve issuer with the given issuerid", DEBUG_DEVELOPER);
+            return false; // Exit if issuer is not found
+        }
 
         try {
+            // Attempt to get the system OAuth client
             $client = \core\oauth2\api::get_system_oauth_client($issuer);
         } catch (Exception $e) {
-            debugging("get_system_oauth_client failed with $e->errorcode", DEBUG_NORMAL);
-            $client = false;
+            debugging("get_system_oauth_client failed with error: " . $e->getMessage(), DEBUG_NORMAL);
+            return false; // Exit if an exception occurs
         }
 
-        $userinfo = $client->get_userinfo();
+        // Check if the client was successfully created
+        if (!$client) { // Notice the use of !$client instead of $client === false
+            debugging('Cannot connect as system account', DEBUG_NORMAL);
+            return false; // Exit if the client is not valid
+        }
+
+        $url = $client->get_issuer()->get_endpoint_url('userinfo');
+        $response = $client->get($url);
+        $responsearray = json_decode($response, true);
+        if (isset($responsearray['sub'])) {
+            // Proceed with processing since 'sub' exists
+            $userinfo = $client->get_userinfo();
+        } else {
+            // Handle the case where 'sub' doesn't exist or the response is invalid
+            debugging("Error: 'sub' field is missing in the response or failed to connect.", DEBUG_NORMAL);
+            return false;
+        }
 
         // Check if 'idnumber' field is present in the user information
         if (!isset($userinfo['idnumber'])) {
             debugging('Identity provider does not have a mapping for idnumber', DEBUG_NORMAL);
-            return;
+            return false; // Exit if 'idnumber' is not found
         }
 
-        if ($client === false) {
-            debugging('Cannot connect as system account', DEBUG_NORMAL);
-            $details = 'Cannot connect as system account';
-            throw new \Exception($details);
-            return false;
-        }
+        // Set the client property if all checks pass
         $this->client = $client;
+
+        return true; // Indicate successful setup
     }
 
     //////////////////////PLAYER//////////////////////
-
-    function get_player_views() {
-        
+    /**
+     * Retrieves the number of views for a specific user from the player API.
+     *
+     * This method sends a request to the configured player API endpoint to get the view count
+     * for the user identified by their `idnumber`. It handles various HTTP response codes to
+     * provide appropriate debugging information and returns the view count if successful
+     *
+     * If the client is not set up, the user ID is not available, or the URL is not configured,
+     * or if there are HTTP errors or no response, the method returns 0.
+     *
+     * @return mixed The number of views as an integer if successful, or 0 in case of failure.
+     */
+    public function get_player_views() {
         global $USER;
-        $userID = $USER->idnumber;
-    
+        $userid = $USER->idnumber;
+
         if ($this->client == null) {
             debugging("Session not set up.", DEBUG_DEVELOPER);
             return;
         }
-    
-        if (!$userID) {
+
+        if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
-    
+
         // Check if the URL is configured
         $url = get_config('block_crucible', 'playerapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
         // Web request
-        $url .= "/users/" . $userID . "/views";
-    
+        $url .= "/users/" . $userid . "/views";
+
         $response = $this->client->get($url);
-    
+
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
             return 0;
@@ -112,15 +158,15 @@ class crucible {
             debugging("Player Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is Unable to Connect to Player Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . "is Unable to Connect to Player Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
-    
+
         if (!$response) {
             debugging("No response received from Player endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
-    
+
         $r = json_decode($response);
         if (!$r) {
             return 0;
@@ -128,26 +174,38 @@ class crucible {
         return $r;
     }
 
-    function get_player_permissions() {
+    /**
+     * Retrieves the permissions for a specific user from the player API.
+     *
+     * This method sends a request to the configured player API endpoint to get the permissions
+     * for the user identified by their `idnumber`. It handles different HTTP response codes to
+     * provide debugging information and returns permissions data if successful
+     *
+     * If the client is not set up, the user ID is not available, or the URL is not configured,
+     * or if there are HTTP errors, the method returns 0.
+     *
+     * @return mixed The permissions data as an object if successful, or 0 in case of failure.
+     */
+    public function get_player_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
-        
-        // web request
+
+        // Web request
         $url = get_config('block_crucible', 'playerapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/users/" . $userID;
+        $url .= "/users/" . $userid;
 
         $response = $this->client->get($url);
 
@@ -161,60 +219,70 @@ class crucible {
             debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
-        
         if (!$response) {
             debugging("No response received from endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
 
         $r = json_decode($response);
-    
         if (empty($r->permissions)) {
             return 0;
         } else {
             // Iterate through permissions array to find "SystemAdmin" key with value "true"
             foreach ($r->permissions as $permission) {
                 if ($permission->key === "SystemAdmin") {
-                    return $r->permissions;   
+                    return $r->permissions;
                 }
             }
             return 0;
         }
-        
+
         return 0;
     }
 
    //////////////////////BLUEPRINT//////////////////////
-    function get_blueprint_msels() {
+    /**
+     * Retrieves the MSELs (Modeling and Simulation Events List) for a specific user from the blueprint API.
+     *
+     * This method sends a request to the configured blueprint API endpoint to get the MSELs for the user
+     * identified by their `idnumber`. It handles various HTTP response codes to provide appropriate debugging
+     * information and returns MSEL data if successful.
+     *
+     * If the client is not set up, the user ID is not available, or the URL is not configured, or if there
+     * are HTTP errors or no response, the method returns 0.
+     *
+     * @return mixed The MSEL data as an object if successful, or 0 in case of failure.
+     */
+    public function get_blueprint_msels() {
 
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
 
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'blueprintapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
-        
-        $url .= "/users/" . $userID . "/msels";
+
+        $url .= "/users/" . $userid . "/msels";
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: ". $userID . " on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) for User: ". $userid . " on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
@@ -223,7 +291,7 @@ class crucible {
             debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -239,26 +307,38 @@ class crucible {
         return $r;
     }
 
-    function get_blueprint_permissions() {
+    /**
+     * Retrieves the permissions for a specific user from the blueprint API.
+     *
+     * This method sends a request to the configured blueprint API endpoint to get the permissions
+     * for the user identified by their `idnumber`. It handles various HTTP response codes to
+     * provide debugging information and returns the permissions data if available.
+     *
+     * If the client is not set up, the user ID is not available, or the URL is not configured, or if there
+     * are HTTP errors, no response, or no permissions data, the method returns 0.
+     *
+     * @return mixed The permissions data if available as an object, or 0 in case of failure or if permissions are empty.
+     */
+    public function get_blueprint_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
-        
-        // web request
+
+        // Web request
         $url = get_config('block_crucible', 'blueprintapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/users/" . $userID;
+        $url .= "/users/" . $userid;
 
         $response = $this->client->get($url);
 
@@ -272,50 +352,60 @@ class crucible {
             debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
-        
         if (!$response) {
             debugging("No response received from endpoint.", DEBUG_DEVELOPER);
             return 0;
         }
 
         $r = json_decode($response);
-    
+
         if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
         }
 
-        /* user exists but no special perms */
+        // User exists but no special perms
         return 0;
     }
 
     //////////////////////CASTER//////////////////////
-
-    function get_caster_permissions() {
+    /**
+     * Retrieves the permissions for a specific user from the caster API.
+     *
+     * This method sends a request to the configured caster API endpoint to get the permissions
+     * for the user identified by their `idnumber`. It handles various HTTP response codes to
+     * provide debugging information and returns the permissions data if available.
+     *
+     * If the client is not set up, the user ID is not available, or the URL is not configured, or if there
+     * are HTTP errors, no response, or empty data, the method returns 0.
+     *
+     * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
+     */
+    public function get_caster_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return;
         }
-        
-        // web request
+
+        // Web request
         $url = get_config('block_crucible', 'casterapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/users/" . $userID . "/permissions";
+        $url .= "/users/" . $userid . "/permissions";
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
@@ -328,11 +418,10 @@ class crucible {
             debugging("Caster Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is Unable to Connect to Caster Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . "is Unable to Connect to Caster Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
-        
         if (!$response) {
             debugging("No response received from endpoint.", DEBUG_DEVELOPER);
             return 0;
@@ -346,28 +435,40 @@ class crucible {
             return $r;
         }
 
-        /* user exists but no special perms */
+        // User exists but no special perms
         return 0;
     }
 
     //////////////////////CITE//////////////////////
-    function get_cite_permissions() {
+    /**
+     * Retrieves the permissions for a specific user from the CITE API.
+     *
+     * This method sends a request to the configured CITE API endpoint to get the permissions
+     * for the user identified by their `idnumber`. It handles various HTTP response codes to
+     * provide debugging information and returns the permissions data if available.
+     *
+     * If the client is not set up, the user ID is not available, or the URL is not configured, or if there
+     * are HTTP errors, no response, or empty data, the method returns 0.
+     *
+     * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
+     */
+    public function get_cite_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'citeapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
         $url .= "/users/" . $USER->idnumber;
@@ -384,7 +485,7 @@ class crucible {
             debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -394,39 +495,52 @@ class crucible {
         }
 
         $r = json_decode($response);
-        
+
         if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
         }
 
-        /* user exists but no special perms */
+        // User exists but no special perms
         return 0;
     }
 
-    function get_cite_evaluations() {
+    /**
+     * Retrieves the evaluations for a specific user from the CITE API.
+     *
+     * This method sends a request to the configured CITE API endpoint to get evaluations
+     * for the user identified by their `idnumber`. It handles various HTTP response codes to
+     * provide debugging information and returns the evaluations data if available.
+     *
+     * The URL is configured to fetch evaluations using the user ID as a query parameter.
+     *
+     * If the client is not set up, the user ID is not available, or if the URL is not configured, or if there
+     * are HTTP errors, no response, or if the response is not valid JSON, the method returns 0.
+     *
+     * @return mixed The evaluations data if available as an object, or 0 in case of failure or if no data is found.
+     */
+    public function get_cite_evaluations() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
 
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'citeapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        //$url .= "/my-evaluations";
-        $url .= "/evaluations?UserId=" . $userID;
+        $url .= "/evaluations?userid=" . $userid;
 
         $response = $this->client->get($url);
 
@@ -440,7 +554,7 @@ class crucible {
             debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -457,26 +571,40 @@ class crucible {
     }
 
     //////////////////////GALLERY//////////////////////
-    function get_gallery_permissions() {
+    /**
+     * Retrieves the permissions for a specific user from the Gallery API.
+     *
+     * This method sends a request to the configured Gallery API endpoint to get permissions
+     * for the user identified by their `idnumber`. It handles various HTTP response codes to
+     * provide debugging information and returns the permissions data if available.
+     *
+     * The URL is configured to fetch permissions using the user ID as a path parameter.
+     *
+     * If the client is not set up, the user ID is not available, or if the URL is not configured, or if there
+     * are HTTP errors, no response, or if the response is not valid JSON, the method returns 0.
+     *
+     * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
+     */
+    public function get_gallery_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'galleryapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/users/" . $userID;
+        $url .= "/users/" . $userid;
 
         $response = $this->client->get($url);
 
@@ -490,7 +618,7 @@ class crucible {
             debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . " is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . " is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -500,37 +628,51 @@ class crucible {
         }
 
         $r = json_decode($response);
-        
+
         if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
         }
 
-        /* user exists but no special perms */
+        // User exists but no special perms
         return 0;
     }
 
-    function get_gallery_exhibits() {
+    /**
+     * Retrieves the exhibits for a specific user from the Gallery API.
+     *
+     * This method sends a request to the configured Gallery API endpoint to get exhibits
+     * for the user identified by their `idnumber`. It handles various HTTP response codes
+     * to provide debugging information and returns the exhibits data if available.
+     *
+     * The URL is configured to fetch exhibits using the user ID as a path parameter.
+     *
+     * If the client is not set up, the user ID is not available, or if the URL is not configured, or if there
+     * are HTTP errors, no response, or if the response is not valid JSON, the method returns 0.
+     *
+     * @return mixed The exhibits data if available as an object, or 0 in case of failure or if no data is found.
+     */
+    public function get_gallery_exhibits() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'galleryapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/users/" . $userID . '/exhibits';
+        $url .= "/users/" . $userid . '/exhibits';
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
@@ -543,7 +685,7 @@ class crucible {
             debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . "is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -560,9 +702,24 @@ class crucible {
     }
 
     //////////////////////Rocket.Chat//////////////////////
-    function get_rocketchat_user_info() {
+    /**
+     * Retrieves user information from Rocket.Chat based on the current user's username.
+     *
+     * This method sends a request to the Rocket.Chat API to get information about the user
+     * identified by their username. It uses authentication headers configured in the system
+     * to make the API request and returns the user information if successful.
+     *
+     * The function requires the Rocket.Chat API URL, an authentication token, and an admin user ID,
+     * all of which are configured in the system. It performs error handling for various scenarios
+     * including network errors, API errors, and invalid responses.
+     *
+     * @return mixed The user information as an object if the request is successful and valid,
+     *               `false` if the request fails due to network issues, or `0` if the user exists but
+     *               no special permissions are found or if an API error occurs.
+     */
+    public function get_rocketchat_user_info() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         $username = $USER->username;
 
@@ -575,20 +732,20 @@ class crucible {
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'rocketchatapiurl');
-        $authToken = get_config('block_crucible', 'rocketchatauthtoken');
-        $adminUserId = get_config('block_crucible', 'rocketchatuserid');
+        $authtoken = get_config('block_crucible', 'rocketchatauthtoken');
+        $adminuserid = get_config('block_crucible', 'rocketchatuserid');
 
-        if (empty($url) || empty($authToken) || empty($adminUserId)) {
-            return -1; 
+        if (empty($url) || empty($authtoken) || empty($adminuserid)) {
+            return -1;
         }
 
         $url .= "/users.info?username=" . $username;
 
         $headers = [
-            'X-Auth-Token: ' . $authToken,
-            'X-User-Id: ' . $adminUserId,
+            'X-Auth-Token: ' . $authtoken,
+            'X-User-Id: ' . $adminuserid,
         ];
 
         $ch = curl_init();
@@ -614,33 +771,47 @@ class crucible {
         } else {
             return $r;
         }
-        
 
-        /* user exists but no special perms */
+        // User exists but no special perms
         return 0;
     }
 
     //////////////////////STEAMFITTER//////////////////////
-    function get_steamfitter_permissions() {
+    /**
+     * Retrieves user permissions from the Steamfitter service based on the current user's ID number.
+     *
+     * This method sends a request to the Steamfitter API to get permissions associated with the
+     * user identified by their ID number. It uses the configured API URL to make the request and
+     * returns the user's permissions if the request is successful.
+     *
+     * The function performs various checks including whether the session is set up, the user ID
+     * is available, and handles different HTTP response codes such as unauthorized access, forbidden
+     * access, and not found errors. It also handles the case where no response is received or the
+     * response is empty.
+     *
+     * @return mixed The user's permissions if the request is successful and valid,
+     *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
+     */
+    public function get_steamfitter_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'steamfitterapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/users/" . $userID;
+        $url .= "/users/" . $userid;
 
         $response = $this->client->get($url);
 
@@ -654,7 +825,7 @@ class crucible {
             debugging("Steamfitter Not Found (404) " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userID . "is unable to Connect to Steamfitter Endpoint " . $url, DEBUG_DEVELOPER);
+            debugging("User: " . $userid . "is unable to Connect to Steamfitter Endpoint " . $url, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -664,57 +835,72 @@ class crucible {
         }
 
         $r = json_decode($response);
-        
+
         if (empty($r->permissions)) {
             return 0;
         } else {
             return $r->permissions;
         }
 
-        /* user exists but no special perms */
+        // User exists but no special perms
         return 0;
     }
 
-     //////////////////////TopoMojo//////////////////////
-     function get_topomojo_permissions() {
+    //////////////////////TopoMojo//////////////////////
+    /**
+     * Retrieves user permissions from the Topomojo service based on the current user's ID number.
+     *
+     * This method sends a request to the Topomojo API to get permissions associated with the
+     * user identified by their ID number. The API request is made using either an API key or
+     * a default client, depending on the configuration
+     *
+     * The function performs various checks including whether the session is set up, the user ID
+     * is available, and handles different HTTP response codes such as unauthorized access, forbidden
+     * access, and not found errors. It also handles the case where no response is received or the
+     * response does not contain relevant permission information.
+     *
+     * @return mixed The user's permissions if the request is successful and valid,
+     *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
+     */
+    public function get_topomojo_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'topomojoapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/user/" . $userID;
-        $apiKey = get_config('block_crucible', 'topomojoapikey');
+        $url .= "/user/" . $userid;
+        $apikey = get_config('block_crucible', 'topomojoapikey');
 
-        if ($apiKey != null) {
+        if ($apikey != null) {
             $headers = [
-                'x-api-key: ' . $apiKey,
+                'x-api-key: ' . $apikey,
             ];
-    
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    
+
             $response = curl_exec($ch);
-    
+
             if (curl_errno($ch)) {
                 debugging('Topomojo API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
                 return false;
             }
-    
+
             curl_close($ch);
         } else {
             $response = $this->client->get($url);
@@ -729,7 +915,7 @@ class crucible {
                 debugging("Topomojo Not Found (404) " . $url, DEBUG_DEVELOPER);
                 return 0;
             } else if ($this->client->info['http_code'] !== 200) {
-                debugging("User: " . $userID . "is unable to Connect to Topomojo Endpoint " . $url, DEBUG_DEVELOPER);
+                debugging("User: " . $userid . "is unable to Connect to Topomojo Endpoint " . $url, DEBUG_DEVELOPER);
                 return 0;
             }
         }
@@ -741,7 +927,11 @@ class crucible {
 
         $r = json_decode($response);
 
-        
+        if (isset($r->message) && strpos($r->message, "ResourceNotFound") !== false) {
+            debugging("Topomojo exception: " . $r->message, DEBUG_DEVELOPER);
+            return 0;
+        }
+
         if ($r->isAdmin || $r->isObserver || $r->isCreator || $r->isBuilder) {
             return $r;
         }
@@ -749,45 +939,60 @@ class crucible {
 
     }
     //////////////////////Gameboard//////////////////////
-    function get_gameboard_permissions() {
+    /**
+     * Retrieves user permissions from the Gameboard service based on the current user's ID number.
+     *
+     * This method sends a request to the Gameboard API to obtain permissions associated with the
+     * user identified by their ID number. The API request is made using either an API key or
+     * a default client, depending on the configuration.
+     *
+     * The function performs various checks including whether the session is set up, the user ID
+     * is available, and handles different HTTP response codes such as unauthorized access, forbidden
+     * access, and not found errors. It also handles cases where no response is received or the
+     * response does not contain relevant permission information.
+     *
+     * @return mixed The user's permissions if the request is successful and valid,
+     *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
+     */
+    public function get_gameboard_permissions() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'gameboardapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/user/" . $userID;
-        $apiKey = get_config('block_crucible', 'gameboardapikey');
+        $url .= "/user/" . $userid;
+        $apikey = get_config('block_crucible', 'gameboardapikey');
 
-        if ($apiKey != null) {
+        if ($apikey != null) {
             $headers = [
-                'x-api-key: ' . $apiKey,
+                'x-api-key: ' . $apikey,
             ];
-    
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    
+
             $response = curl_exec($ch);
-    
+
             if (curl_errno($ch)) {
                 debugging('Gameboard API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
                 return false;
             }
-    
+
             curl_close($ch);
         } else {
             $response = $this->client->get($url);
@@ -802,7 +1007,7 @@ class crucible {
                 debugging("Gameboard Not Found (404) " . $url, DEBUG_DEVELOPER);
                 return 0;
             } else if ($this->client->info['http_code'] !== 200) {
-                debugging("User: " . $userID . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
+                debugging("User: " . $userid . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
                 return 0;
             }
         }
@@ -813,8 +1018,12 @@ class crucible {
         }
 
         $r = json_decode($response);
-
         
+        if (isset($r->message) && strpos($r->message, "Couldn't find resource") !== false) {
+            debugging("Gameboard validation exception: " . $r->message, DEBUG_DEVELOPER);
+            return 0;
+        }
+
         if ($r->isAdmin || $r->isDirector || $r->isDesigner || $r->isObserver || $r->isTester || $r->isSupport || $r->isRegistrar) {
             return $r;
         }
@@ -822,45 +1031,61 @@ class crucible {
 
     }
 
-    function get_active_challenges() {
+    /**
+     * Retrieves active challenges for the current user from the Gameboard service.
+     *
+     * This method sends a request to the Gameboard API to obtain the list of active challenges
+     * associated with the user identified by their ID number. The API request is made using either
+     * an API key or a default client, depending on the configuration.
+     *
+     * The function performs various checks including whether the session is set up, the user ID
+     * is available, and handles different HTTP response codes such as unauthorized access, forbidden
+     * access, and not found errors. It also handles cases where no response is received or the
+     * response is not valid JSON.
+     *
+     * @return mixed The list of active challenges if the request is successful and the response
+     *               is valid, `0` if the request fails due to network issues, HTTP errors, or if no
+     *               challenges are found or the response is invalid.
+     */
+    public function get_active_challenges() {
         global $USER;
-        $userID = $USER->idnumber;
+        $userid = $USER->idnumber;
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return;
         }
-        if (!$userID) {
+        if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'gameboardapiurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
-        $url .= "/user/" . $userID . "/challenges/active";
-        $apiKey = get_config('block_crucible', 'gameboardapikey');
+        $url .= "/user/" . $userid . "/challenges/active";
+        $apikey = get_config('block_crucible', 'gameboardapikey');
 
-        if ($apiKey != null) {
+        if ($apikey != null) {
             $headers = [
-                'x-api-key: ' . $apiKey,
+                'x-api-key: ' . $apikey,
             ];
-    
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    
+
             $response = curl_exec($ch);
-    
+
             if (curl_errno($ch)) {
                 debugging('Gameboard API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
                 return false;
             }
-    
+
             curl_close($ch);
         } else {
             $response = $this->client->get($url);
@@ -875,7 +1100,7 @@ class crucible {
                 debugging("Gameboard Not Found (404) " . $url, DEBUG_DEVELOPER);
                 return 0;
             } else if ($this->client->info['http_code'] !== 200) {
-                debugging("User: " . $userID . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
+                debugging("User: " . $userid . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
                 return 0;
             }
         }
@@ -886,13 +1111,35 @@ class crucible {
         }
 
         $r = json_decode($response);
+        if (isset($r->message) && strpos($r->message, 'GAMEBOARD VALIDATION EXCEPTION') !== false) {
+            debugging("Gameboard validation exception: " . $r->message, DEBUG_DEVELOPER);
+            return 0;
+        }
+
         if (!$r) {
             return 0;
         }
         return $r;
     }
 
-    function get_misp_permissions() {
+    /**
+     * Retrieves permissions for the current user from the MISP (Malware Information Sharing Platform) service.
+     *
+     * This method queries the MISP API to obtain user information, specifically checking if the
+     * current user (identified by their email) has an admin role. The API request uses an API key
+     * for authentication and includes appropriate headers for JSON content.
+     *
+     * The function performs various checks including whether the session is set up and if the user
+     * email is available. It handles the HTTP response and parses the JSON data to identify the
+     * user's role. If the user is found and has the 'admin' role, their information is returned.
+     * If the user is not found or has a different role, appropriate debugging messages are logged
+     * and `0` is returned.
+     *
+     * @return array|int The user information with admin role if found; otherwise, returns `0` if
+     *                   the user is not found, does not have an admin role, or if any issues
+     *                   occur during the request or response parsing.
+     */
+    public function get_misp_permissions() {
         global $USER;
         $email = $USER->email;
 
@@ -905,17 +1152,17 @@ class crucible {
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'mispappurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
         $url .= "/admin/users";
-        $apiKey = get_config('block_crucible', 'mispapikey');
+        $apikey = get_config('block_crucible', 'mispapikey');
 
         $headers = [
-            'Authorization: ' . $apiKey,
+            'Authorization: ' . $apikey,
             'Accept: application/json',
             'Content-Type: application/json',
         ];
@@ -928,25 +1175,39 @@ class crucible {
         $response = curl_exec($ch);
 
         $users = json_decode($response, true);
-        $userFound = false;
+        $userfound = false;
 
         foreach ($users as $user) {
             if (isset($user['User']['email']) && $user['User']['email'] === $email) {
-                $userFound = true;
+                $userfound = true;
                 if (isset($user['Role']['name']) && $user['Role']['name'] === 'admin') {
                     return $user;
                 }
             }
         }
 
-        if (!$userFound) {
+        if (!$userfound) {
             debugging("User with email {$email} not found.", DEBUG_DEVELOPER);
             return 0;
         }
         return 0;
     }
 
-    function get_misp_user() {
+    /**
+     * Retrieves the current user's information from the MISP (Malware Information Sharing Platform) service.
+     *
+     * This method queries the MISP API to obtain user details based on the current user's email address.
+     * The API request uses an API key for authentication and includes headers for JSON content.
+     *
+     * The function performs checks to ensure the session is set up and that the user's email is available.
+     * It then makes a request to the MISP API to retrieve a list of users, parses the JSON response, and
+     * searches for the user whose email matches the current user's email. If found, it returns the user's
+     * information. If the user is not found, appropriate debugging messages are logged and `0` is returned.
+     *
+     * @return array|int The user information if found; otherwise, returns `0` if the user is not found
+     *                   or if any issues occur during the request or response parsing.
+     */
+    public function get_misp_user() {
         global $USER;
         $email = $USER->email;
 
@@ -959,17 +1220,17 @@ class crucible {
             return;
         }
 
-        // web request
+        // Web request
         $url = get_config('block_crucible', 'mispappurl');
         if (empty($url)) {
-            return 0; 
+            return 0;
         }
 
         $url .= "/admin/users";
-        $apiKey = get_config('block_crucible', 'mispapikey');
+        $apikey = get_config('block_crucible', 'mispapikey');
 
         $headers = [
-            'Authorization: ' . $apiKey,
+            'Authorization: ' . $apikey,
             'Accept: application/json',
             'Content-Type: application/json',
         ];
@@ -982,16 +1243,16 @@ class crucible {
         $response = curl_exec($ch);
 
         $users = json_decode($response, true);
-        $userFound = false;
+        $userfound = false;
 
         foreach ($users as $user) {
             if (isset($user['User']['email']) && $user['User']['email'] === $email) {
-                $userFound = true;
+                $userfound = true;
                 return $user;
             }
         }
 
-        if (!$userFound) {
+        if (!$userfound) {
             debugging("User with email {$email} not found.", DEBUG_DEVELOPER);
             return 0;
         }
