@@ -114,7 +114,17 @@ class block_crucible extends block_base {
         $nodata = new stdClass();
         $data->sitename = $SITE->fullname;
         $data->username = $USER->firstname;
-        $crucible = new \block_crucible\crucible();
+        $datafiltered = new stdClass();
+        $enabledApp = get_config('block_crucible', 'enabled');
+        if ($enabledApp) {
+            $crucible = new \block_crucible\crucible();
+        } else {
+            debugging("Applications block plugin has not been enabled", DEBUG_DEVELOPER);
+            $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
+            // Render the no_oauth template with $datafiltered
+            $this->content->text = $OUTPUT->render_from_template('block_crucible/not_enabled', $datafiltered);    
+            return false;
+        }
         $crucible->setup_system();
         $userid = $USER->idnumber;
         $showapps = get_config('block_crucible', 'showallapps');
@@ -264,8 +274,6 @@ class block_crucible extends block_base {
         } else if ($usermisp = 0) {
             debugging("No user data found on MISP for User: " . $userid, DEBUG_DEVELOPER);
         }
-
-        $datafiltered = new stdClass();
         if (!empty($userid)) {
             foreach ($data as $key => $value) {
                 if ($key !== 'sitename' && $key !== 'username') {
@@ -278,7 +286,7 @@ class block_crucible extends block_base {
             }
         
             // Render the landing_parent template with $data
-            $this->content->text = $OUTPUT->render_from_template('block_crucible/landing_parent', $data);
+            $this->content->text = $OUTPUT->render_from_template('block_crucible/landing_parent', $data);      
         } else {
             $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
             // Render the no_oauth template with $datafiltered

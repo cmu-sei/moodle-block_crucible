@@ -73,6 +73,20 @@ class crucible {
         }
 
         try {
+            $endpoints = \core\oauth2\api::get_endpoints($issuer);
+        } catch (Exception $e) {
+            debugging("get_endpoints failed with error: " . $e->getMessage(), DEBUG_NORMAL);
+            return false; // Exit if an exception occurs
+        }
+
+        try {
+            $field_mappings = \core\oauth2\api::get_user_field_mappings($issuer);
+        } catch (Exception $e) {
+            debugging("get_user_field_mappings failed with error: " . $e->getMessage(), DEBUG_NORMAL);
+            return false; // Exit if an exception occurs
+        }
+
+        try {
             // Attempt to get the system OAuth client
             $client = \core\oauth2\api::get_system_oauth_client($issuer);
         } catch (Exception $e) {
