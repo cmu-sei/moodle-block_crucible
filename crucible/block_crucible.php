@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/../../config.php');
-require_login();
+//require_login();
 
 // Get the site name
 /**
