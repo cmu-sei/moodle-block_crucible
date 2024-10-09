@@ -17,4 +17,3 @@ echo new version $NEWVERSION
 sed -i "s/$OLDVERSION/$NEWVERSION/" crucible/version.php
 
 zip -r block_crucible_$NEWVERSION.zip crucible/ --exclude crucible/.git/\* crucible/.gitignore crucible/node_modules/\* crucible/package-lock.json crucible/Gruntfile.js
-
