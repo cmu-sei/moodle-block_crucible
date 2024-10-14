@@ -1,4 +1,4 @@
-# Learning Plan Template Manager for Moodle
+# Crucible Applications Landing Page Block for Moodle
 
 ## Description
 This is a block plugin that allows Moodle to display a list of related applications to the user based on their shared OAUTH account and the specific permissions assigned to the user on each application. The plugin will provide links and icons for this applications to the user.
