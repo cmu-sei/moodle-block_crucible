@@ -1,7 +1,7 @@
 # Learning Plan Template Manager for Moodle
 
 ## Description
-This is a block plugin that allows Moodle to display a list of related applications to the used based on their shared OAUTH account and the specific permissions assigned to the user on each application. The plugin will provide links and icons for this applications to the user.
+This is a block plugin that allows Moodle to display a list of applications to the user based on their shared OAUTH account and the specific permissions assigned to the user on each application. The plugin will provide links and icons for these applications to the user. The plugin is meant to be displayed on the default user dashboard so that users are provided with a "landing page" from which all applications integrated as part of the learning environment can be more easily accessed without having to memorize all of their URLs.
 
 ## Installation
 * Download the plugin and extract into block/crucible
