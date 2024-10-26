@@ -67,6 +67,12 @@ if ($ADMIN->fulltree) {
         get_string('showallapps', 'block_crucible'), get_string('configappshow', 'block_crucible'), 0, 1, 0));
 
     // Alloy
+    $settings->add(new admin_setting_heading(
+        'block_crucible/alloysectionheading',
+        get_string('alloysectionheading', 'block_crucible'), 
+        get_string('alloysectiondesc', 'block_crucible')
+    ));
+
     $settings->add(new admin_setting_configtext('block_crucible/alloyapiurl',
         get_string('alloyapiurl', 'block_crucible'), get_string('configalloyapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -74,6 +80,12 @@ if ($ADMIN->fulltree) {
         get_string('alloyappurl', 'block_crucible'), get_string('configalloyappurl', 'block_crucible'), "", PARAM_URL, 60));
 
     // Blueprint
+    $settings->add(new admin_setting_heading(
+        'block_crucible/blueprintsectionheading',
+        get_string('blueprintsectionheading', 'block_crucible'), 
+        get_string('blueprintsectiondesc', 'block_crucible')
+    ));
+
     $settings->add(new admin_setting_configtext('block_crucible/blueprintapiurl',
         get_string('blueprintapiurl', 'block_crucible'), get_string('configblueprintapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -81,6 +93,12 @@ if ($ADMIN->fulltree) {
         get_string('blueprintappurl', 'block_crucible'), get_string('configblueprintappurl', 'block_crucible'), "", PARAM_URL, 60));
 
     // Caster
+    $settings->add(new admin_setting_heading(
+        'block_crucible/castersectionheading',
+        get_string('castersectionheading', 'block_crucible'), 
+        get_string('castersectiondesc', 'block_crucible')
+    ));
+
     $settings->add(new admin_setting_configtext('block_crucible/casterapiurl',
         get_string('casterapiurl', 'block_crucible'), get_string('configcasterapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -88,6 +106,12 @@ if ($ADMIN->fulltree) {
         get_string('casterappurl', 'block_crucible'), get_string('configcasterappurl', 'block_crucible'), "", PARAM_URL, 60));
 
     // CITE
+    $settings->add(new admin_setting_heading(
+        'block_crucible/citesectionheading',
+        get_string('citesectionheading', 'block_crucible'), 
+        get_string('citesectiondesc', 'block_crucible')
+    ));
+
     $settings->add(new admin_setting_configtext('block_crucible/citeapiurl',
         get_string('citeapiurl', 'block_crucible'), get_string('configciteapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -95,37 +119,25 @@ if ($ADMIN->fulltree) {
         get_string('citeappurl', 'block_crucible'), get_string('configciteappurl', 'block_crucible'), "", PARAM_URL, 60));
 
     // Gallery
+    $settings->add(new admin_setting_heading(
+        'block_crucible/gallerysectionheading',
+        get_string('gallerysectionheading', 'block_crucible'), 
+        get_string('gallerysectiondesc', 'block_crucible')
+    ));
+
     $settings->add(new admin_setting_configtext('block_crucible/galleryapiurl',
         get_string('galleryapiurl', 'block_crucible'), get_string('configgalleryapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
     $settings->add(new admin_setting_configtext('block_crucible/galleryappurl',
         get_string('galleryappurl', 'block_crucible'), get_string('configgalleryappurl', 'block_crucible'), "", PARAM_URL, 60));
 
-    // Player
-    $settings->add(new admin_setting_configtext('block_crucible/playerapiurl',
-        get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/playerappurl',
-        get_string('playerappurl', 'block_crucible'), get_string('configplayerappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    // Steamfitter
-    $settings->add(new admin_setting_configtext('block_crucible/steamfitterapiurl',
-      get_string('steamfitterapiurl', 'block_crucible'), get_string('configsteamfitterapiurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/steamfitterappurl',
-      get_string('steamfitterappurl', 'block_crucible'), get_string('configsteamfitterappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    // Topomojo
-    $settings->add(new admin_setting_configtext('block_crucible/topomojoapiurl',
-      get_string('topomojoapiurl', 'block_crucible'), get_string('configtopomojoapiurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/topomojoappurl',
-      get_string('topomojoappurl', 'block_crucible'), get_string('configtopomojoappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/topomojoapikey',
-      get_string('topomojoapikey', 'block_crucible'), get_string('configtopomojoapikey', 'block_crucible'), "", PARAM_RAW, 60));
-
     // Gameboard
+    $settings->add(new admin_setting_heading(
+        'block_crucible/gameboardsectionheading',
+        get_string('gameboardsectionheading', 'block_crucible'), 
+        get_string('gameboardsectiondesc', 'block_crucible')
+    ));
+
     $settings->add(new admin_setting_configtext('block_crucible/gameboardapiurl',
       get_string('gameboardapiurl', 'block_crucible'), get_string('configgameboardapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -136,17 +148,78 @@ if ($ADMIN->fulltree) {
       get_string('gameboardapikey', 'block_crucible'), get_string('configgameboardapikey', 'block_crucible'), "", PARAM_RAW, 60));
 
     // MISP
+    $settings->add(new admin_setting_heading(
+        'block_crucible/mispsectionheading',
+        get_string('mispsectionheading', 'block_crucible'), 
+        get_string('mispsectiondesc', 'block_crucible')
+    ));
+
+    // Checkbox
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showmisp',
+        get_string('showmisp', 'block_crucible'), get_string('configmispshow', 'block_crucible'), 0, 1, 0));
+
     $settings->add(new admin_setting_configtext('block_crucible/mispappurl',
       get_string('mispappurl', 'block_crucible'), get_string('configmispappurl', 'block_crucible'), "", PARAM_URL, 60));
 
     $settings->add(new admin_setting_configtext('block_crucible/mispapikey',
       get_string('mispapikey', 'block_crucible'), get_string('configmispapikey', 'block_crucible'), "", PARAM_RAW, 60));
+    
+    // Player
+    $settings->add(new admin_setting_heading(
+        'block_crucible/playersectionheading',
+        get_string('playersectionheading', 'block_crucible'), 
+        get_string('playersectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configtext('block_crucible/playerapiurl',
+        get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/playerappurl',
+        get_string('playerappurl', 'block_crucible'), get_string('configplayerappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    // Steamfitter
+    $settings->add(new admin_setting_heading(
+        'block_crucible/steamfittersectionheading',
+        get_string('steamfittersectionheading', 'block_crucible'), 
+        get_string('steamfittersectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configtext('block_crucible/steamfitterapiurl',
+      get_string('steamfitterapiurl', 'block_crucible'), get_string('configsteamfitterapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/steamfitterappurl',
+      get_string('steamfitterappurl', 'block_crucible'), get_string('configsteamfitterappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    // Topomojo
+    $settings->add(new admin_setting_heading(
+        'block_crucible/topomojosectionheading',
+        get_string('topomojosectionheading', 'block_crucible'), 
+        get_string('topomojosectiondesc', 'block_crucible')
+    ));
+
+    // Checkbox
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showtopomojo',
+        get_string('showtopomojo', 'block_crucible'), get_string('configtopomojoshow', 'block_crucible'), 0, 1, 0));
+
+    $settings->add(new admin_setting_configtext('block_crucible/topomojoapiurl',
+      get_string('topomojoapiurl', 'block_crucible'), get_string('configtopomojoapiurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/topomojoappurl',
+      get_string('topomojoappurl', 'block_crucible'), get_string('configtopomojoappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/topomojoapikey',
+      get_string('topomojoapikey', 'block_crucible'), get_string('configtopomojoapikey', 'block_crucible'), "", PARAM_RAW, 60));
 
     // Communications Checkbox
+    $settings->add(new admin_setting_heading(
+        'block_crucible/commsectionheading',
+        get_string('commsectionheading', 'block_crucible'), 
+        get_string('commsectiondesc', 'block_crucible')
+    ));
+    
     $settings->add(new admin_setting_configcheckbox('block_crucible/enablecommapps',
-        get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
-
-    // Rocketchat
+    get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
+    
     $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
         get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'),
         "", PARAM_URL, 60));
@@ -163,16 +236,16 @@ if ($ADMIN->fulltree) {
         get_string('rocketchatuserid', 'block_crucible'), get_string('configrocketchatuserid', 'block_crucible'),
          "", PARAM_RAW, 60));
 
-    // Roundcube
     $settings->add(new admin_setting_configtext('block_crucible/roundcubeappurl',
         get_string('roundcubeappurl', 'block_crucible'), get_string('configroundcubeappurl', 'block_crucible'),
          "", PARAM_URL, 60));
 
     // Hide communications settings if the checkbox is not checked
+    $settings->hide_if('block_crucible/roundcubesectionheading', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/rocketchatapiurl', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/rocketchatappurl', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/rocketchatauthtoken', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/rocketchatuserid', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/roundcubeappurl', 'block_crucible/enablecommapps', 'notchecked', 1);
+    
 }
-
