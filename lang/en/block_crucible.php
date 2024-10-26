@@ -49,6 +49,8 @@ $string['enabled'] = 'Enabled';
 $string['configenabled'] = 'Enable permissions checking via OAUTH';
 $string['showallapps'] = 'Show All Apps to Users';
 $string['enablecommapps'] = 'Enable Communication Apps';
+$string['commsectionheading'] = 'Communication Apps Settings';
+$string['commsectiondesc'] = 'Enable Communication Apps to configure application URLs and settings for Roundcube and Rocketchat integrations.';
 $string['configappshow'] = 'Enable User Access to all Apps';
 $string['configcommshow'] = 'Enable Access to Communication Apps';
 
@@ -58,6 +60,8 @@ $string['playerappurl'] = 'Player UI';
 $string['playerdescription'] = 'Designing User Interfaces';
 $string['configplayerapiurl'] = 'Player API URL used to pull permissions';
 $string['configplayerappurl'] = 'Player UI URL used to redirect participants';
+$string['playersectionheading'] = 'Player Settings';
+$string['playersectiondesc'] = 'Configure API and application URLs for Player integration.';
 
 // Alloy
 $string['alloyapiurl'] = 'Alloy API';
@@ -65,6 +69,9 @@ $string['alloyappurl'] = 'Alloy UI';
 $string['configalloyapiurl'] = 'Alloy API URL used to pull permissions';
 $string['configalloyappurl'] = 'Alloy UI used to redirect content developers';
 $string['alloydescription'] = 'Conducting a Simulation';
+$string['alloysectionheading'] = 'Alloy Settings';
+$string['alloysectiondesc'] = 'Configure API and application URLs for Alloy integration.';
+
 
 // Blueprint
 $string['blueprintapiurl'] = 'Blueprint API';
@@ -72,6 +79,8 @@ $string['blueprintappurl'] = 'Blueprint UI';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
 $string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
 $string['blueprintdescription'] = 'Building a MSEL';
+$string['blueprintsectionheading'] = 'Blueprint Settings';
+$string['blueprintsectiondesc'] = 'Configure API and application URLs for Blueprint integration.';
 
 // Caster
 $string['casterapiurl'] = 'Caster API';
@@ -79,6 +88,8 @@ $string['casterappurl'] = 'Caster UI';
 $string['configcasterapiurl'] = 'Caster API URL used to pull permissions';
 $string['configcasterappurl'] = 'Caster UI used to redirect content developers';
 $string['casterdescription'] = 'Coding a Topology';
+$string['castersectionheading'] = 'Caster Settings';
+$string['castersectiondesc'] = 'Configure API and application URLs for Caster integration.';
 
 // CITE
 $string['citeapiurl'] = 'CITE API';
@@ -86,6 +97,8 @@ $string['citeappurl'] = 'CITE UI';
 $string['configciteapiurl'] = 'CITE API URL used to pull permissions';
 $string['configciteappurl'] = 'CITE UI URL used to redirect participants';
 $string['citedescription'] = 'Evaluating Threats';
+$string['citesectionheading'] = 'CITE Settings';
+$string['citesectiondesc'] = 'Configure API and application URLs for CITE integration.';
 
 // Gallery
 $string['galleryapiurl'] = 'Gallery API';
@@ -93,6 +106,8 @@ $string['galleryappurl'] = 'Gallery UI';
 $string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
 $string['configgalleryappurl'] = 'Gallery UI URL used to redirect participants';
 $string['gallerydescription'] = 'Keeping You in the Know!';
+$string['gallerysectionheading'] = 'Gallery Settings';
+$string['gallerysectiondesc'] = 'Configure API and application URLs for Gallery integration.';
 
 // Steamfitter
 $string['steamfitterapiurl'] = 'Steamfitter API';
@@ -100,6 +115,8 @@ $string['steamfitterappurl'] = 'Steamfitter UI';
 $string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
 $string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
 $string['steamfitterdescription'] = 'Crafting a Scenario';
+$string['steamfittersectionheading'] = 'Steamfitter Settings';
+$string['steamfittersectiondesc'] = 'Configure API and application URLs for Steamfitter integration.';
 
 // Rocketchat
 $string['rocketchatapiurl'] = 'Rocket.Chat API';
@@ -120,11 +137,15 @@ $string['roundcubedescription'] = 'Open Source Webmail';
 // Topomojo
 $string['topomojoapiurl'] = 'TopoMojo API';
 $string['topomojoappurl'] = 'TopoMojo UI';
-$string['topomojoapikey'] = 'Topomojo API Key';
+$string['topomojoapikey'] = 'TopoMojo API Key';
 $string['configtopomojoapiurl'] = 'TopoMojo API URL used to pull permissions';
 $string['configtopomojoappurl'] = 'TopoMojo UI URL used to redirect participants';
 $string['configtopomojoapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['topomojodescription'] = 'Virtual Lab Builder';
+$string['topomojosectionheading'] = 'TopoMojo Settings';
+$string['topomojosectiondesc'] = 'Configure API, keys, and application URLs for TopoMojo integration.';
+$string['showtopomojo'] = 'Show TopoMojo';
+$string['configtopomojoshow'] = 'Show TopoMojo application regardless of user permissions';
 
 // Gameboard
 $string['gameboardapiurl'] = 'Gameboard API';
@@ -134,6 +155,10 @@ $string['configgameboardappurl'] = 'Gameboard UI URL used to redirect participan
 $string['gameboarddescription'] = 'Virtual Lab Training and Competition Platform';
 $string['configgameboardapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['gameboardapikey'] = 'Gameboard API Key';
+$string['gameboardsectionheading'] = 'Gameboard Settings';
+$string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for Gameboard integration.';
+$string['showgameboard'] = 'Show Gameboard';
+$string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 
 // MISP
 $string['mispappurl'] = 'MISP UI';
@@ -141,7 +166,10 @@ $string['configmispappurl'] = 'MISP UI URL used to redirect participants';
 $string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
 $string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['mispapikey'] = 'MISP API Key';
+$string['mispsectionheading'] = 'MISP Settings';
+$string['mispsectiondesc'] = 'Configure API, keys, and application URLs for MISP integration.';
+$string['showmisp'] = 'Show MISP';
+$string['configmispshow'] = 'Show MISP application regardless of user permissions';
 
 // privacy
 $string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';
-

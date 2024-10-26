@@ -250,7 +250,8 @@ class block_crucible extends block_base {
 
         ////////////////////TOPOMOJO////////////////////////////
         $permstopomojo = $crucible->get_topomojo_permissions();
-        if ($permstopomojo) {
+        $showtopomojo = get_config('block_crucible', 'showtopomojo');
+        if ($permstopomojo || $showtopomojo) {
             $data->topomojo = get_config('block_crucible', 'topomojoappurl');
             $data->topomojoDescription = get_string('topomojodescription', 'block_crucible');
             $data->topomojoLogo  = $OUTPUT->image_url('topomojo-logo', 'block_crucible');
@@ -261,7 +262,8 @@ class block_crucible extends block_base {
         ////////////////////GAMEBOARD/////////////////////////////
         $permsgameboard = $crucible->get_gameboard_permissions();
         $activechallenges = $crucible->get_active_challenges();
-        if (($activechallenges && $showapps) || $permsgameboard) {
+        $showgameboard = get_config('block_crucible', 'showgameboard');
+        if (($activechallenges && $showapps) || $permsgameboard || $showgameboard) {
             $data->gameboard = get_config('block_crucible', 'gameboardappurl');
             $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
             $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
@@ -274,7 +276,8 @@ class block_crucible extends block_base {
         ////////////////////MISP/////////////////////////////
         $permsmisp = $crucible->get_misp_permissions();
         $usermisp = $crucible->get_misp_user();
-        if (($usermisp && $showapps) || $permsmisp) {
+        $showmisp = get_config('block_crucible', 'showmisp');
+        if (($usermisp && $showapps) || $permsmisp || $showmisp) {
             $data->misp = get_config('block_crucible', 'mispappurl');
             $data->mispDescription = get_string('mispdescription', 'block_crucible');
             $data->mispLogo  = $OUTPUT->image_url('misp-icon', 'block_crucible');
