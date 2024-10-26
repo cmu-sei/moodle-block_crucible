@@ -137,7 +137,7 @@ $string['roundcubedescription'] = 'Open Source Webmail';
 // Topomojo
 $string['topomojoapiurl'] = 'TopoMojo API';
 $string['topomojoappurl'] = 'TopoMojo UI';
-$string['topomojoapikey'] = 'Topomojo API Key';
+$string['topomojoapikey'] = 'TopoMojo API Key';
 $string['configtopomojoapiurl'] = 'TopoMojo API URL used to pull permissions';
 $string['configtopomojoappurl'] = 'TopoMojo UI URL used to redirect participants';
 $string['configtopomojoapikey'] = 'Add Admin\'s API Key for API Calls';
@@ -157,6 +157,8 @@ $string['configgameboardapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['gameboardapikey'] = 'Gameboard API Key';
 $string['gameboardsectionheading'] = 'Gameboard Settings';
 $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for Gameboard integration.';
+$string['showgameboard'] = 'Show Gameboard';
+$string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 
 // MISP
 $string['mispappurl'] = 'MISP UI';

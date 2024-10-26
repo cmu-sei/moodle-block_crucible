@@ -138,6 +138,9 @@ if ($ADMIN->fulltree) {
         get_string('gameboardsectiondesc', 'block_crucible')
     ));
 
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showgameboard',
+        get_string('showgameboard', 'block_crucible'), get_string('configgameboardshow', 'block_crucible'), 0, 1, 0));
+
     $settings->add(new admin_setting_configtext('block_crucible/gameboardapiurl',
       get_string('gameboardapiurl', 'block_crucible'), get_string('configgameboardapiurl', 'block_crucible'), "", PARAM_URL, 60));
 

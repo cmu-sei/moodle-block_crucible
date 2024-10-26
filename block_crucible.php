@@ -262,7 +262,8 @@ class block_crucible extends block_base {
         ////////////////////GAMEBOARD/////////////////////////////
         $permsgameboard = $crucible->get_gameboard_permissions();
         $activechallenges = $crucible->get_active_challenges();
-        if (($activechallenges && $showapps) || $permsgameboard) {
+        $showgameboard = get_config('block_crucible', 'showgameboard');
+        if (($activechallenges && $showapps) || $permsgameboard || $showgameboard) {
             $data->gameboard = get_config('block_crucible', 'gameboardappurl');
             $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
             $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
