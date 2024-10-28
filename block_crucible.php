@@ -72,6 +72,15 @@ class block_crucible extends block_base {
         return false;
     }
 
+    public function hide_header() {
+        $showtitle= get_config('block_crucible', 'blocktitle');
+        if ($showtitle) {
+            return TRUE;
+        } else {
+            return FALSE;
+        }
+    }
+
     /**
      * Indicates whether the block has a configuration page for site-wide settings.
      *
@@ -278,6 +287,18 @@ class block_crucible extends block_base {
         $optionalmessagecb = get_config('block_crucible', 'customwelcomemessagecb');
         if ($optionalmessagecb) {
             $data->welcomemessage = get_config('block_crucible', 'customwelcomemessage');
+        }
+
+        ///////////////////Keycloak/////////////////////////////
+        $moodleAdmin= is_siteadmin($USER->id);
+
+        if ($moodleAdmin) {
+            $issuerid = get_config('block_crucible', 'issuerid');
+            $issuer = \core\oauth2\api::get_issuer($issuerid);
+            $baseurl = $issuer->get('baseurl');
+            $data->keycloak = $baseurl;
+            $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
+            $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
         }
 
         ////////////////////MISP/////////////////////////////
