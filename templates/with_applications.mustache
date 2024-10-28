@@ -42,8 +42,14 @@
         "blueprint": "https://blueprint.example.com"
     }
 }}
+{{^welcomemessage}}
+    <h5>Hello {{username}}! Welcome to {{sitename}}. </h5> <br>
+{{/welcomemessage}}
 
-<h5>Hello {{username}}! Welcome to {{sitename}}. </h5> <br>
+{{#welcomemessage}}
+    <h5>{{welcomemessage}} </h5> <br>
+{{/welcomemessage}}
+
 
 <div class="applications-grid">
     {{#topomojo}}

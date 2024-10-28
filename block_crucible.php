@@ -273,6 +273,13 @@ class block_crucible extends block_base {
             debugging("No active challenges found on Gameboard for User: " . $userid, DEBUG_DEVELOPER);
         }
 
+
+        ////////////////////Welcome Message/////////////////////////////
+        $optionalmessagecb = get_config('block_crucible', 'customwelcomemessagecb');
+        if ($optionalmessagecb) {
+            $data->welcomemessage = get_config('block_crucible', 'customwelcomemessage');
+        }
+
         ////////////////////MISP/////////////////////////////
         $permsmisp = $crucible->get_misp_permissions();
         $usermisp = $crucible->get_misp_user();

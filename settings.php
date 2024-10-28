@@ -66,6 +66,16 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configcheckbox('block_crucible/showallapps',
         get_string('showallapps', 'block_crucible'), get_string('configappshow', 'block_crucible'), 0, 1, 0));
 
+    // Welcome Message
+    $settings->add(new admin_setting_configcheckbox(
+        'block_crucible/customwelcomemessagecb',
+        get_string('customwelcomemessagecb', 'block_crucible'), 
+        get_string('customwelcomemessagedesc', 'block_crucible'), 0, 1, 0));
+
+    $settings->add(new admin_setting_configtext('block_crucible/customwelcomemessage',
+        get_string('customwelcomemessage', 'block_crucible'), get_string('configcustomwelcomemessage', 'block_crucible'),
+         "", PARAM_RAW, 60));
+
     // Alloy
     $settings->add(new admin_setting_heading(
         'block_crucible/alloysectionheading',
@@ -250,5 +260,6 @@ if ($ADMIN->fulltree) {
     $settings->hide_if('block_crucible/rocketchatauthtoken', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/rocketchatuserid', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/roundcubeappurl', 'block_crucible/enablecommapps', 'notchecked', 1);
+    $settings->hide_if('block_crucible/customwelcomemessage', 'block_crucible/customwelcomemessagecb', 'notchecked', 1);
     
 }
