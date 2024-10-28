@@ -57,6 +57,8 @@ $string['customwelcomemessagecb'] = 'Enable Custom Welcome Message';
 $string['customwelcomemessagedesc'] = 'Enable custom welcome message to override system message';
 $string['customwelcomemessage'] = 'Custom Welcome Message';
 $string['configcustomwelcomemessage'] = 'Add custom welcome message for Applications block';
+$string['blocktitle'] = 'Disable Block Title';
+$string['configblocktitle'] = 'Disable Block Title';
 
 // Player
 $string['playerapiurl'] = 'Player API';
@@ -174,6 +176,9 @@ $string['mispsectionheading'] = 'MISP Settings';
 $string['mispsectiondesc'] = 'Configure API, keys, and application URLs for MISP integration.';
 $string['showmisp'] = 'Show MISP';
 $string['configmispshow'] = 'Show MISP application regardless of user permissions';
+
+//Keycloak
+$string['keycloakdescription'] = 'Open Source Identity and Access Management';
 
 // privacy
 $string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';

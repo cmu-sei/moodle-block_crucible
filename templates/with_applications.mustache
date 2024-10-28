@@ -52,6 +52,21 @@
 
 
 <div class="applications-grid">
+    {{#keycloak}}
+        <div class="application-block" id="keycloak">
+            <div class="application-content">
+                <div class="application-details">
+                    <div class="application-title">Keycloak</div>
+                    <div class="keycloak-description">{{keycloakDescription}}</div>
+                </div>
+                <div class="application-link">
+                    <a href = "{{keycloak}}" target="_blank">
+                        <img class="keycloak-icon" src="{{keycloakLogo}}" alt="Keycloak">
+                    </a>
+                </div>
+            </div>
+        </div>
+    {{/keycloak}}
     {{#topomojo}}
         <div class="application-block" id="topoMojo">
             <div class="application-content">

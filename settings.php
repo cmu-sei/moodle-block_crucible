@@ -54,6 +54,10 @@ if ($ADMIN->fulltree) {
         }
     }
 
+    //Block Title
+    $settings->add(new admin_setting_configcheckbox('block_crucible/blocktitle',
+        get_string('blocktitle', 'block_crucible'), get_string('configblocktitle', 'block_crucible'), 0, 1, 0));
+
     // OAUTH
     $settings->add(new admin_setting_configselect('block_crucible/issuerid',
         get_string('issuerid', 'block_crucible'), get_string('configissuerid', 'block_crucible'), 0, $options));
