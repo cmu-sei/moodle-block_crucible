@@ -275,9 +275,9 @@ class block_crucible extends block_base {
 
 
         ////////////////////Welcome Message/////////////////////////////
-        $optionalmessagecb = get_config('block_crucible', 'optionalwelcomemessagecb');
+        $optionalmessagecb = get_config('block_crucible', 'customwelcomemessagecb');
         if ($optionalmessagecb) {
-            $data->welcomemessage = get_config('block_crucible', 'welcomemessage');
+            $data->welcomemessage = get_config('block_crucible', 'customwelcomemessage');
         }
 
         ////////////////////MISP/////////////////////////////

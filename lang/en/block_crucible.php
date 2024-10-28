@@ -53,10 +53,10 @@ $string['commsectionheading'] = 'Communication Apps Settings';
 $string['commsectiondesc'] = 'Enable Communication Apps to configure application URLs and settings for Roundcube and Rocketchat integrations.';
 $string['configappshow'] = 'Enable User Access to all Apps';
 $string['configcommshow'] = 'Enable Access to Communication Apps';
-$string['optionalwelcomemessagecb'] = 'Enable Optional Welcome Message';
-$string['optionalwelcomemessagedesc'] = 'Enable optional welcome message to override system message';
-$string['welcomemessage'] = 'Welcome Message';
-$string['configwelcomemessage'] = 'Add welcome message for Applications block';
+$string['customwelcomemessagecb'] = 'Enable Custom Welcome Message';
+$string['customwelcomemessagedesc'] = 'Enable custom welcome message to override system message';
+$string['customwelcomemessage'] = 'Custom Welcome Message';
+$string['configcustomwelcomemessage'] = 'Add custom welcome message for Applications block';
 
 // Player
 $string['playerapiurl'] = 'Player API';
