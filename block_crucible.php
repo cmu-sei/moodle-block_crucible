@@ -291,12 +291,11 @@ class block_crucible extends block_base {
 
         ///////////////////Keycloak/////////////////////////////
         $moodleAdmin= is_siteadmin($USER->id);
+        $showkeycloak = get_config('block_crucible', 'showkeycloak');
 
-        if ($moodleAdmin) {
-            $issuerid = get_config('block_crucible', 'issuerid');
-            $issuer = \core\oauth2\api::get_issuer($issuerid);
-            $baseurl = $issuer->get('baseurl');
-            $data->keycloak = $baseurl;
+        if ($moodleAdmin && $showkeycloak) {
+            $keycloak= get_config('block_crucible', 'keycloakappurl');
+            $data->keycloak = $keycloak;
             $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
             $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
         }
