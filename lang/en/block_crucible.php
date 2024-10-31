@@ -166,6 +166,15 @@ $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for
 $string['showgameboard'] = 'Show Gameboard';
 $string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 
+// Keycloak
+$string['keycloakappurl'] = 'Keycloak UI';
+$string['configkeycloakappurl'] = 'Keycloak URL used to redirect users';
+$string['keycloakdescription'] = 'Open Source Identity and Access Management';
+$string['keycloaksectionheading'] = 'Keycloak Settings';
+$string['keycloaksectiondesc'] = 'Configure application URLs for Keycloak integration.';
+$string['showkeycloak'] = 'Show Keycloak';
+$string['configkeycloakshow'] = 'Show Keycloak application regardless of user permissions';
+
 // MISP
 $string['mispappurl'] = 'MISP UI';
 $string['configmispappurl'] = 'MISP UI URL used to redirect participants';
@@ -176,9 +185,6 @@ $string['mispsectionheading'] = 'MISP Settings';
 $string['mispsectiondesc'] = 'Configure API, keys, and application URLs for MISP integration.';
 $string['showmisp'] = 'Show MISP';
 $string['configmispshow'] = 'Show MISP application regardless of user permissions';
-
-//Keycloak
-$string['keycloakdescription'] = 'Open Source Identity and Access Management';
 
 // privacy
 $string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';

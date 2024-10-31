@@ -80,6 +80,19 @@ if ($ADMIN->fulltree) {
         get_string('customwelcomemessage', 'block_crucible'), get_string('configcustomwelcomemessage', 'block_crucible'),
          "", PARAM_RAW, 60));
 
+    // Keycloak
+    $settings->add(new admin_setting_heading(
+        'block_crucible/keycloaksectionheading',
+        get_string('keycloaksectionheading', 'block_crucible'), 
+        get_string('keycloaksectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showkeycloak',
+        get_string('showkeycloak', 'block_crucible'), get_string('configkeycloakshow', 'block_crucible'), 0, 1, 0));
+
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakappurl',
+      get_string('keycloakappurl', 'block_crucible'), get_string('configkeycloakappurl', 'block_crucible'), "", PARAM_URL, 60));
+
     // Alloy
     $settings->add(new admin_setting_heading(
         'block_crucible/alloysectionheading',
