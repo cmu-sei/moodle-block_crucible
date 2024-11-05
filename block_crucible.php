@@ -326,6 +326,16 @@ class block_crucible extends block_base {
                 $data->keycloak = $keycloak;
                 $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                 $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
+            } else {
+                $keycloak= get_config('block_crucible', 'keycloakappurl');
+                // Check if the URL already contains '/realms/master/account'
+                if (strpos($keycloak, '/realms/master/account') === false) {
+                    $keycloak .= '/realms/master/account';
+                }
+
+                $data->keycloak = $keycloak;
+                $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
+                $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
             }
         }
 
