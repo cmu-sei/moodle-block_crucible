@@ -315,17 +315,18 @@ class block_crucible extends block_base {
         }
         if (!empty($userid)) {
             foreach ($data as $key => $value) {
-                if ($key !== 'sitename' && $key !== 'username') {
+                if (!in_array($key, ['sitename', 'username', 'welcomemessage'])) {
                     $datafiltered->$key = $value;
                 }
             }
 
             if (empty((array) $datafiltered)) {
-                $data->crucibleLogo = $OUTPUT->image_url('crucible-icon', 'block_crucible');
+                $this->content = null;
+            } else {
+                $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
+                $this->content->text = $OUTPUT->render_from_template('block_crucible/with_applications', $data); 
             }
-        
-            // Render the landing_parent template with $data
-            $this->content->text = $OUTPUT->render_from_template('block_crucible/landing_parent', $data);      
+             
         } else {
             $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
             // Render the no_oauth template with $datafiltered
@@ -333,5 +334,6 @@ class block_crucible extends block_base {
         }
 
         return $this->content;
+
     }
 }
