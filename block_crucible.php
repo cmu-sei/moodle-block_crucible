@@ -290,14 +290,53 @@ class block_crucible extends block_base {
         }
 
         ///////////////////Keycloak/////////////////////////////
-        $moodleAdmin= is_siteadmin($USER->id);
-        $showkeycloak = get_config('block_crucible', 'showkeycloak');
+        $allowedGroups = get_config('block_crucible', 'keycloakgroups');
+        $groupsArray = explode('|', $allowedGroups);
+        $groupsArray = array_map('trim', $groupsArray);
 
-        if ($moodleAdmin && $showkeycloak) {
-            $keycloak= get_config('block_crucible', 'keycloakappurl');
-            $data->keycloak = $keycloak;
-            $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
-            $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
+        $showkeycloak = get_config('block_crucible', 'showkeycloak');
+        $keycloakGroups = $crucible->get_keycloak_groups();
+        
+        if (!is_array($keycloakGroups)) {
+            $keycloakGroups = $keycloakGroups ? [$keycloakGroups] : [];
+        }
+
+        // Check if the user has any allowed group in their Keycloak groups.
+        $hasAllowedGroup = false;
+        foreach ($keycloakGroups as $group) {
+            if (in_array($group, $groupsArray)) {
+                $hasAllowedGroup = true;
+                break;
+            }
+        }
+
+        $keycloakRoles = $crucible->get_keycloak_roles();
+
+        if (!is_array($keycloakRoles)) {
+            $keycloakRoles = $keycloakRoles ? [$keycloakRoles] : [];
+        }
+
+        // Check if the user has admin role.
+        $keycloakAdmin = false;
+        $keycloakAdmin = in_array('admin', $keycloakRoles);
+
+        if ($showkeycloak) {
+            if ($hasAllowedGroup || $keycloakAdmin) {
+                $keycloak= get_config('block_crucible', 'keycloakappurl');
+                $data->keycloak = $keycloak;
+                $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
+                $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
+            } else {
+                $keycloak= get_config('block_crucible', 'keycloakappurl');
+                // Check if the URL already contains '/realms/master/account'
+                if (strpos($keycloak, '/realms/master/account') === false) {
+                    $keycloak .= '/realms/master/account';
+                }
+
+                $data->keycloak = $keycloak;
+                $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
+                $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
+            }
         }
 
         ////////////////////MISP/////////////////////////////

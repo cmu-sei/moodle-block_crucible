@@ -1279,4 +1279,226 @@ class crucible {
         }
         return 0;
     }
+
+    public function get_keycloak_groups() {
+        global $USER;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+
+        //Web request
+        $url = get_config('block_crucible', 'keycloakappurl');
+        if (empty($url)) {
+            return 0;
+        }
+
+        $url .= "/realms/master/protocol/openid-connect/token";
+
+        $issuerid = get_config('block_crucible', 'issuerid');
+        if (!$issuerid) {
+            debugging("Crucible does not have issuerid set", DEBUG_DEVELOPER);
+            return false; // Exit if issuer ID is not set
+        }
+
+        $issuer = \core\oauth2\api::get_issuer($issuerid);
+        $clientid = $issuer->get('clientid');
+        $clientsecret = $issuer->get('clientsecret');
+
+        // Prepare the POST data as a URL-encoded string.
+        $data = "client_id=" . urlencode($clientid) . "&client_secret=" . urlencode($clientsecret) . "&grant_type=client_credentials";
+
+        // Set headers.
+        $headers = ['Content-Type: application/x-www-form-urlencoded'];
+
+        // Initialize cURL.
+        $ch = curl_init();
+
+        // Set cURL options to replicate the exact `curl` command structure.
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        // Execute the request and capture the response.
+        $response = curl_exec($ch);
+
+        // Close the cURL session.
+        curl_close($ch);
+
+        $tokenData = json_decode($response, true);
+
+        if (isset($tokenData['access_token'])) {
+            $accessToken = $tokenData['access_token'];
+        }
+
+        // Initialize cURL.
+        $ch = curl_init();
+
+        // Web request
+        $groupUrl = get_config('block_crucible', 'keycloakappurl');
+        if (empty($groupUrl)) {
+            return 0;
+        }
+
+        $userid = $USER->idnumber;
+
+        $groupUrl .= '/admin/realms/master/users/' . urlencode($userid) . '/groups';
+
+        // Set the headers with the Authorization token.
+        $headers = [
+            "Authorization: Bearer $accessToken",
+        ];
+
+        // Set cURL options for a GET request.
+        curl_setopt($ch, CURLOPT_URL, $groupUrl);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+
+        // Execute the request and capture the response.
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        // Check for errors and close the session.
+        if (curl_errno($ch)) {
+            echo 'cURL error: ' . curl_error($ch);
+        } else {
+            // Decode the JSON response to an associative array.
+            $groups = json_decode($response, true);
+
+            // Check if decoding was successful and if there are groups in the response.
+            if (is_array($groups) && !empty($groups)) {
+                // Initialize an array to store group names.
+                $groupNames = [];
+            
+                // Loop through each group and collect the 'name' value.
+                foreach ($groups as $group) {
+                    if (isset($group['name'])) {
+                        $groupNames[] = $group['name'];
+                    }
+                }
+            
+                // Output or return the array of group names.
+                return $groupNames;
+            } else {
+                debugging("No groups found or invalid response format.", DEBUG_DEVELOPER);
+            }
+        }
+
+        return 0;
+    }
+
+    public function get_keycloak_roles() {
+        global $USER;
+
+        if ($this->client == null) {
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
+
+        //Web request
+        $url = get_config('block_crucible', 'keycloakappurl');
+        if (empty($url)) {
+            return 0;
+        }
+
+        $url .= "/realms/master/protocol/openid-connect/token";
+
+        $issuerid = get_config('block_crucible', 'issuerid');
+        if (!$issuerid) {
+            debugging("Crucible does not have issuerid set", DEBUG_DEVELOPER);
+            return false; // Exit if issuer ID is not set
+        }
+
+        $issuer = \core\oauth2\api::get_issuer($issuerid);
+        $clientid = $issuer->get('clientid');
+        $clientsecret = $issuer->get('clientsecret');
+
+        // Prepare the POST data as a URL-encoded string.
+        $data = "client_id=" . urlencode($clientid) . "&client_secret=" . urlencode($clientsecret) . "&grant_type=client_credentials";
+
+        // Set headers.
+        $headers = ['Content-Type: application/x-www-form-urlencoded'];
+
+        // Initialize cURL.
+        $ch = curl_init();
+
+        // Set cURL options to replicate the exact `curl` command structure.
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        // Execute the request and capture the response.
+        $response = curl_exec($ch);
+
+        // Close the cURL session.
+        curl_close($ch);
+
+        $tokenData = json_decode($response, true);
+
+        if (isset($tokenData['access_token'])) {
+            $accessToken = $tokenData['access_token'];
+        }
+
+        // Initialize cURL.
+        $ch = curl_init();
+
+        // Web request
+        $roleUrl = get_config('block_crucible', 'keycloakappurl');
+        if (empty($roleUrl)) {
+            return 0;
+        }
+
+        $userid = $USER->idnumber;
+
+        $roleUrl .= '/admin/realms/master/users/' . urlencode($userid) . '/role-mappings/realm';
+
+        // Set the headers with the Authorization token.
+        $headers = [
+            "Authorization: Bearer $accessToken",
+        ];
+
+        // Set cURL options for a GET request.
+        curl_setopt($ch, CURLOPT_URL, $roleUrl);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+
+        // Execute the request and capture the response.
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        // Check for errors and close the session.
+        if (curl_errno($ch)) {
+            echo 'cURL error: ' . curl_error($ch);
+        } else {
+            // Decode the JSON response to an associative array.
+            $roles = json_decode($response, true);
+
+            // Check if decoding was successful and if there are roles in the response.
+            if (is_array($roles) && !empty($roles)) {
+                // Initialize an array to store role names.
+                $roleNames = [];
+            
+                // Loop through each role and collect the 'name' value.
+                foreach ($roles as $role) {
+                    if (isset($role['name'])) {
+                        $roleNames[] = $role['name'];
+                    }
+                }
+            
+                // Output or return the array of role names.
+                return $roleNames;
+            } else {
+                debugging("No roles found or invalid response format.", DEBUG_DEVELOPER);
+            }
+        }
+
+        return 0;
+    }
 }
