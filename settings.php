@@ -93,6 +93,11 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/keycloakappurl',
       get_string('keycloakappurl', 'block_crucible'), get_string('configkeycloakappurl', 'block_crucible'), "", PARAM_URL, 60));
 
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakgroups',
+      get_string('keycloakgroups', 'block_crucible'), get_string('configkeycloakgroups', 'block_crucible'),
+       "", PARAM_RAW, 60));
+    
+
     // Alloy
     $settings->add(new admin_setting_heading(
         'block_crucible/alloysectionheading',

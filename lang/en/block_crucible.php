@@ -174,6 +174,8 @@ $string['keycloaksectionheading'] = 'Keycloak Settings';
 $string['keycloaksectiondesc'] = 'Configure application URLs for Keycloak integration.';
 $string['showkeycloak'] = 'Show Keycloak';
 $string['configkeycloakshow'] = 'Show Keycloak application regardless of user permissions';
+$string['keycloakgroups'] = 'Admin Keycloak Groups';
+$string['configkeycloakgroups'] = 'Enter the names of Keycloak Admin Groups, separated by a "|" character as a delimiter.';
 
 // MISP
 $string['mispappurl'] = 'MISP UI';
