@@ -54,21 +54,21 @@ if ($ADMIN->fulltree) {
         }
     }
 
-    //Block Title
-    $settings->add(new admin_setting_configcheckbox('block_crucible/blocktitle',
-        get_string('blocktitle', 'block_crucible'), get_string('configblocktitle', 'block_crucible'), 0, 1, 0));
+    // Enable/Disable plugin
+    $settings->add(new admin_setting_configcheckbox('block_crucible/enabled',
+        get_string('enabled', 'block_crucible'), get_string('configenabled', 'block_crucible'), 0, 1, 0));
 
     // OAUTH
     $settings->add(new admin_setting_configselect('block_crucible/issuerid',
         get_string('issuerid', 'block_crucible'), get_string('configissuerid', 'block_crucible'), 0, $options));
 
-    // Enable/Disable plugin
-    $settings->add(new admin_setting_configcheckbox('block_crucible/enabled',
-        get_string('enabled', 'block_crucible'), get_string('configenabled', 'block_crucible'), 0, 1, 0));
-
     // Checkbox
     $settings->add(new admin_setting_configcheckbox('block_crucible/showallapps',
         get_string('showallapps', 'block_crucible'), get_string('configappshow', 'block_crucible'), 0, 1, 0));
+
+    //Block Title
+    $settings->add(new admin_setting_configcheckbox('block_crucible/blocktitle',
+        get_string('blocktitle', 'block_crucible'), get_string('configblocktitle', 'block_crucible'), 0, 1, 0));
 
     // Welcome Message
     $settings->add(new admin_setting_configcheckbox(
