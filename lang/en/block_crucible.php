@@ -63,7 +63,7 @@ $string['configblocktitle'] = 'Disable Block Title';
 // Player
 $string['playerapiurl'] = 'Player API';
 $string['playerappurl'] = 'Player UI';
-$string['playerdescription'] = 'Designing User Interfaces';
+$string['playerdescription'] = 'Crucible\'s Exercise User Interface';
 $string['configplayerapiurl'] = 'Player API URL used to pull permissions';
 $string['configplayerappurl'] = 'Player UI URL used to redirect participants';
 $string['playersectionheading'] = 'Player Settings';
@@ -74,17 +74,16 @@ $string['alloyapiurl'] = 'Alloy API';
 $string['alloyappurl'] = 'Alloy UI';
 $string['configalloyapiurl'] = 'Alloy API URL used to pull permissions';
 $string['configalloyappurl'] = 'Alloy UI used to redirect content developers';
-$string['alloydescription'] = 'Conducting a Simulation';
+$string['alloydescription'] = 'Crucible\'s On-Demand Exercise Deployment Dashboard';
 $string['alloysectionheading'] = 'Alloy Settings';
 $string['alloysectiondesc'] = 'Configure API and application URLs for Alloy integration.';
-
 
 // Blueprint
 $string['blueprintapiurl'] = 'Blueprint API';
 $string['blueprintappurl'] = 'Blueprint UI';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
 $string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
-$string['blueprintdescription'] = 'Building a MSEL';
+$string['blueprintdescription'] = 'Crucible\'s Exercise Planning Tool';
 $string['blueprintsectionheading'] = 'Blueprint Settings';
 $string['blueprintsectiondesc'] = 'Configure API and application URLs for Blueprint integration.';
 
@@ -93,7 +92,7 @@ $string['casterapiurl'] = 'Caster API';
 $string['casterappurl'] = 'Caster UI';
 $string['configcasterapiurl'] = 'Caster API URL used to pull permissions';
 $string['configcasterappurl'] = 'Caster UI used to redirect content developers';
-$string['casterdescription'] = 'Coding a Topology';
+$string['casterdescription'] = 'Crucible\'s Exercise Topology Builder';
 $string['castersectionheading'] = 'Caster Settings';
 $string['castersectiondesc'] = 'Configure API and application URLs for Caster integration.';
 
@@ -102,7 +101,7 @@ $string['citeapiurl'] = 'CITE API';
 $string['citeappurl'] = 'CITE UI';
 $string['configciteapiurl'] = 'CITE API URL used to pull permissions';
 $string['configciteappurl'] = 'CITE UI URL used to redirect participants';
-$string['citedescription'] = 'Evaluating Threats';
+$string['citedescription'] = 'Crucible\'s Exercise Dashboard and Incident Evaluator';
 $string['citesectionheading'] = 'CITE Settings';
 $string['citesectiondesc'] = 'Configure API and application URLs for CITE integration.';
 
@@ -111,7 +110,7 @@ $string['galleryapiurl'] = 'Gallery API';
 $string['galleryappurl'] = 'Gallery UI';
 $string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
 $string['configgalleryappurl'] = 'Gallery UI URL used to redirect participants';
-$string['gallerydescription'] = 'Keeping You in the Know!';
+$string['gallerydescription'] = 'Crucible\'s Exercise Information Sharing Tool';
 $string['gallerysectionheading'] = 'Gallery Settings';
 $string['gallerysectiondesc'] = 'Configure API and application URLs for Gallery integration.';
 
@@ -120,7 +119,7 @@ $string['steamfitterapiurl'] = 'Steamfitter API';
 $string['steamfitterappurl'] = 'Steamfitter UI';
 $string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
 $string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
-$string['steamfitterdescription'] = 'Crafting a Scenario';
+$string['steamfitterdescription'] = 'Crucible\'s Exercise Inject Automater';
 $string['steamfittersectionheading'] = 'Steamfitter Settings';
 $string['steamfittersectiondesc'] = 'Configure API and application URLs for Steamfitter integration.';
 
@@ -131,7 +130,7 @@ $string['rocketchatauthtoken'] = 'Rocket.Chat Auth Token';
 $string['configrocketchatapiurl'] = 'Rocket.Chat API URL used to pull permissions';
 $string['configrocketchatappurl'] = 'Rocket.Chat UI URL used to redirect participants';
 $string['configrocketchatauthtoken'] = 'Add Admin\'s Auth Token for API Calls';
-$string['rocketchatdescription'] = 'Communications Platform';
+$string['rocketchatdescription'] = 'Open Source Communications Platform';
 $string['rocketchatuserid'] = 'Rocket.Chat User Id';
 $string['configrocketchatuserid'] = 'Add Admin\'s User Id for API Calls';
 
@@ -140,14 +139,14 @@ $string['roundcubeappurl'] = 'Roundcube UI';
 $string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
 $string['roundcubedescription'] = 'Open Source Webmail';
 
-// Topomojo
+// TopoMojo
 $string['topomojoapiurl'] = 'TopoMojo API';
 $string['topomojoappurl'] = 'TopoMojo UI';
 $string['topomojoapikey'] = 'TopoMojo API Key';
 $string['configtopomojoapiurl'] = 'TopoMojo API URL used to pull permissions';
 $string['configtopomojoappurl'] = 'TopoMojo UI URL used to redirect participants';
 $string['configtopomojoapikey'] = 'Add Admin\'s API Key for API Calls';
-$string['topomojodescription'] = 'Virtual Lab Builder';
+$string['topomojodescription'] = 'Crucible\'s Lab Builder Designed for Individual Training';
 $string['topomojosectionheading'] = 'TopoMojo Settings';
 $string['topomojosectiondesc'] = 'Configure API, keys, and application URLs for TopoMojo integration.';
 $string['showtopomojo'] = 'Show TopoMojo';
@@ -158,7 +157,7 @@ $string['gameboardapiurl'] = 'Gameboard API';
 $string['gameboardappurl'] = 'Gameboard UI';
 $string['configgameboardapiurl'] = 'Gameboard API URL used to pull permissions';
 $string['configgameboardappurl'] = 'Gameboard UI URL used to redirect participants';
-$string['gameboarddescription'] = 'Virtual Lab Training and Competition Platform';
+$string['gameboarddescription'] = 'Crucible\'s Competition Platform';
 $string['configgameboardapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['gameboardapikey'] = 'Gameboard API Key';
 $string['gameboardsectionheading'] = 'Gameboard Settings';
@@ -180,7 +179,7 @@ $string['configkeycloakgroups'] = 'Enter the names of Keycloak Admin Groups, sep
 // MISP
 $string['mispappurl'] = 'MISP UI';
 $string['configmispappurl'] = 'MISP UI URL used to redirect participants';
-$string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
+$string['mispdescription'] = 'Open Source Threat Intelligence and Sharing Platform';
 $string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['mispapikey'] = 'MISP API Key';
 $string['mispsectionheading'] = 'MISP Settings';
