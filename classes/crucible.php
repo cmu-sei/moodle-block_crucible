@@ -1198,11 +1198,13 @@ class crucible {
         $users = json_decode($response, true);
         $userfound = false;
 
-        foreach ($users as $user) {
-            if (isset($user['User']['email']) && $user['User']['email'] === $email) {
-                $userfound = true;
-                if (isset($user['Role']['name']) && $user['Role']['name'] === 'admin') {
-                    return $user;
+        if (is_array($users) && !empty($users)) {
+            foreach ($users as $user) {
+                if (isset($user['User']['email']) && $user['User']['email'] === $email) {
+                    $userfound = true;
+                    if (isset($user['Role']['name']) && $user['Role']['name'] === 'admin') {
+                        return $user;
+                    }
                 }
             }
         }
@@ -1266,10 +1268,12 @@ class crucible {
         $users = json_decode($response, true);
         $userfound = false;
 
-        foreach ($users as $user) {
-            if (isset($user['User']['email']) && $user['User']['email'] === $email) {
-                $userfound = true;
-                return $user;
+        if (is_array($groups) && !empty($groups)) {
+            foreach ($users as $user) {
+                if (isset($user['User']['email']) && $user['User']['email'] === $email) {
+                    $userfound = true;
+                    return $user;
+                }
             }
         }
 
