@@ -1268,7 +1268,7 @@ class crucible {
         $users = json_decode($response, true);
         $userfound = false;
 
-        if (is_array($groups) && !empty($groups)) {
+        if (is_array($users) && !empty($users)) {
             foreach ($users as $user) {
                 if (isset($user['User']['email']) && $user['User']['email'] === $email) {
                     $userfound = true;
