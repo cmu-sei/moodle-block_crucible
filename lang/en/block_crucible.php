@@ -130,14 +130,14 @@ $string['rocketchatauthtoken'] = 'Rocket.Chat Auth Token';
 $string['configrocketchatapiurl'] = 'Rocket.Chat API URL used to pull permissions';
 $string['configrocketchatappurl'] = 'Rocket.Chat UI URL used to redirect participants';
 $string['configrocketchatauthtoken'] = 'Add Admin\'s Auth Token for API Calls';
-$string['rocketchatdescription'] = 'Open Source Communications Platform';
+$string['rocketchatdescription'] = 'Communications Platform';
 $string['rocketchatuserid'] = 'Rocket.Chat User Id';
 $string['configrocketchatuserid'] = 'Add Admin\'s User Id for API Calls';
 
 // Roundcube
 $string['roundcubeappurl'] = 'Roundcube UI';
 $string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
-$string['roundcubedescription'] = 'Open Source Webmail';
+$string['roundcubedescription'] = 'Webmail';
 
 // TopoMojo
 $string['topomojoapiurl'] = 'TopoMojo API';
@@ -168,7 +168,7 @@ $string['configgameboardshow'] = 'Show Gameboard application regardless of user 
 // Keycloak
 $string['keycloakappurl'] = 'Keycloak UI';
 $string['configkeycloakappurl'] = 'Keycloak URL used to redirect users';
-$string['keycloakdescription'] = 'Open Source Identity and Access Management';
+$string['keycloakdescription'] = 'Identity and Access Management';
 $string['keycloaksectionheading'] = 'Keycloak Settings';
 $string['keycloaksectiondesc'] = 'Configure application URLs for Keycloak integration.';
 $string['showkeycloak'] = 'Show Keycloak';
@@ -179,7 +179,7 @@ $string['configkeycloakgroups'] = 'Enter the names of Keycloak Admin Groups, sep
 // MISP
 $string['mispappurl'] = 'MISP UI';
 $string['configmispappurl'] = 'MISP UI URL used to redirect participants';
-$string['mispdescription'] = 'Open Source Threat Intelligence and Sharing Platform';
+$string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
 $string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['mispapikey'] = 'MISP API Key';
 $string['mispsectionheading'] = 'MISP Settings';
