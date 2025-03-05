@@ -165,6 +165,13 @@ $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for
 $string['showgameboard'] = 'Show Gameboard';
 $string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 
+// Docs
+$string['docsappurl'] = 'Docs';
+$string['configdocsappurl'] = 'Docs URL used to redirect participants';
+$string['docsdescription'] = 'Documentation';
+$string['docsectionheading'] = 'Docs Settings';
+$string['docsectiondesc'] = 'Configure URLs for Docs integration.';
+
 // Keycloak
 $string['keycloakappurl'] = 'Keycloak UI';
 $string['configkeycloakappurl'] = 'Keycloak URL used to redirect users';

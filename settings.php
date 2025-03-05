@@ -150,6 +150,17 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/citeappurl',
         get_string('citeappurl', 'block_crucible'), get_string('configciteappurl', 'block_crucible'), "", PARAM_URL, 60));
 
+    // Docs
+    $settings->add(new admin_setting_heading(
+        'block_crucible/docsectionheading',
+        get_string('docsectionheading', 'block_crucible'),
+        get_string('docsectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configtext('block_crucible/docsappurl',
+      get_string('docsappurl', 'block_crucible'), get_string('configdocsappurl', 'block_crucible'), "", PARAM_URL, 60));
+
+
     // Gallery
     $settings->add(new admin_setting_heading(
         'block_crucible/gallerysectionheading',
@@ -198,11 +209,11 @@ if ($ADMIN->fulltree) {
 
     $settings->add(new admin_setting_configtext('block_crucible/mispapikey',
       get_string('mispapikey', 'block_crucible'), get_string('configmispapikey', 'block_crucible'), "", PARAM_RAW, 60));
-    
+
     // Player
     $settings->add(new admin_setting_heading(
         'block_crucible/playersectionheading',
-        get_string('playersectionheading', 'block_crucible'), 
+        get_string('playersectionheading', 'block_crucible'),
         get_string('playersectiondesc', 'block_crucible')
     ));
 
@@ -215,7 +226,7 @@ if ($ADMIN->fulltree) {
     // Steamfitter
     $settings->add(new admin_setting_heading(
         'block_crucible/steamfittersectionheading',
-        get_string('steamfittersectionheading', 'block_crucible'), 
+        get_string('steamfittersectionheading', 'block_crucible'),
         get_string('steamfittersectiondesc', 'block_crucible')
     ));
 
@@ -228,7 +239,7 @@ if ($ADMIN->fulltree) {
     // Topomojo
     $settings->add(new admin_setting_heading(
         'block_crucible/topomojosectionheading',
-        get_string('topomojosectionheading', 'block_crucible'), 
+        get_string('topomojosectionheading', 'block_crucible'),
         get_string('topomojosectiondesc', 'block_crucible')
     ));
 
@@ -248,13 +259,13 @@ if ($ADMIN->fulltree) {
     // Communications Checkbox
     $settings->add(new admin_setting_heading(
         'block_crucible/commsectionheading',
-        get_string('commsectionheading', 'block_crucible'), 
+        get_string('commsectionheading', 'block_crucible'),
         get_string('commsectiondesc', 'block_crucible')
     ));
-    
+
     $settings->add(new admin_setting_configcheckbox('block_crucible/enablecommapps',
     get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
-    
+
     $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
         get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'),
         "", PARAM_URL, 60));
@@ -283,5 +294,5 @@ if ($ADMIN->fulltree) {
     $settings->hide_if('block_crucible/rocketchatuserid', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/roundcubeappurl', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/customwelcomemessage', 'block_crucible/customwelcomemessagecb', 'notchecked', 1);
-    
+
 }
