@@ -166,11 +166,11 @@ $string['showgameboard'] = 'Show Gameboard';
 $string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 
 // Docs
-$string['docsappurl'] = 'IMCITE Docs';
-$string['configdocsappurl'] = 'IMCITE URL used to redirect participants';
-$string['docsdescription'] = 'IMCITE Documentation';
-$string['docsectionheading'] = 'IMCITE Docs Settings';
-$string['docsectiondesc'] = 'Configure URLs for IMCITE Docs integration.';
+$string['docsappurl'] = 'Docs';
+$string['configdocsappurl'] = 'Docs URL used to redirect participants';
+$string['docsdescription'] = 'Documentation';
+$string['docsectionheading'] = 'Docs Settings';
+$string['docsectiondesc'] = 'Configure URLs for Docs integration.';
 
 // Keycloak
 $string['keycloakappurl'] = 'Keycloak UI';
