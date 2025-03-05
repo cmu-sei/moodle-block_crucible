@@ -165,6 +165,13 @@ $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for
 $string['showgameboard'] = 'Show Gameboard';
 $string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 
+// Docs
+$string['docsappurl'] = 'IMCITE Docs';
+$string['configdocsappurl'] = 'IMCITE URL used to redirect participants';
+$string['docsdescription'] = 'IMCITE Documentation';
+$string['docsectionheading'] = 'IMCITE Docs Settings';
+$string['docsectiondesc'] = 'Configure URLs for IMCITE Docs integration.';
+
 // Keycloak
 $string['keycloakappurl'] = 'Keycloak UI';
 $string['configkeycloakappurl'] = 'Keycloak URL used to redirect users';

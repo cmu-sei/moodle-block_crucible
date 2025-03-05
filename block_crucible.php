@@ -352,6 +352,12 @@ class block_crucible extends block_base {
         } else if ($usermisp = 0) {
             debugging("No user data found on MISP for User: " . $userid, DEBUG_DEVELOPER);
         }
+
+        ////////////////////DOCS/////////////////////////////
+        $data->docs = get_config('block_crucible', 'docsappurl');
+        $data->docsDescription = get_string('docsdescription', 'block_crucible');
+        $data->docsLogo  = $OUTPUT->image_url('docs-logo', 'block_crucible');
+
         if (!empty($userid)) {
             foreach ($data as $key => $value) {
                 if (!in_array($key, ['sitename', 'username', 'welcomemessage'])) {
