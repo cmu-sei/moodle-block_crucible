@@ -131,6 +131,7 @@ class block_crucible extends block_base {
         $data = new stdClass();
         $nodata = new stdClass();
         $data->sitename = $SITE->fullname;
+        $data->shortname = $SITE->shortname;
         $data->username = $USER->firstname;
         $datafiltered = new stdClass();
         $enabledApp = get_config('block_crucible', 'enabled');
