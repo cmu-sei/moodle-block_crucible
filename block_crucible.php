@@ -150,29 +150,47 @@ class block_crucible extends block_base {
         $showcomms = get_config('block_crucible', 'enablecommapps');
 
         ////////////////////PLAYER/////////////////////////////
-        $views = $crucible->get_player_views();
+        $playerurl = get_config('block_crucible', 'playerappurl');
+        $views = null;
+        if ($payerurl) {
+            $views = $crucible->get_player_views();
+        }
         if ($views) {
-            $data->player = get_config('block_crucible', 'playerappurl');
+            $data->player = $playerurl;
             $data->playerDescription = get_string('playerdescription', 'block_crucible');
             $data->playerLogo  = $OUTPUT->image_url('crucible-icon-player', 'block_crucible');
-        } else if ($views == 0) {
+        } else if ($views == 0 && $views != null) {
             debugging("No views found on Player for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($views == null) {
+            debugging("Player not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////PLAYER/////////////////////////////
-        $permsplayer = $crucible->get_player_permissions();
+        $permsplayer = null;
+        if ($playerurl) {
+            $permsplayer = $crucible->get_player_permissions();
+        }
         if ($permsplayer) {
             $data->alloy = get_config('block_crucible', 'alloyappurl');
             $data->alloyDescription = get_string('alloydescription', 'block_crucible');
             $data->alloyLogo  = $OUTPUT->image_url('crucible-icon-alloy', 'block_crucible');
-        } else if ($views == 0) {
+        } else if ($views == 0 && $views != null) {
             debugging("No permissions found on Player for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($views == null) {
+            debugging("Player not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
+
         ////////////////////BLUEPRINT/////////////////////////////
-        $msels = $crucible->get_blueprint_msels();
-        $permsblueprint = $crucible->get_blueprint_permissions();
+        $blueprinturl = get_config('block_crucible', 'blueprintappurl');
+        $msels = null;
+        $permsblueprint = null;
+        if ($blueprinturl) {
+            $msels = $crucible->get_blueprint_msels();
+            $permsblueprint = $crucible->get_blueprint_permissions();
+        }
+
         if (($msels && $showapps) || $permsblueprint) {
-            $data->blueprint = get_config('block_crucible', 'blueprintappurl');
+            $data->blueprint = $blueprinturl;
             $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
             $data->blueprintLogo = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
 
@@ -183,71 +201,107 @@ class block_crucible extends block_base {
             } else {
                 debugging("Roundcube not enabled", DEBUG_DEVELOPER);
             }
-        } else if ($permsblueprint == 0) {
+        } else if ($permsblueprint == 0 && $permsblueprint != null) {
             debugging("No user data found on Blueprint for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($msels == 0) {
+        } else if ($msels == 0 && $msels != null) {
             debugging("No MSELs found on Blueprint for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($permsblueprint == null && $msels == null) {
+            debugging("Blueprint not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////CASTER/////////////////////////////
-        $permscaster = $crucible->get_caster_permissions();
+        $casterurl = get_config('block_crucible', 'casterappurl');
+        $permscaster = null;
+        if ($casterurl) {
+            $permscaster = $crucible->get_caster_permissions();
+        }
+
         if ($permscaster) {
-            $data->caster = get_config('block_crucible', 'casterappurl');
+            $data->caster = $casterurl;
             $data->casterDescription = get_string('casterdescription', 'block_crucible');
             $data->casterLogo  = $OUTPUT->image_url('crucible-icon-caster', 'block_crucible');
-        } else if ($permscaster == 0) {
+        } else if ($permscaster == 0 && $permscaster != null) {
             debugging("No user data found on Caster for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($permscaster == null) {
+            debugging("Caster not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////CITE/////////////////////////////
-        $permscite = $crucible->get_cite_permissions();
-        $evalscite = $crucible->get_cite_evaluations();
+        $citeurl = get_config('block_crucible', 'citeappurl');
+        $permscite = null;
+        $evalscite = null;
+        if ($citeurl) {
+            $permscite = $crucible->get_cite_permissions();
+            $evalscite = $crucible->get_cite_evaluations();
+        }
+
         if (($evalscite && $showapps) || $permscite) {
-            $data->cite = get_config('block_crucible', 'citeappurl');
+            $data->cite = $citeurl;
             $data->citeDescription = get_string('citedescription', 'block_crucible');
             $data->citeLogo  = $OUTPUT->image_url('crucible-icon-cite', 'block_crucible');
-        } else if ($permscite == 0) {
+        } else if ($permscite == 0 && $permscite != null) {
             debugging("No user data found on CITE for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($evalscite = 0) {
+        } else if ($evalscite = 0 && $evalscite != null) {
             debugging("No evaluations found on CITE for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($evalscite == null && $permscite == null) {
+            debugging("CITE not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////GALLERY/////////////////////////////
-        $permsgallery = $crucible->get_gallery_permissions();
-        $exhibitsgallery = $crucible->get_gallery_exhibits();
+        $galleryurl = get_config('block_crucible', 'galleryappurl');
+        $permsgallery = null;
+        $exhibitsgallery = null;
+        if ($galleryurl) {
+            $permsgallery = $crucible->get_gallery_permissions();
+            $exhibitsgallery = $crucible->get_gallery_exhibits();
+        }
+
         if (($exhibitsgallery && $showapps) || $permsgallery) {
-            $data->gallery = get_config('block_crucible', 'galleryappurl');
+            $data->gallery = $galleryurl;
             $data->galleryDescription = get_string('gallerydescription', 'block_crucible');
             $data->galleryLogo  = $OUTPUT->image_url('crucible-icon-gallery', 'block_crucible');
-        } else if ($permsgallery == 0) {
+        } else if ($permsgallery == 0 && $permsgallery != null) {
             debugging("No user data found on Gallery for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($exhibitsgallery = 0) {
+        } else if ($exhibitsgallery = 0 && $exhibitsgallery != null) {
             debugging("No exhibits found on Gallery for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($permsgallery == null && $exhibitsgallery == null) {
+            debugging("Gallery not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////STEAMFITTER/////////////////////////////
-        $permssteam = $crucible->get_steamfitter_permissions();
+        $steamfitterurl = get_config('block_crucible', 'steamfitterappurl');
+        $permssteam = null;
+        if ($steamfitterurl) {
+            $permssteam = $crucible->get_steamfitter_permissions();
+        }
+
         if ($permssteam) {
-            $data->steamfitter = get_config('block_crucible', 'steamfitterappurl');
+            $data->steamfitter = $steamfitterurl;
             $data->steamfitterDescription = get_string('steamfitterdescription', 'block_crucible');
             $data->steamfitterLogo  = $OUTPUT->image_url('crucible-icon-steamfitter', 'block_crucible');
-        } else if ($permssteam == 0) {
+        } else if ($permssteam == 0 && $permssteam != null) {
             debugging("No user data found on Steamfitter for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($permssteam == null) {
+            debugging("Steamfitter not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////RocketChat/////////////////////////////
         if ($showcomms) {
-            $rocketchat = $crucible->get_rocketchat_user_info();
+            $rocketchaturl = get_config('block_crucible', 'rocketchatappurl');
+            $rocketchat = null;
+            if ($rocketchaturl) {
+                $rocketchat = $crucible->get_rocketchat_user_info();
+            }
 
             if ($rocketchat) {
                 $rocketperms = $rocketchat->user->roles;
 
                 if ($showapps) {
-                    $data->rocket = get_config('block_crucible', 'rocketchatappurl');
+                    $data->rocket = $rocketchaturl;
                     $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
                     $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
                 } else if (in_array("admin", $rocketperms)) {
-                    $data->rocket = get_config('block_crucible', 'rocketchatappurl');
+                    $data->rocket = $rocketchaturl;
                     $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
                     $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
                 }
@@ -259,30 +313,44 @@ class block_crucible extends block_base {
         }
 
         ////////////////////TOPOMOJO////////////////////////////
-        $permstopomojo = $crucible->get_topomojo_permissions();
+        $topomojourl = get_config('block_crucible', 'topomojoappurl');
+        $permstopomojo = null;
+        if ($topomojourl) {
+            $permstopomojo = $crucible->get_topomojo_permissions();
+        }
+
         $showtopomojo = get_config('block_crucible', 'showtopomojo');
         if ($permstopomojo || $showtopomojo) {
-            $data->topomojo = get_config('block_crucible', 'topomojoappurl');
+            $data->topomojo = $topomojourl;
             $data->topomojoDescription = get_string('topomojodescription', 'block_crucible');
             $data->topomojoLogo  = $OUTPUT->image_url('topomojo-logo', 'block_crucible');
-        } else if ($permstopomojo == 0) {
+        } else if ($permstopomojo == 0 && $permstopomojo != null) {
             debugging("No user data found on Topomojo for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($permstopomojo == null) {
+            debugging("Topomojo not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////GAMEBOARD/////////////////////////////
-        $permsgameboard = $crucible->get_gameboard_permissions();
-        $activechallenges = $crucible->get_active_challenges();
-        $showgameboard = get_config('block_crucible', 'showgameboard');
-        if (($activechallenges && $showapps) || $permsgameboard || $showgameboard) {
-            $data->gameboard = get_config('block_crucible', 'gameboardappurl');
-            $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
-            $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
-        } else if ($permsgameboard == 0) {
-            debugging("No user data found on Gameboard for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($activechallenges = 0) {
-            debugging("No active challenges found on Gameboard for User: " . $userid, DEBUG_DEVELOPER);
+        $gameboardurl = get_config('block_crucible', 'gameboardappurl');
+        $permsgameboard = null;
+        $activechallenges = null;
+        if ($gameboardurl) {
+            $permsgameboard = $crucible->get_gameboard_permissions();
+            $activechallenges = $crucible->get_active_challenges();
         }
 
+        $showgameboard = get_config('block_crucible', 'showgameboard');
+        if (($activechallenges && $showapps) || $permsgameboard || $showgameboard) {
+            $data->gameboard = $gameboardurl;
+            $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
+            $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
+        } else if ($permsgameboard == 0 && $permsgameboard != null) {
+            debugging("No user data found on Gameboard for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($activechallenges = 0 && $activechallenges != null) {
+            debugging("No active challenges found on Gameboard for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($permsgameboard == null && $activechallenges == null) {
+            debugging("Gameboard not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
+        }
 
         ////////////////////Welcome Message/////////////////////////////
         $optionalmessagecb = get_config('block_crucible', 'customwelcomemessagecb');
@@ -298,7 +366,13 @@ class block_crucible extends block_base {
         $showkeycloak = get_config('block_crucible', 'showkeycloak');
         $userredirect = get_config('block_crucible', 'userredirect');
 
-        $keycloakGroups = $crucible->get_keycloak_groups();
+        $keycloakuserurl = get_config('block_crucible', 'keycloakuserurl');
+        $keycloakadminurl = get_config('block_crucible', 'keycloakadminurl');
+
+        if ($keycloakuserurl || $keycloakadminurl) {
+            $keycloakGroups = $crucible->get_keycloak_groups();
+            $keycloakRoles = $crucible->get_keycloak_roles();
+        }
         
         if (!is_array($keycloakGroups)) {
             $keycloakGroups = $keycloakGroups ? [$keycloakGroups] : [];
@@ -313,8 +387,6 @@ class block_crucible extends block_base {
             }
         }
 
-        $keycloakRoles = $crucible->get_keycloak_roles();
-
         if (!is_array($keycloakRoles)) {
             $keycloakRoles = $keycloakRoles ? [$keycloakRoles] : [];
         }
@@ -325,39 +397,53 @@ class block_crucible extends block_base {
 
         if ($showkeycloak) {
             if ($userredirect) {
-                $data->keycloak = get_config('block_crucible', 'keycloakuserurl');
+                $data->keycloak = $keycloakuserurl;
                 $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                 $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
             }
             else if ($hasAllowedGroup || $keycloakAdmin) {
-                $data->keycloak = get_config('block_crucible', 'keycloakadminurl');
+                $data->keycloak = $keycloakadminurl;
                 $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                 $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
             } else {
-                $data->keycloak = get_config('block_crucible', 'keycloakuserurl');
+                $data->keycloak = $keycloakuserurl;
                 $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                 $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
             }
+        } else {
+            debugging("Keycloak not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////MISP/////////////////////////////
-        $permsmisp = $crucible->get_misp_permissions();
-        $usermisp = $crucible->get_misp_user();
+        $mispurl = get_config('block_crucible', 'mispappurl');
+        $permsmisp = null;
+        $usermisp = null;
+        if ($mispurl) {
+            $permsmisp = $crucible->get_misp_permissions();
+            $usermisp = $crucible->get_misp_user();
+        }
+
         $showmisp = get_config('block_crucible', 'showmisp');
         if (($usermisp && $showapps) || $permsmisp || $showmisp) {
-            $data->misp = get_config('block_crucible', 'mispappurl');
+            $data->misp = $mispurl;
             $data->mispDescription = get_string('mispdescription', 'block_crucible');
             $data->mispLogo  = $OUTPUT->image_url('misp-icon', 'block_crucible');
-        } else if ($permsmisp == 0) {
+        } else if ($permsmisp == 0 && $permsmisp != null) {
             debugging("No user data found on MISP for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($usermisp = 0) {
+        } else if ($usermisp = 0 && $usermisp != null) {
             debugging("No user data found on MISP for User: " . $userid, DEBUG_DEVELOPER);
+        } else if ($permsmisp == null && $usermisp == null) {
+            debugging("MISP not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
         ////////////////////DOCS/////////////////////////////
-        $data->docs = get_config('block_crucible', 'docsappurl');
-        $data->docsDescription = get_string('docsdescription', 'block_crucible');
-        $data->docsLogo  = $OUTPUT->image_url('docs-logo', 'block_crucible');
+        $docsurl = get_config('block_crucible', 'docsappurl');
+
+        if ($docsurl) {
+            $data->docs = $docsurl;
+            $data->docsDescription = get_string('docsdescription', 'block_crucible');
+            $data->docsLogo  = $OUTPUT->image_url('docs-logo', 'block_crucible');
+        }
 
         if (!empty($userid)) {
             foreach ($data as $key => $value) {
