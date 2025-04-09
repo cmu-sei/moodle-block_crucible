@@ -90,8 +90,14 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configcheckbox('block_crucible/showkeycloak',
         get_string('showkeycloak', 'block_crucible'), get_string('configkeycloakshow', 'block_crucible'), 0, 1, 0));
 
-    $settings->add(new admin_setting_configtext('block_crucible/keycloakappurl',
-      get_string('keycloakappurl', 'block_crucible'), get_string('configkeycloakappurl', 'block_crucible'), "", PARAM_URL, 60));
+    $settings->add(new admin_setting_configcheckbox('block_crucible/userredirect',
+        get_string('userredirect', 'block_crucible'), get_string('configuserredirect', 'block_crucible'), 0, 1, 0));
+
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakuserurl',
+      get_string('keycloakuserurl', 'block_crucible'), get_string('configkeycloakuserurl', 'block_crucible'), "", PARAM_URL, 60));
+    
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakadminurl',
+      get_string('keycloakadminurl', 'block_crucible'), get_string('configkeycloakadminurl', 'block_crucible'), "", PARAM_URL, 60));
 
     $settings->add(new admin_setting_configtext('block_crucible/keycloakgroups',
       get_string('keycloakgroups', 'block_crucible'), get_string('configkeycloakgroups', 'block_crucible'),

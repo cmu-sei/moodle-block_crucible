@@ -1045,9 +1045,17 @@ class crucible {
             return 0;
         }
 
-        if ($r->isAdmin || $r->isDirector || $r->isDesigner || $r->isObserver || $r->isTester || $r->isSupport || $r->isRegistrar) {
+        if (
+            (isset($r->isAdmin) && $r->isAdmin) ||
+            (isset($r->isDirector) && $r->isDirector) ||
+            (isset($r->isDesigner) && $r->isDesigner) ||
+            (isset($r->isObserver) && $r->isObserver) ||
+            (isset($r->isTester) && $r->isTester) ||
+            (isset($r->isSupport) && $r->isSupport) ||
+            (isset($r->isRegistrar) && $r->isRegistrar)
+        ) {
             return $r;
-        }
+        }        
         return 0;
 
     }
@@ -1293,12 +1301,12 @@ class crucible {
         }
 
         //Web request
-        $url = get_config('block_crucible', 'keycloakappurl');
+        $url = get_config('block_crucible', 'keycloakadminurl');
         if (empty($url)) {
             return 0;
         }
 
-        $url .= "/realms/master/protocol/openid-connect/token";
+        $url .= "/protocol/openid-connect/token";
 
         $issuerid = get_config('block_crucible', 'issuerid');
         if (!$issuerid) {
@@ -1312,7 +1320,6 @@ class crucible {
 
         // Prepare the POST data as a URL-encoded string.
         $data = "client_id=" . urlencode($clientid) . "&client_secret=" . urlencode($clientsecret) . "&grant_type=client_credentials";
-
         // Set headers.
         $headers = ['Content-Type: application/x-www-form-urlencoded'];
 
@@ -1336,20 +1343,28 @@ class crucible {
 
         if (isset($tokenData['access_token'])) {
             $accessToken = $tokenData['access_token'];
+        } else {
+            debugging("Failed to obtain access token from Keycloak.", DEBUG_DEVELOPER);
+            return false; // Exit early if token not set
         }
 
         // Initialize cURL.
         $ch = curl_init();
 
         // Web request
-        $groupUrl = get_config('block_crucible', 'keycloakappurl');
-        if (empty($groupUrl)) {
+        $realmUrl = get_config('block_crucible', 'keycloakadminurl');
+        if (empty($realmUrl)) {
             return 0;
         }
 
         $userid = $USER->idnumber;
 
-        $groupUrl .= '/admin/realms/master/users/' . urlencode($userid) . '/groups';
+        $realmUrl = rtrim($realmUrl, '/');
+        if (strpos($realmUrl, '/admin/realms/') === false && strpos($realmUrl, '/realms/') !== false) {
+            $realmUrl = str_replace('/realms/', '/admin/realms/', $realmUrl);
+        }
+
+        $groupUrl = $realmUrl . '/users/' . urlencode($userid) . '/groups';
 
         // Set the headers with the Authorization token.
         $headers = [
@@ -1404,12 +1419,12 @@ class crucible {
         }
 
         //Web request
-        $url = get_config('block_crucible', 'keycloakappurl');
+        $url = get_config('block_crucible', 'keycloakadminurl');
         if (empty($url)) {
             return 0;
         }
 
-        $url .= "/realms/master/protocol/openid-connect/token";
+        $url .= "/protocol/openid-connect/token";
 
         $issuerid = get_config('block_crucible', 'issuerid');
         if (!$issuerid) {
@@ -1452,15 +1467,20 @@ class crucible {
         // Initialize cURL.
         $ch = curl_init();
 
-        // Web request
-        $roleUrl = get_config('block_crucible', 'keycloakappurl');
-        if (empty($roleUrl)) {
+        $realmUrl = get_config('block_crucible', 'keycloakadminurl');
+        if (empty($realmUrl)) {
             return 0;
         }
 
         $userid = $USER->idnumber;
 
-        $roleUrl .= '/admin/realms/master/users/' . urlencode($userid) . '/role-mappings/realm';
+        // Normalize and convert to admin API path
+        $realmUrl = rtrim($realmUrl, '/');
+        if (strpos($realmUrl, '/admin/realms/') === false && strpos($realmUrl, '/realms/') !== false) {
+            $realmUrl = str_replace('/realms/', '/admin/realms/', $realmUrl);
+        }
+
+        $roleUrl = $realmUrl . '/users/' . urlencode($userid) . '/role-mappings/realm';
 
         // Set the headers with the Authorization token.
         $headers = [

@@ -173,8 +173,10 @@ $string['docsectionheading'] = 'Docs Settings';
 $string['docsectiondesc'] = 'Configure URLs for Docs integration.';
 
 // Keycloak
-$string['keycloakappurl'] = 'Keycloak UI';
-$string['configkeycloakappurl'] = 'Keycloak URL used to redirect users';
+$string['keycloakuserurl'] = 'Keycloak User URL';
+$string['configkeycloakuserurl'] = 'Specifies the Keycloak URL to which regular users are redirected. Ensure the URL includes the realm component without trailing /.';
+$string['keycloakadminurl'] = 'Keycloak Admin URL';
+$string['configkeycloakadminurl'] = 'Specifies the Keycloak URL to which admins are redirected. Ensure the URL includes the realm component without trailing /.';
 $string['keycloakdescription'] = 'Identity and Access Management';
 $string['keycloaksectionheading'] = 'Keycloak Settings';
 $string['keycloaksectiondesc'] = 'Configure application URLs for Keycloak integration.';
@@ -182,6 +184,8 @@ $string['showkeycloak'] = 'Show Keycloak';
 $string['configkeycloakshow'] = 'Show Keycloak application regardless of user permissions';
 $string['keycloakgroups'] = 'Admin Keycloak Groups';
 $string['configkeycloakgroups'] = 'Enter the names of Keycloak Admin Groups, separated by a "|" character as a delimiter.';
+$string['userredirect'] = "User Account Redirect";
+$string['configuserredirect'] = 'When enabled, redirects all users to the same page used for user account management.';
 
 // MISP
 $string['mispappurl'] = 'MISP UI';
