@@ -152,7 +152,7 @@ class block_crucible extends block_base {
         ////////////////////PLAYER/////////////////////////////
         $playerurl = get_config('block_crucible', 'playerappurl');
         $views = null;
-        if ($payerurl) {
+        if ($playerurl) {
             $views = $crucible->get_player_views();
         }
         if ($views) {
