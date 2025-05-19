@@ -236,7 +236,7 @@ If the required URLs are added, the Gallery block will be added to the Applicati
 
 If the required URLs are added, the Gameboard block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gameboard application or if the user has an active gamespace and the `Show All Applications` is checked or the `Enable Gameboard` is checked.
 
-![Gameboard Settings](img/gameboard-settings.png)
+![Gameboard Settings](img/gameboard-settings-v1.png)
 
 - **Show Gameboard:** Show Gameboard application regardless of user permissions.
 - **Gameboard API:** Enter the API Endpoint URL for the Gameboard application.
@@ -249,7 +249,7 @@ If the required URLs are added, the Gameboard block will be added to the Applica
 
 If the required URLs are added, the MISP block will be added to the Applications block. However, this block will only show if the user has admin privileges in the MISP application or if the user has an account and the `Show All Applications` is checked or the `Enable MISP` is checked.
 
-![MISP Settings](img/misp-settings.png)
+![MISP Settings](img/misp-settings-v1.png)
 
 - **Show MISP:** Show MISP application regardless of user permissions.
 - **MISP UI** Enter the main URL for MISP.
