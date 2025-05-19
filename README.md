@@ -1,4 +1,24 @@
 # Crucible Applications Landing Page Block for Moodle
+
+## Table of Contents
+
+1. [Description](#description)  
+2. [License](#license)
+3. [Installation](#1-installation)  
+   - [Requirements](#11-requirements)  
+   - [Configure the Oauth2 Issuer](#12-configure-the-oauth2-issuer)  
+   - [Steps to Install](#13-steps-to-install)  
+   - [Post-Installation Check](#14-post-installation-check)  
+4. [Configuration](#2-configuration)  
+   - [Global Settings](#21-global-settings)  
+   - [Application Display Settings](#22-application-display-settings)  
+5. [Usage Guide](#3-usage-guide)  
+   - [How Users See the Landing Page](#31-how-users-see-the-landing-page)  
+   - [Alternative Displays for Specific Scenarios](#32-alternative-displays-for-specific-scenarios)  
+6. [Technical Details](#4-technical-details)  
+   - [Code Structure and Files](#41-code-structure-and-files)  
+   - [Key Functions and Logic](#42-key-functions-and-logic)  
+
 ## Description
 The Crucible Applications Landing Page Block plugin for Moodle provides a streamlined "landing page" experience by displaying a list of integrated applications for users. Using a shared OAUTH account, the plugin identifies applications the user has permission to access, showing relevant icons and links. This block is intended for display on the user's dashboard, giving them quick, centralized access to all learning environment applications without needing to remember each URL.
 
@@ -40,7 +60,7 @@ Follow these steps to add Keycloak as an Oauth2 Identity Provider (IdP):
 #### 1.2.2 Fill in Isssuer Settings
 1. On the Oauth2 Settings page, fill the following fields accordingly:
 
-<img src="./assets/oauth2-settings-issuers.png" alt="Issuer Settings" width="600">
+![Issuer Settings](img/oauth2-settings-issuers.png)
 
 | Field                                            | Value                                                           |
 | ------------------------------------------------ | --------------------------------------------------------------- |
@@ -62,7 +82,7 @@ Follow these steps to add Keycloak as an Oauth2 Identity Provider (IdP):
 #### 1.2.3 Adding a User Field Mapping
 Map the Keycloak **sub** field (a unique user ID) to Moodle's internal **idnumber** field to identify users consistently.
 
-<img src="./assets/user-mappings.png" alt="User Mappings" width="600">
+![User Mappings](img/user-mappings.png)
 
 1. Navigate to `Site Administration > Server > Oauth2 Services`.
 2. Locate the configured Oauth2 issuers (e.g., Keycloak).
@@ -102,7 +122,7 @@ After installation, confirm the plugin's presency by:
 - Checking `Site Administration > Plugins > Blocks` to verify the plugin is listed.
 - Navigating to a user's dashboard and confirming that the block appears as an option in the block selection menu.
 
-<img src="./assets/block-menu.png" alt="Block Menu" width="600">
+![Block Menu](img/block-menu.png)
 
 ## 2. Configuration
 ### 2.1 Global Settings
@@ -113,7 +133,7 @@ Access global settings by going to `Site Administration > Plugins > Blocks > App
 - **Disable Block Title:** Optionally set a custom title for the block as it appears to users.
 - **Enable Custom Welcome Message:** Option to enable a custom welcome message for users and enter a specific message to be displayed.
 
-<img src="./assets/global-settings.png" alt="Global Settings" width="600">
+![Global Settings](img/global-settings.png)
 
 ### 2.2 Application Display Settings
 In this section, you can configure each application individually by setting URLs, API keys, and enabling/disabling each app.
@@ -126,7 +146,7 @@ Each application has a dedicated settings section. Expand each section to get an
 
 If enabled, the Keycloak block will be added to the Applications block. If the user has admin privileges or is part of a group that has admin privileges, the URL provided to the user will contain the `/admin/master/console` path. For regular users, the URL provided to the user will contain the `/realms/master/account` path.
 
-<img src="./assets/keycloak-settings.png" alt="Keycloak Settings" width="600">
+![Keycloak Settings](img/keycloak-settings.png)
 
 - **Show Keycloak:** Show Keycloak application regardless of user permissions.
 - **User Account Redirect:** When enabled, redirects all users to the same page used for user account management.
@@ -146,7 +166,7 @@ These configurations are essential to ensure seamless communication between Mood
 
 If the required URLs are added, the Alloy block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Player application or if the user has any active views in the Player application. As a requirement, for this block to be enabled, the Player block should also be configured.
 
-<img src="./assets/alloy-settings.png" alt="Alloy Settings" width="600">
+![Alloy Settings](img/alloy-settings.png)
 
 - **Show Alloy:** Show Alloy application regardless of user permissions.
 - **Allow API:** Enter the API Endpoint URL for the Alloy application.
@@ -158,7 +178,7 @@ If the required URLs are added, the Alloy block will be added to the Application
 
 If the required URLs are added, the Blueprint block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Blueprint application or if the user has any MSELs and the `Show All Applications` is checked.
 
-<img src="./assets/blueprint-settings.png" alt="Bluprint Settings" width="600">
+![Blueprint Settings](img/blueprint-settings.png)
 
 - **Show Blueprint:** Show Blueprint application regardless of user permissions.
 - **Blueprint API:** Enter the API Endpoint URL for the Blueprint application.
@@ -170,7 +190,7 @@ If the required URLs are added, the Blueprint block will be added to the Applica
 
 If the required URLs are added, the Caster block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Caster application.
 
-<img src="./assets/caster-settings.png" alt="Caster Settings" width="600">
+![Caster Settings](img/caster-settings.png)
 
 - **Show Caster:** Show Caster application regardless of user permissions.
 - **Caster API:** Enter the API Endpoint URL for the Caster application.
@@ -182,7 +202,7 @@ If the required URLs are added, the Caster block will be added to the Applicatio
 
 If the required URLs are added, the CITE block will be added to the Applications block. However, this block will only show if the user has admin privileges in the CITE application or if the user has an active evaluation and the `Show All Applications` is checked.
 
-<img src="./assets/cite-settings.png" alt="CITE Settings" width="600">
+![CITE Settings](img/cite-settings.png)
 
 - **Show CITE:** Show CITE application regardless of user permissions.
 - **CITE API:** Enter the API Endpoint URL for the CITE application.
@@ -194,7 +214,7 @@ If the required URLs are added, the CITE block will be added to the Applications
 
 If the required URL is added, the Docs block will be added to the Applications block.
 
-<img src="./assets/docs-settings.png" alt="Docs Settings" width="600">
+![Docs Settings](img/docs-settings.png)
 
 - **Docs UI:** Enter the main URL for Docs instance.
 </details>
@@ -204,7 +224,7 @@ If the required URL is added, the Docs block will be added to the Applications b
 
 If the required URLs are added, the Gallery block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gallery application or if the user has an active exhibit and the `Show All Applications` is checked.
 
-<img src="./assets/gallery-settings.png" alt="Gallery Settings" width="600">
+![Gallery Settings](img/gallery-settings.png)
 
 - **Show Gallery:** Show Gallery application regardless of user permissions.
 - **Gallery API:** Enter the API Endpoint URL for the Gallery application.
@@ -216,7 +236,7 @@ If the required URLs are added, the Gallery block will be added to the Applicati
 
 If the required URLs are added, the Gameboard block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gameboard application or if the user has an active gamespace and the `Show All Applications` is checked or the `Enable Gameboard` is checked.
 
-<img src="./assets/gameboard-settings.png" alt="Gameboard Settings" width="600">
+![Gameboard Settings](img/gameboard-settings.png)
 
 - **Show Gameboard:** Show Gameboard application regardless of user permissions.
 - **Gameboard API:** Enter the API Endpoint URL for the Gameboard application.
@@ -229,7 +249,7 @@ If the required URLs are added, the Gameboard block will be added to the Applica
 
 If the required URLs are added, the MISP block will be added to the Applications block. However, this block will only show if the user has admin privileges in the MISP application or if the user has an account and the `Show All Applications` is checked or the `Enable MISP` is checked.
 
-<img src="./assets/misp-settings.png" alt="MISP Settings" width="600">
+![MISP Settings](img/misp-settings.png)
 
 - **Show MISP:** Show MISP application regardless of user permissions.
 - **MISP UI** Enter the main URL for MISP.
@@ -241,7 +261,7 @@ If the required URLs are added, the MISP block will be added to the Applications
 
 If the required URLs are added, the Player block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Player application or if the user has an active Player view.
 
-<img src="./assets/player-settings.png" alt="Player Settings" width="600">
+![Player Settings](img/player-settings.png)
 
 - **Show Player:** Show Player application regardless of user permissions.
 - **Player API:** Enter the API URL for Player.
@@ -253,7 +273,7 @@ If the required URLs are added, the Player block will be added to the Applicatio
 
 If the required URLs are added, the Steamfitter block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Steamfitter application.
 
-<img src="./assets/steamfitter-settings.png" alt="Steamfitter Settings" width="600">
+![Steamfitter Settings](img/steamfitter-settings.png)
 
 - **Show Steamfitter:** Show Steamfitter application regardless of user permissions.
 - **Steamfitter API:** Enter the API URL for Steamfitter.
@@ -265,7 +285,7 @@ If the required URLs are added, the Steamfitter block will be added to the Appli
 
 If the required URLs are added, the TopoMojo block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Topomojo application or the `Enable TopoMojo` is checked.
 
-<img src="./assets/topomojo-settings.png" alt="TopoMojo Settings" width="600">
+![TopoMojo Settings](img/topomojo-settings.png)
 
 - **Show TopoMojo:** Show TopoMojo application regardless of user permissions.
 - **TopoMojo API:** Enter the API URL for Steamfitter.
@@ -276,7 +296,7 @@ If the required URLs are added, the TopoMojo block will be added to the Applicat
 <details>
 <summary><strong>Communication Apps</strong></summary>
 
-<img src="./assets/communication-settings.png" alt="Communication Apps Settings" width="600">
+![Communication Settings](img/communication-settings.png)
 
 - **Enable Communication Apps:** Toggle visibility of all communication-related applications.
 </details>
@@ -286,7 +306,7 @@ If the required URLs are added, the TopoMojo block will be added to the Applicat
 
 If the required URLs are added and the `Enable Communication Apps` is checked, the Rocket.Chat block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Rocket.Chat application or the user has an account.
 
-<img src="./assets/roundcube-rocketchat-settings.png" alt="Roundcube & Rocket.Chat Settings" width="600">
+![Roundcube Rocketchat Settings](img/roundcube-rocketchat-settings.png)
 
 - **Rocket.Chat API:** Enter the API URL for Rocket.chat.
 - **Rocket.Chat UI:** Enter the main URL for Rocket.Chat.
@@ -306,7 +326,7 @@ Once configured, users will see a landing page with icons and links to the appli
 - **Description:** Brief description of the application.
 - **Direct Link:** Clicking the tile directs the user to the application.
 
-<img src="./assets/dashboard-look.png" alt="Dashboard Look" width="600">
+![Dashboard Look](img/dashboard-look.png)
 
 ### 3.2 Alternative Displays for Specific Scenarios
 In certain cases, the plugin may display alternative views for the user depending on the configuration state:
@@ -315,13 +335,13 @@ In certain cases, the plugin may display alternative views for the user dependin
 If OAuth is not properly configured, or the user is not authenticated through OAuth:
 - The plugin will display a message informing the user that the application list cannot be loaded because OAuth integration is required.
 
-<img src="./assets/no-auth.png" alt="No Auth" width="600">
+![No Auth](img/no-auth.png)
 
 2. **Plugin Not Enabled:**
 If the plugin is disabled globally in the settings:
 - The block will either not appear on the user's dashboard, or it will display a message informing the user that the plugin is not currently enabled.
 
-<img src="./assets/not-enabled.png" alt="Not Enabled" width="600">
+![Not Enabled](img/not-enabled.png)
 
 ## 4. Technical Details
 ### 4.1 Code Structure and Files
