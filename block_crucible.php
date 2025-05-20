@@ -199,14 +199,6 @@ class block_crucible extends block_base {
             $data->blueprint = $blueprinturl;
             $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
             $data->blueprintLogo = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
-
-            if ($permsblueprint && $showcomms) {
-                $data->roundcube = get_config('block_crucible', 'roundcubeappurl');
-                $data->roundcubeDescription = get_string('roundcubedescription', 'block_crucible');
-                $data->roundcubeLogo = $OUTPUT->image_url('icon-roundcube', 'block_crucible');
-            } else {
-                debugging("Roundcube not enabled", DEBUG_DEVELOPER);
-            }
         } else if ($permsblueprint == 0 && $permsblueprint != null) {
             debugging("No user data found on Blueprint for User: " . $userid, DEBUG_DEVELOPER);
         } else if ($msels == 0 && $msels != null) {
@@ -304,31 +296,47 @@ class block_crucible extends block_base {
         }
 
         ////////////////////RocketChat/////////////////////////////
-        if ($showcomms) {
-            $rocketchaturl = get_config('block_crucible', 'rocketchatappurl');
-            $rocketchat = null;
 
-            if ($rocketchaturl) {
-                $rocketchat = $crucible->get_rocketchat_user_info();
+        $rocketchaturl = get_config('block_crucible', 'rocketchatappurl');
+        $rocketchat = null;
+        $showrocketchat = null;
+
+        if ($rocketchaturl) {
+            $rocketchat = $crucible->get_rocketchat_user_info();
+            $showrocketchat = get_config('block_crucible', 'showrocketchat');
+        }
+
+        if ($rocketchat) {
+            $rocketperms = $rocketchat->user->roles;
+        
+            if ($showapps || in_array("admin", $rocketperms)) {
+                $data->rocket = $rocketchaturl;
+                $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
+                $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
             }
+        } else if ($showrocketchat) {
+            $data->rocket = $rocketchaturl;
+            $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
+            $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
+        } else if ($rocketchat === -1) {
+            debugging("Rocket.Chat is not configured", DEBUG_DEVELOPER);
+        }
+        
 
-            if ($rocketchat) {
-                $rocketperms = $rocketchat->user->roles;
+         ////////////////////Roundcube/////////////////////////////
+        $roundcubeurl = get_config('block_crucible', 'roundcubeappurl');
+        $showroundcube = null;
 
-                if ($showapps) {
-                    $data->rocket = $rocketchaturl;
-                    $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-                    $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-                } else if (in_array("admin", $rocketperms)) {
-                    $data->rocket = $rocketchaturl;
-                    $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-                    $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-                }
-            } else if ($rocketchat == -1) {
-                debugging("Rocket.Chat is not configured", DEBUG_DEVELOPER);
-            }
-        } else if ($showcomms == 0) {
-            debugging("Rocket.Chat not enabled", DEBUG_DEVELOPER);
+        if ($roundcubeurl) {
+            $showroundcube = get_config('block_crucible', 'showroundcube');
+        }
+ 
+        if ($showroundcube) {
+            $data->roundcube = get_config('block_crucible', 'roundcubeappurl');
+            $data->roundcubeDescription = get_string('roundcubedescription', 'block_crucible');
+            $data->roundcubeLogo = $OUTPUT->image_url('icon-roundcube', 'block_crucible');
+        } else {
+            debugging("Roundcube not enabled", DEBUG_DEVELOPER);
         }
 
         ////////////////////TOPOMOJO////////////////////////////

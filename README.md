@@ -142,29 +142,9 @@ In this section, you can configure each application individually by setting URLs
 Each application has a dedicated settings section. Expand each section to get an overview of each configurable application and its specific settings:
 
 <details>
-<summary><strong>Keycloak:</strong> Open Source Identity and Access Management</summary>
-
-If enabled, the Keycloak block will be added to the Applications block. If the user has admin privileges or is part of a group that has admin privileges, the URL provided to the user will contain the `/admin/master/console` path. For regular users, the URL provided to the user will contain the `/realms/master/account` path.
-
-![Keycloak Settings](img/keycloak-settings.png)
-
-- **Show Keycloak:** Show Keycloak application regardless of user permissions.
-- **User Account Redirect:** When enabled, redirects all users to the same page used for user account management.
-- **Keycloak User URL:** Specifies the Keycloak URL to which regular users are redirected. Ensure the URL includes the realm component without trailing /.
-- **Keycloak Admin URL:** Specifies the Keycloak URL tto which admins are redirected. Ensure the URL includes the realm component without trailing /.
-- **Admin Keycloak Groups:** Specify groups relevant to Keycloak for role-based permissions.
-
-**Additional Configuration Requirements:**
-- **Moodle Client Configuration in Keycloak:** The Keycloak integration will only function correctly if the Moodle client in Keycloak has the `Service Account` configuration enabled. This setup allows the Applications block to authenticate as a service account and access Keycloak's APIs for roles and groups.
-- **View Roles in Keycloak:** To enable proper role-based permissions, the Keycloak client must also be configured to include `view roles` in the `Service Account Roles` section. This ensures that user roles are correctly fetched and applied for filtering and permissions management.
-
-These configurations are essential to ensure seamless communication between Moodle and Keycloak for user authentication and role-based permissions.
-</details>
-
-<details>
 <summary><strong>Alloy: </strong>Conducting a Simulation</summary>
 
-If the required URLs are added, the Alloy block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Player application or if the user has any active views in the Player application. As a requirement, for this block to be enabled, the Player block should also be configured.
+If the required URLs are added, the Alloy block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Player application or if the user has any active views in the Player application. As a requirement, for this block to be enabled, the Player block should also be configured or the `Show Alloy` is checked.
 
 ![Alloy Settings](img/alloy-settings.png)
 
@@ -176,7 +156,7 @@ If the required URLs are added, the Alloy block will be added to the Application
 <details>
 <summary><strong>Blueprint: </strong>Building a MSEL</summary>
 
-If the required URLs are added, the Blueprint block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Blueprint application or if the user has any MSELs and the `Show All Applications` is checked.
+If the required URLs are added, the Blueprint block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Blueprint application or if the user has any MSELs and the `Show All Applications` is checked or the `Show Blueprint` is checked.
 
 ![Blueprint Settings](img/blueprint-settings.png)
 
@@ -188,7 +168,7 @@ If the required URLs are added, the Blueprint block will be added to the Applica
 <details>
 <summary><strong>Caster: </strong>Coding a Topology</summary>
 
-If the required URLs are added, the Caster block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Caster application.
+If the required URLs are added, the Caster block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Caster application or the `Show Caster` is checked.
 
 ![Caster Settings](img/caster-settings.png)
 
@@ -200,7 +180,7 @@ If the required URLs are added, the Caster block will be added to the Applicatio
 <details>
 <summary><strong>CITE: </strong>Evaluating Threats</summary>
 
-If the required URLs are added, the CITE block will be added to the Applications block. However, this block will only show if the user has admin privileges in the CITE application or if the user has an active evaluation and the `Show All Applications` is checked.
+If the required URLs are added, the CITE block will be added to the Applications block. However, this block will only show if the user has admin privileges in the CITE application or if the user has an active evaluation and the `Show All Applications` is checked or the `Show CITE` is checked.
 
 ![CITE Settings](img/cite-settings.png)
 
@@ -222,7 +202,7 @@ If the required URL is added, the Docs block will be added to the Applications b
 <details>
 <summary><strong>Gallery: </strong>Keeping You in the Know!</summary>
 
-If the required URLs are added, the Gallery block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gallery application or if the user has an active exhibit and the `Show All Applications` is checked.
+If the required URLs are added, the Gallery block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gallery application or if the user has an active exhibit and the `Show All Applications` is checked or the `Show Gallery` is checked.
 
 ![Gallery Settings](img/gallery-settings.png)
 
@@ -234,7 +214,7 @@ If the required URLs are added, the Gallery block will be added to the Applicati
 <details>
 <summary><strong>Gameboard: </strong>Virtual Lab Training and Competition Platform</summary>
 
-If the required URLs are added, the Gameboard block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gameboard application or if the user has an active gamespace and the `Show All Applications` is checked or the `Enable Gameboard` is checked.
+If the required URLs are added, the Gameboard block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gameboard application or if the user has an active gamespace and the `Show All Applications` is checked or the `Show Gameboard` is checked.
 
 ![Gameboard Settings](img/gameboard-settings-v1.png)
 
@@ -245,9 +225,29 @@ If the required URLs are added, the Gameboard block will be added to the Applica
 </details>
 
 <details>
+<summary><strong>Keycloak:</strong> Open Source Identity and Access Management</summary>
+
+If enabled, the Keycloak block will be added to the Applications block. If the user has admin privileges or is part of a group that has admin privileges, the URL provided to the user will contain the `/admin/master/console` path. For regular users, the URL provided to the user will contain the `/realms/master/account` path.
+
+![Keycloak Settings](img/keycloak-settings.png)
+
+- **Show Keycloak:** Show Keycloak application regardless of user permissions.
+- **User Account Redirect:** When enabled, redirects all users to the same page used for user account management.
+- **Keycloak User URL:** Specifies the Keycloak URL to which regular users are redirected. Ensure the URL includes the realm component without trailing /.
+- **Keycloak Admin URL:** Specifies the Keycloak URL tto which admins are redirected. Ensure the URL includes the realm component without trailing /.
+- **Admin Keycloak Groups:** Specify groups relevant to Keycloak for role-based permissions.
+
+**Additional Configuration Requirements:**
+- **Moodle Client Configuration in Keycloak:** The Keycloak integration will only function correctly if the Moodle client in Keycloak has the `Service Account` configuration enabled. This setup allows the Applications block to authenticate as a service account and access Keycloak's APIs for roles and groups.
+- **View Roles in Keycloak:** To enable proper role-based permissions, the Keycloak client must also be configured to include `view roles` in the `Service Account Roles` section. This ensures that user roles are correctly fetched and applied for filtering and permissions management.
+
+These configurations are essential to ensure seamless communication between Moodle and Keycloak for user authentication and role-based permissions.
+</details>
+
+<details>
 <summary><strong>MISP: </strong>Threat Intelligence and Sharing Platform</summary>
 
-If the required URLs are added, the MISP block will be added to the Applications block. However, this block will only show if the user has admin privileges in the MISP application or if the user has an account and the `Show All Applications` is checked or the `Enable MISP` is checked.
+If the required URLs are added, the MISP block will be added to the Applications block. However, this block will only show if the user has admin privileges in the MISP application or if the user has an account and the `Show All Applications` is checked or the `Show MISP` is checked.
 
 ![MISP Settings](img/misp-settings-v1.png)
 
@@ -259,7 +259,7 @@ If the required URLs are added, the MISP block will be added to the Applications
 <details>
 <summary><strong>Player: </strong>Designing User Interfaces</summary>
 
-If the required URLs are added, the Player block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Player application or if the user has an active Player view.
+If the required URLs are added, the Player block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Player application or if the user has an active Player view or the `Show Player` is checked.
 
 ![Player Settings](img/player-settings.png)
 
@@ -269,10 +269,33 @@ If the required URLs are added, the Player block will be added to the Applicatio
 </details>
 
 <details>
+<summary><strong>Rocket.Chat</strong></summary>
+
+If the required URLs are added, the Rocket.chat block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Rocket.Chat application, the user has an account or the `Show Rocket.Chat` is checked.
+
+![Rocketchat Settings](img/rocketchat-settings.png)
+
+- **Show Rocket.Chat:** Show Rocket.Chat application regardless of user permissions.
+- **Rocket.Chat API:** Enter the API URL for Rocket.chat.
+- **Rocket.Chat UI:** Enter the main URL for Rocket.Chat.
+- **Rocket.Chat Auth Token:** Enter the authentication token required for integration.
+- **Rocket.Chat User ID:** Specify the user ID tied to the authentication token for Rocket.Chat.
+</details>
+
+<details>
+<summary><strong>Roundcube</strong></summary>
+
+For Roundcube, if the required URL is added and the `Show Roundcube` is checked, the Roundcube block will be added to the Applications block.
+
+![Roundcube Settings](img/roundcube-settings.png)
+
+- **Roundcube UI:** Enter the URL for the Roundcube application.
+</details>
+
+<details>
 <summary><strong>Steamfitter: </strong>Crafting a Scenario</summary>
 
-If the required URLs are added, the Steamfitter block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Steamfitter application.
-
+If the required URLs are added, the Steamfitter block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Steamfitter application or the `Show Steamfitter` is checked.
 ![Steamfitter Settings](img/steamfitter-settings.png)
 
 - **Show Steamfitter:** Show Steamfitter application regardless of user permissions.
@@ -283,7 +306,7 @@ If the required URLs are added, the Steamfitter block will be added to the Appli
 <details>
 <summary><strong>TopoMojo: </strong>Virtual Lab Builder</summary>
 
-If the required URLs are added, the TopoMojo block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Topomojo application or the `Enable TopoMojo` is checked.
+If the required URLs are added, the TopoMojo block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Topomojo application or the `Show TopoMojo` is checked.
 
 ![TopoMojo Settings](img/topomojo-settings.png)
 
@@ -291,31 +314,6 @@ If the required URLs are added, the TopoMojo block will be added to the Applicat
 - **TopoMojo API:** Enter the API URL for Steamfitter.
 - **TopoMojo UI:** Enter the main URL for Steamfitter.
 - **TopoMojo API Key:** Enter the API key required for integration.
-</details>
-
-<details>
-<summary><strong>Communication Apps</strong></summary>
-
-![Communication Settings](img/communication-settings.png)
-
-- **Enable Communication Apps:** Toggle visibility of all communication-related applications.
-</details>
-
-<details>
-<summary><strong>Rocket.Chat & Roundcube</strong></summary>
-
-If the required URLs are added and the `Enable Communication Apps` is checked, the Rocket.Chat block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Rocket.Chat application or the user has an account.
-
-![Roundcube Rocketchat Settings](img/roundcube-rocketchat-settings.png)
-
-- **Rocket.Chat API:** Enter the API URL for Rocket.chat.
-- **Rocket.Chat UI:** Enter the main URL for Rocket.Chat.
-- **Rocket.Chat Auth Token:** Enter the authentication token required for integration.
-- **Rocket.Chat User ID:** Specify the user ID tied to the authentication token for Rocket.Chat.
-
-For Roundcube, if the required URL is added and the `Enable Communications Apps` is checked, the Roundcube block will be added to the Applications block. However, the block will only show if the user has admin privileges in the Blueprint application.
-
-- **Roundcube UI:** Enter the URL for the Roundcube application.
 </details>
 
 ## 3. Usage Guide

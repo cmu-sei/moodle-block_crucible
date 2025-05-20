@@ -79,29 +79,6 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/customwelcomemessage',
         get_string('customwelcomemessage', 'block_crucible'), get_string('configcustomwelcomemessage', 'block_crucible'),
          "", PARAM_RAW, 60));
-
-    // Keycloak
-    $settings->add(new admin_setting_heading(
-        'block_crucible/keycloaksectionheading',
-        get_string('keycloaksectionheading', 'block_crucible'), 
-        get_string('keycloaksectiondesc', 'block_crucible')
-    ));
-
-    $settings->add(new admin_setting_configcheckbox('block_crucible/showkeycloak',
-        get_string('showkeycloak', 'block_crucible'), get_string('configkeycloakshow', 'block_crucible'), 0, 1, 0));
-
-    $settings->add(new admin_setting_configcheckbox('block_crucible/userredirect',
-        get_string('userredirect', 'block_crucible'), get_string('configuserredirect', 'block_crucible'), 0, 1, 0));
-
-    $settings->add(new admin_setting_configtext('block_crucible/keycloakuserurl',
-      get_string('keycloakuserurl', 'block_crucible'), get_string('configkeycloakuserurl', 'block_crucible'), "", PARAM_URL, 60));
-    
-    $settings->add(new admin_setting_configtext('block_crucible/keycloakadminurl',
-      get_string('keycloakadminurl', 'block_crucible'), get_string('configkeycloakadminurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/keycloakgroups',
-      get_string('keycloakgroups', 'block_crucible'), get_string('configkeycloakgroups', 'block_crucible'),
-       "", PARAM_RAW, 60));
     
 
     // Alloy
@@ -214,7 +191,30 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/gameboardapikey',
       get_string('gameboardapikey', 'block_crucible'), get_string('configgameboardapikey', 'block_crucible'), "", PARAM_RAW, 60));
 
-    // MISP
+    // Keycloak
+    $settings->add(new admin_setting_heading(
+        'block_crucible/keycloaksectionheading',
+        get_string('keycloaksectionheading', 'block_crucible'), 
+        get_string('keycloaksectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showkeycloak',
+        get_string('showkeycloak', 'block_crucible'), get_string('configkeycloakshow', 'block_crucible'), 0, 1, 0));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/userredirect',
+        get_string('userredirect', 'block_crucible'), get_string('configuserredirect', 'block_crucible'), 0, 1, 0));
+
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakuserurl',
+      get_string('keycloakuserurl', 'block_crucible'), get_string('configkeycloakuserurl', 'block_crucible'), "", PARAM_URL, 60));
+    
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakadminurl',
+      get_string('keycloakadminurl', 'block_crucible'), get_string('configkeycloakadminurl', 'block_crucible'), "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakgroups',
+      get_string('keycloakgroups', 'block_crucible'), get_string('configkeycloakgroups', 'block_crucible'),
+       "", PARAM_RAW, 60));
+    
+      // MISP
     $settings->add(new admin_setting_heading(
         'block_crucible/mispsectionheading',
         get_string('mispsectionheading', 'block_crucible'), 
@@ -247,6 +247,47 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/playerappurl',
         get_string('playerappurl', 'block_crucible'), get_string('configplayerappurl', 'block_crucible'), "", PARAM_URL, 60));
 
+    // Rocket.Chat
+    $settings->add(new admin_setting_heading(
+        'block_crucible/rocketchatsectionheading',
+        get_string('rocketchatsectionheading', 'block_crucible'),
+        get_string('rocketchatsectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showrocketchat',
+        get_string('showrocketchat', 'block_crucible'), get_string('configrocketchatshow', 'block_crucible'), 0, 1, 0));
+
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
+        get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'),
+        "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatappurl',
+        get_string('rocketchatappurl', 'block_crucible'), get_string('configrocketchatappurl', 'block_crucible'),
+        "", PARAM_URL, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatauthtoken',
+        get_string('rocketchatauthtoken', 'block_crucible'), get_string('configrocketchatauthtoken', 'block_crucible'),
+        "", PARAM_RAW, 60));
+
+    $settings->add(new admin_setting_configtext('block_crucible/rocketchatuserid',
+        get_string('rocketchatuserid', 'block_crucible'), get_string('configrocketchatuserid', 'block_crucible'),
+        "", PARAM_RAW, 60));
+
+    // Roundcube
+    $settings->add(new admin_setting_heading(
+        'block_crucible/roundcubesectionheading',
+        get_string('roundcubesectionheading', 'block_crucible'),
+        get_string('roundcubesectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showroundcube',
+        get_string('showroundcube', 'block_crucible'), get_string('configroundcubeshow', 'block_crucible'), 0, 1, 0));
+    
+    $settings->add(new admin_setting_configtext('block_crucible/roundcubeappurl',
+        get_string('roundcubeappurl', 'block_crucible'), get_string('configroundcubeappurl', 'block_crucible'),
+         "", PARAM_URL, 60));
+
+
     // Steamfitter
     $settings->add(new admin_setting_heading(
         'block_crucible/steamfittersectionheading',
@@ -270,7 +311,6 @@ if ($ADMIN->fulltree) {
         get_string('topomojosectiondesc', 'block_crucible')
     ));
 
-    // Checkbox
     $settings->add(new admin_setting_configcheckbox('block_crucible/showtopomojo',
         get_string('showtopomojo', 'block_crucible'), get_string('configtopomojoshow', 'block_crucible'), 0, 1, 0));
 
@@ -283,43 +323,6 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/topomojoapikey',
       get_string('topomojoapikey', 'block_crucible'), get_string('configtopomojoapikey', 'block_crucible'), "", PARAM_RAW, 60));
 
-    // Communications Checkbox
-    $settings->add(new admin_setting_heading(
-        'block_crucible/commsectionheading',
-        get_string('commsectionheading', 'block_crucible'),
-        get_string('commsectiondesc', 'block_crucible')
-    ));
 
-    $settings->add(new admin_setting_configcheckbox('block_crucible/enablecommapps',
-        get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
-        get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'),
-        "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatappurl',
-        get_string('rocketchatappurl', 'block_crucible'), get_string('configrocketchatappurl', 'block_crucible'),
-         "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatauthtoken',
-        get_string('rocketchatauthtoken', 'block_crucible'), get_string('configrocketchatauthtoken', 'block_crucible'),
-         "", PARAM_RAW, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatuserid',
-        get_string('rocketchatuserid', 'block_crucible'), get_string('configrocketchatuserid', 'block_crucible'),
-         "", PARAM_RAW, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/roundcubeappurl',
-        get_string('roundcubeappurl', 'block_crucible'), get_string('configroundcubeappurl', 'block_crucible'),
-         "", PARAM_URL, 60));
-
-    // Hide communications settings if the checkbox is not checked
-    $settings->hide_if('block_crucible/roundcubesectionheading', 'block_crucible/enablecommapps', 'notchecked', 1);
-    $settings->hide_if('block_crucible/rocketchatapiurl', 'block_crucible/enablecommapps', 'notchecked', 1);
-    $settings->hide_if('block_crucible/rocketchatappurl', 'block_crucible/enablecommapps', 'notchecked', 1);
-    $settings->hide_if('block_crucible/rocketchatauthtoken', 'block_crucible/enablecommapps', 'notchecked', 1);
-    $settings->hide_if('block_crucible/rocketchatuserid', 'block_crucible/enablecommapps', 'notchecked', 1);
-    $settings->hide_if('block_crucible/roundcubeappurl', 'block_crucible/enablecommapps', 'notchecked', 1);
     $settings->hide_if('block_crucible/customwelcomemessage', 'block_crucible/customwelcomemessagecb', 'notchecked', 1);
-
 }
