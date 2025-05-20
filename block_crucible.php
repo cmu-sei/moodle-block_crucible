@@ -151,6 +151,7 @@ class block_crucible extends block_base {
 
         ////////////////////PLAYER/////////////////////////////
         $playerurl = get_config('block_crucible', 'playerappurl');
+
         $views = null;
         if ($playerurl) {
             $views = $crucible->get_player_views();
@@ -165,12 +166,14 @@ class block_crucible extends block_base {
             debugging("Player not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
-        ////////////////////PLAYER/////////////////////////////
         $permsplayer = null;
+        $showplayer = null;
+
         if ($playerurl) {
             $permsplayer = $crucible->get_player_permissions();
+            $showplayer = get_config('block_crucible', 'showplayer');
         }
-        if ($permsplayer) {
+        if ($permsplayer || $showplayer) {
             $data->alloy = get_config('block_crucible', 'alloyappurl');
             $data->alloyDescription = get_string('alloydescription', 'block_crucible');
             $data->alloyLogo  = $OUTPUT->image_url('crucible-icon-alloy', 'block_crucible');
@@ -184,12 +187,15 @@ class block_crucible extends block_base {
         $blueprinturl = get_config('block_crucible', 'blueprintappurl');
         $msels = null;
         $permsblueprint = null;
+        $showblueprint = null;
+
         if ($blueprinturl) {
             $msels = $crucible->get_blueprint_msels();
             $permsblueprint = $crucible->get_blueprint_permissions();
+            $showblueprint = get_config('block_crucible', 'showblueprint');
         }
 
-        if (($msels && $showapps) || $permsblueprint) {
+        if (($msels && $showapps) || $permsblueprint || $showblueprint) {
             $data->blueprint = $blueprinturl;
             $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
             $data->blueprintLogo = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
@@ -212,11 +218,14 @@ class block_crucible extends block_base {
         ////////////////////CASTER/////////////////////////////
         $casterurl = get_config('block_crucible', 'casterappurl');
         $permscaster = null;
+        $showcaster = null;
+
         if ($casterurl) {
             $permscaster = $crucible->get_caster_permissions();
+            $showcaster = get_config('block_crucible', 'showcaster');
         }
 
-        if ($permscaster) {
+        if ($permscaster || $showcaster) {
             $data->caster = $casterurl;
             $data->casterDescription = get_string('casterdescription', 'block_crucible');
             $data->casterLogo  = $OUTPUT->image_url('crucible-icon-caster', 'block_crucible');
@@ -230,12 +239,15 @@ class block_crucible extends block_base {
         $citeurl = get_config('block_crucible', 'citeappurl');
         $permscite = null;
         $evalscite = null;
+        $showcite = null;
+
         if ($citeurl) {
             $permscite = $crucible->get_cite_permissions();
             $evalscite = $crucible->get_cite_evaluations();
+            $showcite = get_config('block_crucible', 'showcite');
         }
 
-        if (($evalscite && $showapps) || $permscite) {
+        if (($evalscite && $showapps) || $permscite || $showcite) {
             $data->cite = $citeurl;
             $data->citeDescription = get_string('citedescription', 'block_crucible');
             $data->citeLogo  = $OUTPUT->image_url('crucible-icon-cite', 'block_crucible');
@@ -251,12 +263,15 @@ class block_crucible extends block_base {
         $galleryurl = get_config('block_crucible', 'galleryappurl');
         $permsgallery = null;
         $exhibitsgallery = null;
+        $showgallery = null;
+
         if ($galleryurl) {
             $permsgallery = $crucible->get_gallery_permissions();
             $exhibitsgallery = $crucible->get_gallery_exhibits();
+            $showgallery = get_config('block_crucible', 'showgallery');
         }
 
-        if (($exhibitsgallery && $showapps) || $permsgallery) {
+        if (($exhibitsgallery && $showapps) || $permsgallery || $showgallery) {
             $data->gallery = $galleryurl;
             $data->galleryDescription = get_string('gallerydescription', 'block_crucible');
             $data->galleryLogo  = $OUTPUT->image_url('crucible-icon-gallery', 'block_crucible');
@@ -271,11 +286,14 @@ class block_crucible extends block_base {
         ////////////////////STEAMFITTER/////////////////////////////
         $steamfitterurl = get_config('block_crucible', 'steamfitterappurl');
         $permssteam = null;
+        $showsteamfitter = null;
+
         if ($steamfitterurl) {
             $permssteam = $crucible->get_steamfitter_permissions();
+            $showsteamfitter = get_config('block_crucible', 'showsteamfitter');
         }
 
-        if ($permssteam) {
+        if ($permssteam || $showsteamfitter) {
             $data->steamfitter = $steamfitterurl;
             $data->steamfitterDescription = get_string('steamfitterdescription', 'block_crucible');
             $data->steamfitterLogo  = $OUTPUT->image_url('crucible-icon-steamfitter', 'block_crucible');
@@ -289,6 +307,7 @@ class block_crucible extends block_base {
         if ($showcomms) {
             $rocketchaturl = get_config('block_crucible', 'rocketchatappurl');
             $rocketchat = null;
+
             if ($rocketchaturl) {
                 $rocketchat = $crucible->get_rocketchat_user_info();
             }
@@ -315,11 +334,13 @@ class block_crucible extends block_base {
         ////////////////////TOPOMOJO////////////////////////////
         $topomojourl = get_config('block_crucible', 'topomojoappurl');
         $permstopomojo = null;
+        $showtopomojo = null;
+
         if ($topomojourl) {
             $permstopomojo = $crucible->get_topomojo_permissions();
+            $showtopomojo = get_config('block_crucible', 'showtopomojo');
         }
 
-        $showtopomojo = get_config('block_crucible', 'showtopomojo');
         if ($permstopomojo || $showtopomojo) {
             $data->topomojo = $topomojourl;
             $data->topomojoDescription = get_string('topomojodescription', 'block_crucible');
@@ -334,12 +355,14 @@ class block_crucible extends block_base {
         $gameboardurl = get_config('block_crucible', 'gameboardappurl');
         $permsgameboard = null;
         $activechallenges = null;
+        $showgameboard = null;
+
         if ($gameboardurl) {
             $permsgameboard = $crucible->get_gameboard_permissions();
             $activechallenges = $crucible->get_active_challenges();
+            $showgameboard = get_config('block_crucible', 'showgameboard');
         }
 
-        $showgameboard = get_config('block_crucible', 'showgameboard');
         if (($activechallenges && $showapps) || $permsgameboard || $showgameboard) {
             $data->gameboard = $gameboardurl;
             $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
@@ -418,12 +441,14 @@ class block_crucible extends block_base {
         $mispurl = get_config('block_crucible', 'mispappurl');
         $permsmisp = null;
         $usermisp = null;
+        $showmisp = null;
+
         if ($mispurl) {
             $permsmisp = $crucible->get_misp_permissions();
             $usermisp = $crucible->get_misp_user();
+            $showmisp = get_config('block_crucible', 'showmisp');
         }
 
-        $showmisp = get_config('block_crucible', 'showmisp');
         if (($usermisp && $showapps) || $permsmisp || $showmisp) {
             $data->misp = $mispurl;
             $data->mispDescription = get_string('mispdescription', 'block_crucible');

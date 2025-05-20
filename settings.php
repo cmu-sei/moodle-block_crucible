@@ -111,6 +111,9 @@ if ($ADMIN->fulltree) {
         get_string('alloysectiondesc', 'block_crucible')
     ));
 
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showalloy',
+        get_string('showalloy', 'block_crucible'), get_string('configalloyshow', 'block_crucible'), 0, 1, 0));
+
     $settings->add(new admin_setting_configtext('block_crucible/alloyapiurl',
         get_string('alloyapiurl', 'block_crucible'), get_string('configalloyapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -123,6 +126,9 @@ if ($ADMIN->fulltree) {
         get_string('blueprintsectionheading', 'block_crucible'), 
         get_string('blueprintsectiondesc', 'block_crucible')
     ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showblueprint',
+        get_string('showblueprint', 'block_crucible'), get_string('configblueprintshow', 'block_crucible'), 0, 1, 0));
 
     $settings->add(new admin_setting_configtext('block_crucible/blueprintapiurl',
         get_string('blueprintapiurl', 'block_crucible'), get_string('configblueprintapiurl', 'block_crucible'), "", PARAM_URL, 60));
@@ -137,6 +143,9 @@ if ($ADMIN->fulltree) {
         get_string('castersectiondesc', 'block_crucible')
     ));
 
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showcaster',
+        get_string('showcaster', 'block_crucible'), get_string('configcastershow', 'block_crucible'), 0, 1, 0));
+
     $settings->add(new admin_setting_configtext('block_crucible/casterapiurl',
         get_string('casterapiurl', 'block_crucible'), get_string('configcasterapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -149,6 +158,9 @@ if ($ADMIN->fulltree) {
         get_string('citesectionheading', 'block_crucible'), 
         get_string('citesectiondesc', 'block_crucible')
     ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showcite',
+        get_string('showcite', 'block_crucible'), get_string('configciteshow', 'block_crucible'), 0, 1, 0));
 
     $settings->add(new admin_setting_configtext('block_crucible/citeapiurl',
         get_string('citeapiurl', 'block_crucible'), get_string('configciteapiurl', 'block_crucible'), "", PARAM_URL, 60));
@@ -173,6 +185,9 @@ if ($ADMIN->fulltree) {
         get_string('gallerysectionheading', 'block_crucible'), 
         get_string('gallerysectiondesc', 'block_crucible')
     ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showgallery',
+        get_string('showgallery', 'block_crucible'), get_string('configgalleryshow', 'block_crucible'), 0, 1, 0));
 
     $settings->add(new admin_setting_configtext('block_crucible/galleryapiurl',
         get_string('galleryapiurl', 'block_crucible'), get_string('configgalleryapiurl', 'block_crucible'), "", PARAM_URL, 60));
@@ -223,6 +238,9 @@ if ($ADMIN->fulltree) {
         get_string('playersectiondesc', 'block_crucible')
     ));
 
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showplayer',
+        get_string('showplayer', 'block_crucible'), get_string('configplayershow', 'block_crucible'), 0, 1, 0));
+    
     $settings->add(new admin_setting_configtext('block_crucible/playerapiurl',
         get_string('playerapiurl', 'block_crucible'), get_string('configplayerapiurl', 'block_crucible'), "", PARAM_URL, 60));
 
@@ -235,6 +253,9 @@ if ($ADMIN->fulltree) {
         get_string('steamfittersectionheading', 'block_crucible'),
         get_string('steamfittersectiondesc', 'block_crucible')
     ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/showsteamfitter',
+        get_string('showsteamfitter', 'block_crucible'), get_string('configsteamfittershow', 'block_crucible'), 0, 1, 0));
 
     $settings->add(new admin_setting_configtext('block_crucible/steamfitterapiurl',
       get_string('steamfitterapiurl', 'block_crucible'), get_string('configsteamfitterapiurl', 'block_crucible'), "", PARAM_URL, 60));
@@ -270,7 +291,7 @@ if ($ADMIN->fulltree) {
     ));
 
     $settings->add(new admin_setting_configcheckbox('block_crucible/enablecommapps',
-    get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
+        get_string('enablecommapps', 'block_crucible'), get_string('configcommshow', 'block_crucible'), 0, 1, 0));
 
     $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
         get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'),

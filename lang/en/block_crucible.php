@@ -61,6 +61,8 @@ $string['blocktitle'] = 'Disable Block Title';
 $string['configblocktitle'] = 'Disable Block Title';
 
 // Player
+$string['showplayer'] = 'Show Player';
+$string['configplayershow'] = 'Show Player application regardless of user permissions';
 $string['playerapiurl'] = 'Player API';
 $string['playerappurl'] = 'Player UI';
 $string['playerdescription'] = 'Crucible\'s Exercise User Interface';
@@ -70,6 +72,8 @@ $string['playersectionheading'] = 'Player Settings';
 $string['playersectiondesc'] = 'Configure API and application URLs for Player integration.';
 
 // Alloy
+$string['showalloy'] = 'Show Alloy';
+$string['configalloyshow'] = 'Show Alloy application regardless of user permissions';
 $string['alloyapiurl'] = 'Alloy API';
 $string['alloyappurl'] = 'Alloy UI';
 $string['configalloyapiurl'] = 'Alloy API URL used to pull permissions';
@@ -79,6 +83,8 @@ $string['alloysectionheading'] = 'Alloy Settings';
 $string['alloysectiondesc'] = 'Configure API and application URLs for Alloy integration.';
 
 // Blueprint
+$string['showblueprint'] = 'Show Blueprint';
+$string['configblueprintshow'] = 'Show Blueprint application regardless of user permissions';
 $string['blueprintapiurl'] = 'Blueprint API';
 $string['blueprintappurl'] = 'Blueprint UI';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
@@ -88,6 +94,8 @@ $string['blueprintsectionheading'] = 'Blueprint Settings';
 $string['blueprintsectiondesc'] = 'Configure API and application URLs for Blueprint integration.';
 
 // Caster
+$string['showcaster'] = 'Show Caster';
+$string['configcastershow'] = 'Show Caster application regardless of user permissions';
 $string['casterapiurl'] = 'Caster API';
 $string['casterappurl'] = 'Caster UI';
 $string['configcasterapiurl'] = 'Caster API URL used to pull permissions';
@@ -97,6 +105,8 @@ $string['castersectionheading'] = 'Caster Settings';
 $string['castersectiondesc'] = 'Configure API and application URLs for Caster integration.';
 
 // CITE
+$string['showcite'] = 'Show CITE';
+$string['configciteshow'] = 'Show CITE application regardless of user permissions';
 $string['citeapiurl'] = 'CITE API';
 $string['citeappurl'] = 'CITE UI';
 $string['configciteapiurl'] = 'CITE API URL used to pull permissions';
@@ -106,6 +116,8 @@ $string['citesectionheading'] = 'CITE Settings';
 $string['citesectiondesc'] = 'Configure API and application URLs for CITE integration.';
 
 // Gallery
+$string['showgallery'] = 'Show Gallery';
+$string['configgalleryshow'] = 'Show Gallery application regardless of user permissions';
 $string['galleryapiurl'] = 'Gallery API';
 $string['galleryappurl'] = 'Gallery UI';
 $string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
@@ -115,6 +127,8 @@ $string['gallerysectionheading'] = 'Gallery Settings';
 $string['gallerysectiondesc'] = 'Configure API and application URLs for Gallery integration.';
 
 // Steamfitter
+$string['showsteamfitter'] = 'Show Steamfitter';
+$string['configsteamfittershow'] = 'Show Steamfitter application regardless of user permissions';
 $string['steamfitterapiurl'] = 'Steamfitter API';
 $string['steamfitterappurl'] = 'Steamfitter UI';
 $string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
@@ -140,6 +154,8 @@ $string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participan
 $string['roundcubedescription'] = 'Webmail';
 
 // TopoMojo
+$string['showtopomojo'] = 'Show TopoMojo';
+$string['configtopomojoshow'] = 'Show TopoMojo application regardless of user permissions';
 $string['topomojoapiurl'] = 'TopoMojo API';
 $string['topomojoappurl'] = 'TopoMojo UI';
 $string['topomojoapikey'] = 'TopoMojo API Key';
@@ -149,10 +165,10 @@ $string['configtopomojoapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['topomojodescription'] = 'Crucible\'s Training Lab Builder and Interface';
 $string['topomojosectionheading'] = 'TopoMojo Settings';
 $string['topomojosectiondesc'] = 'Configure API, keys, and application URLs for TopoMojo integration.';
-$string['showtopomojo'] = 'Show TopoMojo';
-$string['configtopomojoshow'] = 'Show TopoMojo application regardless of user permissions';
 
 // Gameboard
+$string['showgameboard'] = 'Show Gameboard';
+$string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 $string['gameboardapiurl'] = 'Gameboard API';
 $string['gameboardappurl'] = 'Gameboard UI';
 $string['configgameboardapiurl'] = 'Gameboard API URL used to pull permissions';
@@ -162,17 +178,17 @@ $string['configgameboardapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['gameboardapikey'] = 'Gameboard API Key';
 $string['gameboardsectionheading'] = 'Gameboard Settings';
 $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for Gameboard integration.';
-$string['showgameboard'] = 'Show Gameboard';
-$string['configgameboardshow'] = 'Show Gameboard application regardless of user permissions';
 
 // Docs
-$string['docsappurl'] = 'Docs';
+$string['docsappurl'] = 'Docs UI';
 $string['configdocsappurl'] = 'Docs URL used to redirect participants';
 $string['docsdescription'] = 'Documentation';
 $string['docsectionheading'] = 'Docs Settings';
 $string['docsectiondesc'] = 'Configure URLs for Docs integration.';
 
 // Keycloak
+$string['showkeycloak'] = 'Show Keycloak';
+$string['configkeycloakshow'] = 'Show Keycloak application regardless of user permissions';
 $string['keycloakuserurl'] = 'Keycloak User URL';
 $string['configkeycloakuserurl'] = 'Specifies the Keycloak URL to which regular users are redirected. Ensure the URL includes the realm component without trailing /.';
 $string['keycloakadminurl'] = 'Keycloak Admin URL';
@@ -180,14 +196,14 @@ $string['configkeycloakadminurl'] = 'Specifies the Keycloak URL to which admins 
 $string['keycloakdescription'] = 'Identity and Access Management';
 $string['keycloaksectionheading'] = 'Keycloak Settings';
 $string['keycloaksectiondesc'] = 'Configure application URLs for Keycloak integration.';
-$string['showkeycloak'] = 'Show Keycloak';
-$string['configkeycloakshow'] = 'Show Keycloak application regardless of user permissions';
 $string['keycloakgroups'] = 'Admin Keycloak Groups';
 $string['configkeycloakgroups'] = 'Enter the names of Keycloak Admin Groups, separated by a "|" character as a delimiter.';
 $string['userredirect'] = "User Account Redirect";
 $string['configuserredirect'] = 'When enabled, redirects all users to the same page used for user account management.';
 
 // MISP
+$string['showmisp'] = 'Show MISP';
+$string['configmispshow'] = 'Show MISP application regardless of user permissions';
 $string['mispappurl'] = 'MISP UI';
 $string['configmispappurl'] = 'MISP UI URL used to redirect participants';
 $string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
@@ -195,8 +211,6 @@ $string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
 $string['mispapikey'] = 'MISP API Key';
 $string['mispsectionheading'] = 'MISP Settings';
 $string['mispsectiondesc'] = 'Configure API, keys, and application URLs for MISP integration.';
-$string['showmisp'] = 'Show MISP';
-$string['configmispshow'] = 'Show MISP application regardless of user permissions';
 
 // privacy
 $string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';
