@@ -138,6 +138,10 @@ $string['steamfittersectionheading'] = 'Steamfitter Settings';
 $string['steamfittersectiondesc'] = 'Configure API and application URLs for Steamfitter integration.';
 
 // Rocketchat
+$string['rocketchatsectionheading'] = 'Rocket.Chat Settings';
+$string['showrocketchat'] = 'Show Rocket.Chat';
+$string['configrocketchatshow'] = 'Show Rocket.Chat application regardless of user permissions';
+$string['rocketchatsectiondesc'] = 'Configure API and application URLs for Rocket.Chat integration.';
 $string['rocketchatapiurl'] = 'Rocket.Chat API';
 $string['rocketchatappurl'] = 'Rocket.Chat UI';
 $string['rocketchatauthtoken'] = 'Rocket.Chat Auth Token';
@@ -149,6 +153,10 @@ $string['rocketchatuserid'] = 'Rocket.Chat User Id';
 $string['configrocketchatuserid'] = 'Add Admin\'s User Id for API Calls';
 
 // Roundcube
+$string['roundcubesectionheading'] = 'Roundcube Settings';
+$string['showroundcube'] = 'Show Roundcube';
+$string['configroundcubeshow'] = 'Show Roundcube application regardless of user permissions';
+$string['roundcubesectiondesc'] = 'Configure application URL for Roundcube integration.';
 $string['roundcubeappurl'] = 'Roundcube UI';
 $string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
 $string['roundcubedescription'] = 'Webmail';
