@@ -1366,10 +1366,10 @@ class crucible {
 
         $realmUrl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', rtrim($realmUrl, '/'));
 
-        $username = $USER->username;
+        $email = $USER->email;
 
         // Build user search URL
-        $userSearchUrl = $realmUrl . '/users?username=' . urlencode($username);
+        $userSearchUrl = $realmUrl . '/users?email=' . urlencode($email);
 
         // Prepare request
         curl_setopt($ch, CURLOPT_URL, $userSearchUrl);
@@ -1384,7 +1384,7 @@ class crucible {
 
         // Defensive check
         if (!is_array($userlist) || empty($userlist)) {
-            debugging("No users found in Keycloak matching username: $username", DEBUG_DEVELOPER);
+            debugging("No users found in Keycloak matching email: $email", DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -1499,15 +1499,15 @@ class crucible {
 
         $realmUrl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', rtrim($realmUrl, '/'));
 
-        $username = $USER->username;
-
         // Set the headers with the Authorization token.
         $headers = [
             "Authorization: Bearer $accessToken",
         ];
 
+        $email = $USER->email;
+
         // Build user search URL
-        $userSearchUrl = $realmUrl . '/users?username=' . urlencode($username);
+        $userSearchUrl = $realmUrl . '/users?email=' . urlencode($email);
 
         // Prepare request
         curl_setopt($ch, CURLOPT_URL, $userSearchUrl);
@@ -1522,7 +1522,7 @@ class crucible {
 
         // Defensive check
         if (!is_array($userlist) || empty($userlist)) {
-            debugging("No users found in Keycloak matching username: $username", DEBUG_DEVELOPER);
+            debugging("No users found in Keycloak matching email: $email", DEBUG_DEVELOPER);
             return 0;
         }
 
