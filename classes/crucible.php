@@ -1306,6 +1306,9 @@ class crucible {
             return 0;
         }
 
+        // Convert /admin/{realm}/console → /admin/realms/{realm}
+        $url = preg_replace('#/admin/([^/]+)/console$#', '/realms/$1', rtrim($url, '/'));
+
         $url .= "/protocol/openid-connect/token";
 
         $issuerid = get_config('block_crucible', 'issuerid');
@@ -1351,25 +1354,44 @@ class crucible {
         // Initialize cURL.
         $ch = curl_init();
 
-        // Web request
+        // Set the headers with the Authorization token.
+        $headers = [
+            "Authorization: Bearer $accessToken",
+        ];
+
         $realmUrl = get_config('block_crucible', 'keycloakadminurl');
         if (empty($realmUrl)) {
             return 0;
         }
 
-        $userid = $USER->idnumber;
+        $realmUrl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', rtrim($realmUrl, '/'));
 
-        $realmUrl = rtrim($realmUrl, '/');
-        if (strpos($realmUrl, '/admin/realms/') === false && strpos($realmUrl, '/realms/') !== false) {
-            $realmUrl = str_replace('/realms/', '/admin/realms/', $realmUrl);
+        $username = $USER->username;
+
+        // Build user search URL
+        $userSearchUrl = $realmUrl . '/users?username=' . urlencode($username);
+
+        // Prepare request
+        curl_setopt($ch, CURLOPT_URL, $userSearchUrl);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $userlist = json_decode($response, true);
+
+        // Defensive check
+        if (!is_array($userlist) || empty($userlist)) {
+            debugging("No users found in Keycloak matching username: $username", DEBUG_DEVELOPER);
+            return 0;
         }
 
-        $groupUrl = $realmUrl . '/users/' . urlencode($userid) . '/groups';
+        // Get the Keycloak UUID
+        $keycloakUserid = $userlist[0]['id'];
 
-        // Set the headers with the Authorization token.
-        $headers = [
-            "Authorization: Bearer $accessToken",
-        ];
+        $groupUrl = $realmUrl . '/users/' . urlencode($keycloakUserid) . '/groups';
 
         // Set cURL options for a GET request.
         curl_setopt($ch, CURLOPT_URL, $groupUrl);
@@ -1379,6 +1401,7 @@ class crucible {
 
         // Execute the request and capture the response.
         $response = curl_exec($ch);
+
         curl_close($ch);
 
         // Check for errors and close the session.
@@ -1423,6 +1446,8 @@ class crucible {
         if (empty($url)) {
             return 0;
         }
+
+        $url = preg_replace('#/admin/([^/]+)/console$#', '/realms/$1', rtrim($url, '/'));
 
         $url .= "/protocol/openid-connect/token";
 
@@ -1472,20 +1497,39 @@ class crucible {
             return 0;
         }
 
-        $userid = $USER->idnumber;
+        $realmUrl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', rtrim($realmUrl, '/'));
 
-        // Normalize and convert to admin API path
-        $realmUrl = rtrim($realmUrl, '/');
-        if (strpos($realmUrl, '/admin/realms/') === false && strpos($realmUrl, '/realms/') !== false) {
-            $realmUrl = str_replace('/realms/', '/admin/realms/', $realmUrl);
-        }
-
-        $roleUrl = $realmUrl . '/users/' . urlencode($userid) . '/role-mappings/realm';
+        $username = $USER->username;
 
         // Set the headers with the Authorization token.
         $headers = [
             "Authorization: Bearer $accessToken",
         ];
+
+        // Build user search URL
+        $userSearchUrl = $realmUrl . '/users?username=' . urlencode($username);
+
+        // Prepare request
+        curl_setopt($ch, CURLOPT_URL, $userSearchUrl);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $userlist = json_decode($response, true);
+
+        // Defensive check
+        if (!is_array($userlist) || empty($userlist)) {
+            debugging("No users found in Keycloak matching username: $username", DEBUG_DEVELOPER);
+            return 0;
+        }
+
+        // Get the Keycloak UUID
+        $keycloakUserid = $userlist[0]['id'];
+
+        $roleUrl = $realmUrl . '/users/' . urlencode($keycloakUserid) . '/role-mappings/realm';
 
         // Set cURL options for a GET request.
         curl_setopt($ch, CURLOPT_URL, $roleUrl);
