@@ -152,11 +152,16 @@ class block_crucible extends block_base {
         ////////////////////PLAYER/////////////////////////////
         $playerurl = get_config('block_crucible', 'playerappurl');
 
+        $permsplayer = null;
+        $showplayer = null;
         $views = null;
+
         if ($playerurl) {
-            $views = $crucible->get_player_views();
+            $permsplayer = $crucible->get_player_permissions();
+            $showplayer = get_config('block_crucible', 'showplayer');
         }
-        if ($views) {
+
+        if ($permsplayer || $showplayer) {
             $data->player = $playerurl;
             $data->playerDescription = get_string('playerdescription', 'block_crucible');
             $data->playerLogo  = $OUTPUT->image_url('crucible-icon-player', 'block_crucible');
@@ -166,21 +171,21 @@ class block_crucible extends block_base {
             debugging("Player not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
-        $permsplayer = null;
-        $showplayer = null;
+        ////////////////////ALLOY/////////////////////////////
+        $alloyurl = get_config('block_crucible', 'playerappurl');
 
-        if ($playerurl) {
-            $permsplayer = $crucible->get_player_permissions();
-            $showplayer = get_config('block_crucible', 'showplayer');
+        $showalloy = null;
+
+        if ($alloyurl) {
+            $showalloy = get_config('block_crucible', 'showalloy');
         }
-        if ($permsplayer || $showplayer) {
+
+        if ($permsplayer || $showalloy) {
             $data->alloy = get_config('block_crucible', 'alloyappurl');
             $data->alloyDescription = get_string('alloydescription', 'block_crucible');
             $data->alloyLogo  = $OUTPUT->image_url('crucible-icon-alloy', 'block_crucible');
-        } else if ($views == 0 && $views != null) {
-            debugging("No permissions found on Player for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($views == null) {
-            debugging("Player not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
+        } else if ($permsplayer == 0 && $permsplayer != null) {
+            debugging("No permissions found on Alloy for User: " . $userid, DEBUG_DEVELOPER);
         }
 
         ////////////////////BLUEPRINT/////////////////////////////
