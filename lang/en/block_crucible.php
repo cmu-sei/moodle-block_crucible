@@ -206,6 +206,8 @@ $string['keycloaksectionheading'] = 'Keycloak Settings';
 $string['keycloaksectiondesc'] = 'Configure application URLs for Keycloak integration.';
 $string['keycloakgroups'] = 'Admin Keycloak Groups';
 $string['configkeycloakgroups'] = 'Enter the names of Keycloak Admin Groups, separated by a "|" character as a delimiter.';
+$string['keycloakroles'] = 'Admin Keycloak Roles';
+$string['configkeycloakroles'] = 'Enter the names of Keycloak Admin Roles, separated by a "|" character as a delimiter.';
 $string['userredirect'] = "User Account Redirect";
 $string['configuserredirect'] = 'When enabled, redirects all users to the same page used for user account management.';
 

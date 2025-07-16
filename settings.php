@@ -213,7 +213,11 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/keycloakgroups',
       get_string('keycloakgroups', 'block_crucible'), get_string('configkeycloakgroups', 'block_crucible'),
        "", PARAM_RAW, 60));
-    
+
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakroles',
+    get_string('keycloakroles', 'block_crucible'), get_string('configkeycloakroles', 'block_crucible'),
+    "", PARAM_RAW, 60));
+
       // MISP
     $settings->add(new admin_setting_heading(
         'block_crucible/mispsectionheading',

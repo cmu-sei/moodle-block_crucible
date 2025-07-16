@@ -131,6 +131,44 @@ class crucible {
         return true; // Indicate successful setup
     }
 
+    /**
+     * Retrieves the user's permission level based on Keycloak roles or groups.
+     *
+     * This method checks if the current user has a matching role or group (defined in
+     * the plugin configuration settings `keycloakroles` and `keycloakgroups`). If either match
+     * is found in the user's Keycloak roles or groups, the corresponding value is returned.
+     *
+     * The function returns early if the OAuth client is not set up or the user lacks an ID number.
+     * If no match is found, the function returns 0.
+     *
+     * @global \stdClass $USER The current Moodle user object.
+     * @return string|int The matching role or group name if found; otherwise 0.
+     */
+    public function get_user_permissions() {
+        global $USER;
+        $userid = $USER->idnumber;
+
+        $roles = get_config('block_crucible', 'keycloakroles');
+        $groups = get_config('block_crucible', 'keycloakgroups');
+
+        if ($this->client == null) {
+                debugging("Session not set up", DEBUG_DEVELOPER);
+                return;
+         }
+        if (!$userid) {
+                debugging("User has no idnumber.", DEBUG_DEVELOPER);
+                return;
+        }
+
+        // Check Keycloak roles and groups for Administrator.
+        $userRoles = $this->get_keycloak_roles();
+         if (is_array($userRoles) && in_array($roles, $userRoles)) {
+                return $roles;
+        }
+
+        return 0;
+    }
+
     //////////////////////PLAYER//////////////////////
     /**
      * Retrieves the number of views for a specific user from the player API.
@@ -193,76 +231,6 @@ class crucible {
             return 0;
         }
         return $r;
-    }
-
-    /**
-     * Retrieves the permissions for a specific user from the player API.
-     *
-     * This method sends a request to the configured player API endpoint to get the permissions
-     * for the user identified by their `idnumber`. It handles different HTTP response codes to
-     * provide debugging information and returns permissions data if successful
-     *
-     * If the client is not set up, the user ID is not available, or the URL is not configured,
-     * or if there are HTTP errors, the method returns 0.
-     *
-     * @return mixed The permissions data as an object if successful, or 0 in case of failure.
-     */
-    public function get_player_permissions() {
-        global $USER;
-        $userid = $USER->idnumber;
-
-        if ($this->client == null) {
-            debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
-        }
-        if (!$userid) {
-            debugging("User has no idnumber.", DEBUG_DEVELOPER);
-            return;
-        }
-
-        // Web request
-        $url = get_config('block_crucible', 'playerapiurl');
-        if (empty($url)) {
-            return 0;
-        }
-
-        $url .= "/users/" . $userid;
-
-        $response = $this->client->get($url);
-
-        if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 404) {
-            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        if (!$response) {
-            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        $r = json_decode($response);
-        if (empty($r->permissions)) {
-            return 0;
-        } else {
-            // Iterate through permissions array to find "SystemAdmin" key with value "true"
-            foreach ($r->permissions as $permission) {
-                if ($permission->key === "SystemAdmin") {
-                    return $r->permissions;
-                }
-            }
-            return 0;
-        }
-
-        return 0;
     }
 
    //////////////////////BLUEPRINT//////////////////////
@@ -388,72 +356,6 @@ class crucible {
             return 0;
         } else {
             return $r->permissions;
-        }
-
-        // User exists but no special perms
-        return 0;
-    }
-
-    //////////////////////CASTER//////////////////////
-    /**
-     * Retrieves the permissions for a specific user from the caster API.
-     *
-     * This method sends a request to the configured caster API endpoint to get the permissions
-     * for the user identified by their `idnumber`. It handles various HTTP response codes to
-     * provide debugging information and returns the permissions data if available.
-     *
-     * If the client is not set up, the user ID is not available, or the URL is not configured, or if there
-     * are HTTP errors, no response, or empty data, the method returns 0.
-     *
-     * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
-     */
-    public function get_caster_permissions() {
-        global $USER;
-        $userid = $USER->idnumber;
-
-        if ($this->client == null) {
-            debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
-        }
-        if (!$userid) {
-            debugging("User has no idnumber.", DEBUG_DEVELOPER);
-            return;
-        }
-
-        // Web request
-        $url = get_config('block_crucible', 'casterapiurl');
-        if (empty($url)) {
-            return 0;
-        }
-
-        $url .= "/users/" . $userid . "/permissions";
-        $response = $this->client->get($url);
-
-        if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 404) {
-            debugging("Caster Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is Unable to Connect to Caster Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        if (!$response) {
-            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        $r = json_decode($response);
-
-        if (empty($r)) {
-            return 0;
-        } else {
-            return $r;
         }
 
         // User exists but no special perms
@@ -791,76 +693,6 @@ class crucible {
             debugging($r->message, DEBUG_DEVELOPER);
         } else {
             return $r;
-        }
-
-        // User exists but no special perms
-        return 0;
-    }
-
-    //////////////////////STEAMFITTER//////////////////////
-    /**
-     * Retrieves user permissions from the Steamfitter service based on the current user's ID number.
-     *
-     * This method sends a request to the Steamfitter API to get permissions associated with the
-     * user identified by their ID number. It uses the configured API URL to make the request and
-     * returns the user's permissions if the request is successful.
-     *
-     * The function performs various checks including whether the session is set up, the user ID
-     * is available, and handles different HTTP response codes such as unauthorized access, forbidden
-     * access, and not found errors. It also handles the case where no response is received or the
-     * response is empty.
-     *
-     * @return mixed The user's permissions if the request is successful and valid,
-     *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
-     */
-    public function get_steamfitter_permissions() {
-        global $USER;
-        $userid = $USER->idnumber;
-
-        if ($this->client == null) {
-            debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
-        }
-        if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
-        }
-
-        // Web request
-        $url = get_config('block_crucible', 'steamfitterapiurl');
-        if (empty($url)) {
-            return 0;
-        }
-
-        $url .= "/users/" . $userid;
-
-        $response = $this->client->get($url);
-
-        if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 404) {
-            debugging("Steamfitter Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is unable to Connect to Steamfitter Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        if (!$response) {
-            debugging("No response received from Steamfitter endpoint.", DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        $r = json_decode($response);
-
-        if (empty($r->permissions)) {
-            return 0;
-        } else {
-            return $r->permissions;
         }
 
         // User exists but no special perms
@@ -1336,7 +1168,6 @@ class crucible {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
-        // Execute the request and capture the response.
         $response = curl_exec($ch);
 
         // Close the cURL session.
@@ -1379,7 +1210,6 @@ class crucible {
 
         $response = curl_exec($ch);
         curl_close($ch);
-
         $userlist = json_decode($response, true);
 
         // Defensive check
