@@ -148,20 +148,18 @@ class block_crucible extends block_base {
         $userid = $USER->idnumber;
         $showapps = get_config('block_crucible', 'showallapps');
         $showcomms = get_config('block_crucible', 'enablecommapps');
+        $userperms = $crucible->get_user_permissions();
 
         ////////////////////PLAYER/////////////////////////////
         $playerurl = get_config('block_crucible', 'playerappurl');
-
-        $permsplayer = null;
         $showplayer = null;
         $views = null;
 
         if ($playerurl) {
-            $permsplayer = $crucible->get_player_permissions();
             $showplayer = get_config('block_crucible', 'showplayer');
         }
 
-        if ($permsplayer || $showplayer) {
+        if ($userperms || $showplayer) {
             $data->player = $playerurl;
             $data->playerDescription = get_string('playerdescription', 'block_crucible');
             $data->playerLogo  = $OUTPUT->image_url('crucible-icon-player', 'block_crucible');
@@ -180,11 +178,11 @@ class block_crucible extends block_base {
             $showalloy = get_config('block_crucible', 'showalloy');
         }
 
-        if ($permsplayer || $showalloy) {
+        if ($userperms || $showalloy) {
             $data->alloy = get_config('block_crucible', 'alloyappurl');
             $data->alloyDescription = get_string('alloydescription', 'block_crucible');
             $data->alloyLogo  = $OUTPUT->image_url('crucible-icon-alloy', 'block_crucible');
-        } else if ($permsplayer == 0 && $permsplayer != null) {
+        } else if ($userperms == 0 && $userperms != null) {
             debugging("No permissions found on Alloy for User: " . $userid, DEBUG_DEVELOPER);
         }
 
@@ -214,21 +212,19 @@ class block_crucible extends block_base {
 
         ////////////////////CASTER/////////////////////////////
         $casterurl = get_config('block_crucible', 'casterappurl');
-        $permscaster = null;
         $showcaster = null;
 
         if ($casterurl) {
-            $permscaster = $crucible->get_caster_permissions();
             $showcaster = get_config('block_crucible', 'showcaster');
         }
 
-        if ($permscaster || $showcaster) {
+        if ($userperms || $showcaster) {
             $data->caster = $casterurl;
             $data->casterDescription = get_string('casterdescription', 'block_crucible');
             $data->casterLogo  = $OUTPUT->image_url('crucible-icon-caster', 'block_crucible');
-        } else if ($permscaster == 0 && $permscaster != null) {
+        } else if ($userperms == 0 && $userperms != null) {
             debugging("No user data found on Caster for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($permscaster == null) {
+        } else if ($userperms == null) {
             debugging("Caster not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
@@ -282,21 +278,19 @@ class block_crucible extends block_base {
 
         ////////////////////STEAMFITTER/////////////////////////////
         $steamfitterurl = get_config('block_crucible', 'steamfitterappurl');
-        $permssteam = null;
         $showsteamfitter = null;
 
         if ($steamfitterurl) {
-            $permssteam = $crucible->get_steamfitter_permissions();
             $showsteamfitter = get_config('block_crucible', 'showsteamfitter');
         }
 
-        if ($permssteam || $showsteamfitter) {
+        if ($userperms || $showsteamfitter) {
             $data->steamfitter = $steamfitterurl;
             $data->steamfitterDescription = get_string('steamfitterdescription', 'block_crucible');
             $data->steamfitterLogo  = $OUTPUT->image_url('crucible-icon-steamfitter', 'block_crucible');
-        } else if ($permssteam == 0 && $permssteam != null) {
+        } else if ($userperms == 0 && $userperms != null) {
             debugging("No user data found on Steamfitter for User: " . $userid, DEBUG_DEVELOPER);
-        } else if ($permssteam == null) {
+        } else if ($userperms == null) {
             debugging("Steamfitter not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
         }
 
@@ -404,6 +398,8 @@ class block_crucible extends block_base {
 
         $keycloakuserurl = get_config('block_crucible', 'keycloakuserurl');
         $keycloakadminurl = get_config('block_crucible', 'keycloakadminurl');
+        $keycloakGroups = [];
+        $keycloakRoles = [];
 
         if ($keycloakuserurl || $keycloakadminurl) {
             $keycloakGroups = $crucible->get_keycloak_groups();
