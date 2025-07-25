@@ -188,9 +188,6 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/gameboardappurl',
       get_string('gameboardappurl', 'block_crucible'), get_string('configgameboardappurl', 'block_crucible'), "", PARAM_URL, 60));
 
-    $settings->add(new admin_setting_configtext('block_crucible/gameboardapikey',
-      get_string('gameboardapikey', 'block_crucible'), get_string('configgameboardapikey', 'block_crucible'), "", PARAM_RAW, 60));
-
     // Keycloak
     $settings->add(new admin_setting_heading(
         'block_crucible/keycloaksectionheading',
@@ -213,7 +210,11 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/keycloakgroups',
       get_string('keycloakgroups', 'block_crucible'), get_string('configkeycloakgroups', 'block_crucible'),
        "", PARAM_RAW, 60));
-    
+
+    $settings->add(new admin_setting_configtext('block_crucible/keycloakroles',
+    get_string('keycloakroles', 'block_crucible'), get_string('configkeycloakroles', 'block_crucible'),
+    "", PARAM_RAW, 60));
+
       // MISP
     $settings->add(new admin_setting_heading(
         'block_crucible/mispsectionheading',
@@ -319,10 +320,6 @@ if ($ADMIN->fulltree) {
 
     $settings->add(new admin_setting_configtext('block_crucible/topomojoappurl',
       get_string('topomojoappurl', 'block_crucible'), get_string('configtopomojoappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/topomojoapikey',
-      get_string('topomojoapikey', 'block_crucible'), get_string('configtopomojoapikey', 'block_crucible'), "", PARAM_RAW, 60));
-
 
     $settings->hide_if('block_crucible/customwelcomemessage', 'block_crucible/customwelcomemessagecb', 'notchecked', 1);
 }
