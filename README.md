@@ -216,12 +216,11 @@ If the required URLs are added, the Gallery block will be added to the Applicati
 
 If the required URLs are added, the Gameboard block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Gameboard application or if the user has an active gamespace and the `Show All Applications` is checked or the `Show Gameboard` is checked.
 
-![Gameboard Settings](img/gameboard-settings-v1.png)
+![Gameboard Settings](img/gameboard-settings-v2.png)
 
 - **Show Gameboard:** Show Gameboard application regardless of user permissions.
 - **Gameboard API:** Enter the API Endpoint URL for the Gameboard application.
 - **Gameboard UI:** Enter the main URL for Gameboard.
-- **Gameboard API Key:** Provide the API key needed to connect with Gameboard.
 </details>
 
 <details>
@@ -308,12 +307,11 @@ If the required URLs are added, the Steamfitter block will be added to the Appli
 
 If the required URLs are added, the TopoMojo block will be added to the Applications block. However, this block will only show if the user has admin privileges in the Topomojo application or the `Show TopoMojo` is checked.
 
-![TopoMojo Settings](img/topomojo-settings.png)
+![TopoMojo Settings](img/topomojo-settings-v1.png)
 
 - **Show TopoMojo:** Show TopoMojo application regardless of user permissions.
 - **TopoMojo API:** Enter the API URL for Steamfitter.
 - **TopoMojo UI:** Enter the main URL for Steamfitter.
-- **TopoMojo API Key:** Enter the API key required for integration.
 </details>
 
 ## 3. Usage Guide
