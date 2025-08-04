@@ -228,13 +228,14 @@ If the required URLs are added, the Gameboard block will be added to the Applica
 
 If enabled, the Keycloak block will be added to the Applications block. If the user has admin privileges or is part of a group that has admin privileges, the URL provided to the user will contain the `/admin/master/console` path. For regular users, the URL provided to the user will contain the `/realms/master/account` path.
 
-![Keycloak Settings](img/keycloak-settings.png)
+![Keycloak Settings](img/keycloak-settings-v1.png)
 
 - **Show Keycloak:** Show Keycloak application regardless of user permissions.
 - **User Account Redirect:** When enabled, redirects all users to the same page used for user account management.
 - **Keycloak User URL:** Specifies the Keycloak URL to which regular users are redirected. Ensure the URL includes the realm component without trailing /.
 - **Keycloak Admin URL:** Specifies the Keycloak URL tto which admins are redirected. Ensure the URL includes the realm component without trailing /.
 - **Admin Keycloak Groups:** Specify groups relevant to Keycloak for role-based permissions.
+- **Admin Keycloak Roles:** Specify roles  relevant to Keycloak for role-based permissions.
 
 **Additional Configuration Requirements:**
 - **Moodle Client Configuration in Keycloak:** The Keycloak integration will only function correctly if the Moodle client in Keycloak has the `Service Account` configuration enabled. This setup allows the Applications block to authenticate as a service account and access Keycloak's APIs for roles and groups.
