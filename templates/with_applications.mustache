@@ -1,274 +1,254 @@
 {{!
-    This file is part of Moodle - http://moodle.org/
-
-    Moodle is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Moodle is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-    Crucible Applications Landing Page Block for Moodle
-
-    Copyright 2024 Carnegie Mellon University.
-
-    NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
-    CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
-    WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
-    CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-    Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
-    terms.
-
-    [DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
-
-    This Software includes and/or makes use of Third-Party Software each subject to its own license.
-    
-    DM24-1176
+  @template block_crucible/landing
 }}
-{{!
-    @template block_crucible/landing
+<div class="imcite-card imcite-apps">
 
-    This template renders the cards view for the crucible block.
+  <!-- Header -->
+  <div class="imcite-card__header">
+    <div class="imcite-card__icon">🧩</div>
+    <div class="imcite-card__titlewrap">
+      <div class="imcite-card__title">{{cardtitle}}</div>
 
-    Example context (json):
-    {
-        "player": "https://player.example.com",
-        "blueprint": "https://blueprint.example.com"
-    }
-}}
-{{^welcomemessage}}
-    <h5>Hello {{username}}! Welcome to {{sitename}}. </h5> <br>
-{{/welcomemessage}}
+      {{#welcomemessage}}
+        <div class="imcite-card__subtitle">{{welcomemessage}}</div>
+      {{/welcomemessage}}
+      {{^welcomemessage}}
+        <div class="imcite-card__subtitle">
+          {{#str}} appswelcome, block_crucible {{/str}}
+          <strong>{{username}}</strong> · {{sitename}}
+        </div>
+      {{/welcomemessage}}
+    </div>
+  </div>
 
-{{#welcomemessage}}
-    <h5>{{welcomemessage}} </h5> <br>
-{{/welcomemessage}}
+  <!-- Body -->
+  <div class="imcite-card__body">
+    <div class="apps-grid">
 
+      {{#keycloak}}
+        <div class="app-card" id="keycloak">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Keycloak</div>
+              <div class="app-card__desc">{{keycloakDescription}}</div>
+            </div>
+            <div class="app-card__link">
+              <a href="{{keycloak}}" target="_blank">
+                <img class="app-card__logo app-card__logo--keycloak" src="{{keycloakLogo}}" alt="Keycloak">
+              </a>
+            </div>
+          </div>
+        </div>
+      {{/keycloak}}
 
-<div class="applications-grid">
-    {{#keycloak}}
-        <div class="application-block" id="keycloak">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Keycloak</div>
-                    <div class="keycloak-description">{{keycloakDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{keycloak}}" target="_blank">
-                        <img class="keycloak-icon" src="{{keycloakLogo}}" alt="Keycloak">
-                    </a>
-                </div>
+      {{#topomojo}}
+        <div class="app-card" id="topoMojo">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">TopoMojo</div>
+              <div class="app-card__desc">{{topomojoDescription}}</div>
             </div>
-        </div>
-    {{/keycloak}}
-    {{#topomojo}}
-        <div class="application-block" id="topoMojo">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">TopoMojo</div>
-                    <div class="application-description">{{topomojoDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{topomojo}}" target="_blank">
-                        <img class="topo-image" src="{{topomojoLogo}}" alt="TopoMojo">
-                    </a>
-                </div>
+            <div class="app-card__link">
+              <a href="{{topomojo}}" target="_blank">
+                <img class="app-card__logo app-card__logo--topo" src="{{topomojoLogo}}" alt="TopoMojo">
+              </a>
             </div>
+          </div>
         </div>
-    {{/topomojo}}
-    {{#gameboard}}
-        <div class="application-block" id="gameboard">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Gameboard</div>
-                    <div class="gameboard-description">{{gameboardDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{gameboard}}" target="_blank">
-                        <img class="gameboard-image" src="{{gameboardLogo}}" alt="Gameboard">
-                    </a>
-                </div>
-            </div>
-        </div>
-    {{/gameboard}}
-    {{#misp}}
-        <div class="application-block" id="misp">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">MISP</div>
-                    <div class="misp-description">{{mispDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{misp}}" target="_blank">
-                        <img class="misp-icon" src="{{mispLogo}}" alt="Misp">
-                    </a>
-                </div>
-            </div>
-        </div>
-    {{/misp}}
-    {{#player}}
-        <div class="application-block" id="player">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Player</div>
-                    <div class="application-description">{{playerDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href="{{player}}" target="_blank">
-                        <img class="application-image" src="{{playerLogo}}" alt="Player">
-                    </a>
-                </div>
-            </div>
-        </div>
-    {{/player}}
+      {{/topomojo}}
 
-    {{#alloy}}
-        <div class="application-block" id="alloy">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Alloy</div>
-                    <div class="application-description">{{alloyDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href="{{alloy}}" target="_blank">
-                        <img class="application-image" src="{{alloyLogo}}" alt="Alloy">
-                    </a>
-                </div>
+      {{#gameboard}}
+        <div class="app-card" id="gameboard">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Gameboard</div>
+              <div class="app-card__desc">{{gameboardDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{gameboard}}" target="_blank">
+                <img class="app-card__logo app-card__logo--gameboard" src="{{gameboardLogo}}" alt="Gameboard">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/alloy}}
+      {{/gameboard}}
 
-    {{#blueprint}}
-        <div class="application-block" id="blueprint">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Blueprint</div>
-                    <div class="application-description">{{blueprintDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href="{{blueprint}}" target="_blank">
-                        <img class="application-image" src="{{blueprintLogo}}" alt="Blueprint">
-                    </a>
-                </div>
+      {{#misp}}
+        <div class="app-card" id="misp">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">MISP</div>
+              <div class="app-card__desc">{{mispDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{misp}}" target="_blank">
+                <img class="app-card__logo app-card__logo--misp" src="{{mispLogo}}" alt="MISP">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/blueprint}}
+      {{/misp}}
 
-    {{#caster}}
-        <div class="application-block" id="caster">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Caster</div>
-                    <div class="application-description">{{casterDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{caster}}" target="_blank">
-                        <img class="application-image" src="{{casterLogo}}" alt="Caster">
-                    </a>
-                </div>
+      {{#player}}
+        <div class="app-card" id="player">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Player</div>
+              <div class="app-card__desc">{{playerDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{player}}" target="_blank">
+                <img class="app-card__logo" src="{{playerLogo}}" alt="Player">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/caster}}
+      {{/player}}
 
-    {{#cite}}
-        <div class="application-block" id="cite">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">CITE</div>
-                    <div class="application-description">{{citeDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{cite}}" target="_blank">
-                        <img class="application-image" src="{{citeLogo}}" alt="Cite">
-                    </a>
-                </div>
+      {{#alloy}}
+        <div class="app-card" id="alloy">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Alloy</div>
+              <div class="app-card__desc">{{alloyDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{alloy}}" target="_blank">
+                <img class="app-card__logo" src="{{alloyLogo}}" alt="Alloy">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/cite}}
+      {{/alloy}}
 
-    {{#docs}}
-        <div class="application-block" id="docs">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">IMCITE Docs</div>
-                    <div class="application-description">{{docsDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{docs}}" target="_blank">
-                        <img class="application-image" src="{{docsLogo}}" alt="Docs">
-                    </a>
-                </div>
+      {{#blueprint}}
+        <div class="app-card" id="blueprint">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Blueprint</div>
+              <div class="app-card__desc">{{blueprintDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{blueprint}}" target="_blank">
+                <img class="app-card__logo" src="{{blueprintLogo}}" alt="Blueprint">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/docs}}
+      {{/blueprint}}
 
-    {{#gallery}}
-        <div class="application-block" id="gallery">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Gallery</div>
-                    <div class="application-description">{{galleryDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{gallery}}" target="_blank">
-                        <img class="application-image" src="{{galleryLogo}}" alt="Gallery">
-                    </a>
-                </div>
+      {{#caster}}
+        <div class="app-card" id="caster">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Caster</div>
+              <div class="app-card__desc">{{casterDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{caster}}" target="_blank">
+                <img class="app-card__logo" src="{{casterLogo}}" alt="Caster">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/gallery}}
+      {{/caster}}
 
-    {{#roundcube}}
-        <div class="application-block" id="roundcube">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Roundcube</div>
-                    <div class="application-description">{{roundcubeDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{roundcube}}" target="_blank">
-                        <img class="application-image" src="{{roundcubeLogo}}" alt="Roundcube">
-                    </a>
-                </div>
+      {{#cite}}
+        <div class="app-card" id="cite">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">CITE</div>
+              <div class="app-card__desc">{{citeDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{cite}}" target="_blank">
+                <img class="app-card__logo" src="{{citeLogo}}" alt="CITE">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/roundcube}}
+      {{/cite}}
 
-    {{#rocket}}
-        <div class="application-block" id="rocket">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Rocket.Chat</div>
-                    <div class="application-description">{{rocketDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{rocket}}" target="_blank">
-                        <img class="rocketchat" src="{{rocketLogo}}" alt="RocketChat">
-                    </a>
-                </div>
+      {{#docs}}
+        <div class="app-card" id="docs">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">IMCITE Docs</div>
+              <div class="app-card__desc">{{docsDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{docs}}" target="_blank">
+                <img class="app-card__logo" src="{{docsLogo}}" alt="Docs">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/rocket}}
+      {{/docs}}
 
-    {{#steamfitter}}
-        <div class="application-block" id="steamfitter">
-            <div class="application-content">
-                <div class="application-details">
-                    <div class="application-title">Steamfitter</div>
-                    <div class="application-description">{{steamfitterDescription}}</div>
-                </div>
-                <div class="application-link">
-                    <a href = "{{steamfitter}}" target="_blank">
-                        <img class="application-image" src="{{steamfitterLogo}}" alt="Steamfitter">
-                    </a>
-                </div>
+      {{#gallery}}
+        <div class="app-card" id="gallery">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Gallery</div>
+              <div class="app-card__desc">{{galleryDescription}}</div>
             </div>
+            <div class="app-card__link">
+              <a href="{{gallery}}" target="_blank">
+                <img class="app-card__logo" src="{{galleryLogo}}" alt="Gallery">
+              </a>
+            </div>
+          </div>
         </div>
-    {{/steamfitter}}
+      {{/gallery}}
+
+      {{#roundcube}}
+        <div class="app-card" id="roundcube">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Roundcube</div>
+              <div class="app-card__desc">{{roundcubeDescription}}</div>
+            </div>
+            <div class="app-card__link">
+              <a href="{{roundcube}}" target="_blank">
+                <img class="app-card__logo app-card__logo--rc" src="{{roundcubeLogo}}" alt="Roundcube">
+              </a>
+            </div>
+          </div>
+        </div>
+      {{/roundcube}}
+
+      {{#rocket}}
+        <div class="app-card" id="rocket">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Rocket.Chat</div>
+              <div class="app-card__desc">{{rocketDescription}}</div>
+            </div>
+            <div class="app-card__link">
+              <a href="{{rocket}}" target="_blank">
+                <img class="app-card__logo" src="{{rocketLogo}}" alt="Rocket.Chat">
+              </a>
+            </div>
+          </div>
+        </div>
+      {{/rocket}}
+
+      {{#steamfitter}}
+        <div class="app-card" id="steamfitter">
+          <div class="app-card__content">
+            <div class="app-card__details">
+              <div class="app-card__title">Steamfitter</div>
+              <div class="app-card__desc">{{steamfitterDescription}}</div>
+            </div>
+            <div class="app-card__link">
+              <a href="{{steamfitter}}" target="_blank">
+                <img class="app-card__logo" src="{{steamfitterLogo}}" alt="Steamfitter">
+              </a>
+            </div>
+          </div>
+        </div>
+      {{/steamfitter}}
+
+    </div>
+  </div>
 </div>

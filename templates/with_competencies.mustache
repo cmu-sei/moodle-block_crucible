@@ -1,0 +1,71 @@
+<div class="imcite-card imcite-comp">
+
+  <!-- Header -->
+  <div class="imcite-card__header">
+    <div class="imcite-card__icon">🧩</div>
+    <div class="imcite-card__titlewrap">
+      <div class="imcite-card__title">{{cardtitle}}</div>
+      <div class="imcite-card__subtitle">{{#str}} competencies_subtitle, block_crucible {{/str}}</div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="imcite-card__body">
+    {{#hascomps}}
+      <div class="comp-table">
+        <!-- Column header once -->
+        <div class="comp-table__header">
+          <div>{{#str}} col_competency, block_crucible {{/str}}</div>
+          <div class="comp-cell--num">{{#str}} col_courses, block_crucible {{/str}}</div>
+          <div class="comp-cell--num">{{#str}} col_activities, block_crucible {{/str}}</div>
+        </div>
+
+        <!-- Framework Groups -->
+        {{#hasgroups}}
+          {{#groups}}
+            <!-- Framework header (not a data row) -->
+            <div class="framework-band" role="rowgroup" aria-label="Framework: {{framework}}">
+              <div class="framework-band__inner">
+                <span class="framework-chip" aria-hidden="true">Framework</span>
+                <span class="framework-name">{{framework}}</span>
+              </div>
+            </div>
+
+            <!-- Competencies under this framework -->
+            {{#competencies}}
+              <a href="{{url}}">
+                <div class="comp-table__row">
+                  <div>
+                    <div class="comp-name">{{name}}</div>
+                    {{#framework}}
+                      <div class="comp-meta">
+                        {{framework}}{{#idnumber}} • {{idnumber}}{{/idnumber}}
+                      </div>
+                    {{/framework}}
+                  </div>
+                  <div class="comp-cell--num">{{coursecount}}</div>
+                  <div class="comp-cell--num">{{activitycount}}</div>
+                </div>
+              </a>
+            {{/competencies}}
+          {{/groups}}
+        {{/hasgroups}}
+      </div>
+    {{/hascomps}}
+
+    {{^hascomps}}
+      <div class="notice--empty">
+        {{#str}} nocompsmapped, block_crucible {{/str}}
+      </div>
+    {{/hascomps}}
+
+    {{#hasunmapped}}
+      <div class="divider"></div>
+      {{#unmapped}}
+        <a class="unmapped-link" href="{{url}}">
+          Unmapped {{framework}} Competencies ({{count}})
+        </a>
+      {{/unmapped}}
+    {{/hasunmapped}}
+  </div>
+</div>

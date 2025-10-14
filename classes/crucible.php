@@ -1181,14 +1181,14 @@ class crucible {
             if (is_array($groups) && !empty($groups)) {
                 // Initialize an array to store group names.
                 $groupNames = [];
-            
+
                 // Loop through each group and collect the 'name' value.
                 foreach ($groups as $group) {
                     if (isset($group['name'])) {
                         $groupNames[] = $group['name'];
                     }
                 }
-            
+
                 // Output or return the array of group names.
                 return $groupNames;
             } else {
