@@ -2,7 +2,7 @@
 <?php
 require_once(__DIR__.'/../../config.php');
 
-$cid  = optional_param('id', 0, PARAM_INT);
+$idnumber  = optional_param('idnumber','', PARAM_RAW_TRIMMED);
 $fwid = optional_param('fwid', 0, PARAM_INT);
 
 require_login();
@@ -11,9 +11,9 @@ $PAGE->set_context($context);
 
 $svc = new \block_crucible\competencies();
 
-if ($cid) {
-    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['id'=>$cid]));
-    $data = $svc->get_competency_detail_data($cid);
+if ($idnumber) {
+    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['idnumber'=>$idnumber]));
+    $data = $svc->get_competency_detail_data($idnumber);
 
     $PAGE->set_title($data->name);
     $PAGE->set_heading(format_string($SITE->fullname));

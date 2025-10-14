@@ -61,7 +61,7 @@ class competencies {
                 'idnumber'      => s($idnumber),
                 'coursecount'   => $coursecount,
                 'activitycount' => $activitycount,
-                'url'           => (new \moodle_url('/blocks/crucible/competency.php', ['id' => $cid]))->out(false),
+                'url'           => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
             ];
         }
 
@@ -159,18 +159,19 @@ class competencies {
         ];
     }
 
-    public function get_competency_detail_data(int $cid): \stdClass {
+    public function get_competency_detail_data(string $idnumber): \stdClass {
         global $CFG;
         require_once($CFG->dirroot.'/course/lib.php');
 
         $ctxsys = \context_system::instance();
 
         // Load competencies
-        $c = \core_competency\competency::get_record(['id' => $cid]);
+        $c = \core_competency\competency::get_record(['idnumber' => $idnumber]);
         if (!$c) {
             throw new \moodle_exception('invalidrecord', 'error');
         }
 
+        $cid      = (int)$c->get('id');
         $name     = (string)$c->get('shortname');
         $idnumber = (string)$c->get('idnumber');
         $fwshort  = '';
@@ -285,7 +286,7 @@ class competencies {
                     'id'       => $cid,
                     'name'     => format_string($shortname, true, ['context' => $ctx]),
                     'idnumber' => s($idnumber),
-                    'url'      => (new \moodle_url('/blocks/crucible/competency.php', ['id' => $cid]))->out(false),
+                    'url'      => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
                 ];
             }
         }
