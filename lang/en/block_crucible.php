@@ -295,4 +295,5 @@ $string['framework_unknown'] = 'Unassigned framework';
 $string['unmapped_summary']  = 'Unmapped {$a} Competencies';
 $string['unmapped_for_framework_title'] = 'Unmapped Competencies — {$a}';
 $string['unmapped_list_empty'] = 'No unmapped competencies in this framework.';
+$string['task_sync_keycloak_users'] = 'Sync Keycloak Users to Moodle';
 
