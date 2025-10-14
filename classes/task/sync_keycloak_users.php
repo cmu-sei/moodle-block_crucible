@@ -101,8 +101,8 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     $needs = false;
                     $u = (object)['id' => $existing->id];
 
-                    if ($firstname && $existing->firstname !== $firstname) { $u->firstname = $firstname; $needs = true; }
-                    if ($lastname  && $existing->lastname  !== $lastname)  { $u->lastname  = $lastname;  $needs = true; }
+                    if ($firstname && $existing->firstname !== $firstname) { $u->firstname = $firstname; $needs = true;}
+                    if ($lastname  && $existing->lastname  !== $lastname)  { $u->lastname  = $lastname;  $needs = true;}
 
                     // Custom profile fields
                     $pf = profile_user_record($existing->id, false) ?: new \stdClass();
@@ -156,6 +156,11 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     $new->id = $newid;
                     profile_save_data($new);
                     $created++;
+                    $nameafter = trim(($new->firstname ?? '') . ' ' . ($new->lastname ?? ''));
+                    mtrace('[crucible] created user'
+                        . ' username=' . $new->username
+                        . ' name="'    . ($nameafter !== '' ? $nameafter : '-')
+                    );
                 } catch (\Throwable $e) {
                     mtrace('[crucible] create failed for KC id '.$kcid.' : '.$e->getMessage());
                 }
