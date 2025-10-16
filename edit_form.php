@@ -20,10 +20,9 @@ class block_crucible_edit_form extends block_edit_form {
         );
 
         $default = (int)get_config('block_crucible', 'showheader_default');
-        $mform->setDefault('config_showheader', $default ?: 1); // default to ON if unset
+        $mform->setDefault('config_showheader', $default ?: 1);
         $mform->addHelpButton('config_showheader', 'showheader', 'block_crucible');
 
-        // Default for NEW instances: show header.
         $mform->setDefault('config_showheader', 1);
 
         $mform->addElement('select', 'config_viewtype',
@@ -31,9 +30,13 @@ class block_crucible_edit_form extends block_edit_form {
             [
                 'apps'          => get_string('view_apps', 'block_crucible'),
                 'learningplan'  => get_string('view_learningplan', 'block_crucible'),
-                'competencies'  => get_string('view_competencies', 'block_crucible'), // NEW
+                'competencies'  => get_string('view_competencies', 'block_crucible'),
             ]
         );
         $mform->setDefault('config_viewtype', 'apps');
+    }
+
+    public static function display_form_when_adding(): bool {
+        return true;
     }
 }
