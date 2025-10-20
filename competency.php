@@ -18,6 +18,10 @@ if ($idnumber) {
     $PAGE->set_title($data->name);
     $PAGE->set_heading(format_string($SITE->fullname));
 
+    // Breadcrumbs
+    $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
+    $PAGE->navbar->add(get_string('col_competency', 'block_crucible'), $PAGE->url);
+
     echo $OUTPUT->header();
     echo $OUTPUT->render_from_template('block_crucible/competency_view', (object)[
         'cardtitle'     => $data->name,
@@ -38,6 +42,9 @@ if ($fwid) {
 
     $PAGE->set_title(get_string('unmapped_for_framework_title', 'block_crucible', $data->framework));
     $PAGE->set_heading(format_string($SITE->fullname));
+    // Breadcrumbs
+    $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
+    $PAGE->navbar->add(get_string('framework', 'block_crucible'), $PAGE->url);
 
     echo $OUTPUT->header();
     echo $OUTPUT->render_from_template('block_crucible/framework_unmapped', (object)[

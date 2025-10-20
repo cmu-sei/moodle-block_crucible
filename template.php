@@ -10,6 +10,9 @@ $PAGE->set_url(new moodle_url('/blocks/crucible/template.php', ['id' => $tid]));
 $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('learningplantitle', 'block_crucible'));
 $PAGE->set_heading(format_string($SITE->fullname));
+// Breadcrumbs
+$PAGE->navbar->add(get_string('home'), new moodle_url('/'));
+$PAGE->navbar->add(get_string('learning_plan', 'block_crucible'), $PAGE->url);
 
 $action = optional_param('action', '', PARAM_ALPHANUMEXT);
 
