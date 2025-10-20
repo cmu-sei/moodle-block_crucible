@@ -606,6 +606,22 @@ class block_crucible extends block_base {
 
             $this->content->text = $OUTPUT->render_from_template('block_crucible/with_competencies', $data);
             return $this->content;
+        } else if ($view === 'reports') {
+            global $OUTPUT, $USER;
+
+            $svc = new \block_crucible\reports();
+            $html = $svc->render_for_user(null, $USER->id);
+
+            $vm = (object)[
+                'cardtitle'  => $cardtitle,
+                'reporthtml' => $html !== '' ? $html : \html_writer::div(
+                    get_string('reportnotsetmessage', 'block_crucible'),
+                    'alert alert-info'
+                ),
+            ];
+
+            $this->content->text = $OUTPUT->render_from_template('block_crucible/with_report', $vm);
+            return $this->content;
         }
     }
 }

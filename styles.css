@@ -353,3 +353,84 @@
 
 /* Hover affordance */
 .imcite-apps .app-card:hover { box-shadow: 0 2px 8px rgba(2,6,23,.06); }
+
+#dropdownFiltersButton {
+  display: none !important;
+}
+/* Scope all overrides to this block only */
+.imcite-report .reportbuilder-table {
+  /* Base look */
+  border-radius: 12px;
+  overflow: hidden; /* keep rounded corners on header */
+  border: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+  margin: 0; /* align with card edges */
+}
+
+/* Header */
+.imcite-report .reportbuilder-table thead th.header {
+  background: linear-gradient(180deg, #f7f9fc 0%, #f1f4f9 100%);
+  color: #2b4b9b;            /* match your apps card title blue */
+  font-weight: 700;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  padding: 10px 14px;
+}
+.imcite-report .reportbuilder-table thead th.header a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Body cells */
+.imcite-report .reportbuilder-table tbody td.cell {
+  padding: 10px 14px;
+  vertical-align: middle;
+  border-top-color: rgba(0,0,0,0.04); /* soften row separators */
+}
+
+/* Row hover */
+.imcite-report .reportbuilder-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+/* Link styling inside cells */
+.imcite-report .reportbuilder-table tbody td a {
+  color: #2b4b9b;
+  font-weight: 600;
+}
+.imcite-report .reportbuilder-table tbody td a:hover {
+  text-decoration: underline;
+}
+
+/* Hide RB's extra card-view toggle column (not used in your layout) */
+.imcite-report .reportbuilder-table td.card-toggle,
+.imcite-report .reportbuilder-table th.card-toggle {
+  display: none !important;
+}
+
+/* RB sometimes renders 'emptyrow' to pad the page — hide them */
+.imcite-report .reportbuilder-table tr.emptyrow {
+  display: none;
+}
+
+/* Make long text wrap nicely */
+.imcite-report .reportbuilder-table .no-overflow,
+.imcite-report .reportbuilder-table .text_to_html {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Optional: compact mode (tighten everything slightly) */
+.imcite-report .reportbuilder-table.table {
+  --rb-cell-pad-y: 8px;
+  --rb-cell-pad-x: 12px;
+}
+.imcite-report .reportbuilder-table td.cell,
+.imcite-report .reportbuilder-table th.header {
+  padding: var(--rb-cell-pad-y) var(--rb-cell-pad-x);
+}
+
+/* OPTIONAL: remove the Download UI inside this card only */
+.imcite-report .dataformatselector {
+  display: none !important;
+}

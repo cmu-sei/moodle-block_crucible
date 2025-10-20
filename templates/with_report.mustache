@@ -1,0 +1,26 @@
+{{!
+  @template block_crucible/with_report
+}}
+<div class="imcite-card imcite-report">
+  <!-- Header -->
+  <div class="imcite-card__header">
+    <div class="imcite-card__icon">🤝</div>
+    <div class="imcite-card__titlewrap">
+      <div class="imcite-card__title">{{cardtitle}}</div>
+
+      {{#subtitle}}
+        <div class="imcite-card__subtitle">{{subtitle}}</div>
+      {{/subtitle}}
+      {{^subtitle}}
+        {{! Keep empty state graceful; omit subtitle if not provided }}
+      {{/subtitle}}
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="imcite-card__body">
+    <div class="report-container">
+      {{{reporthtml}}}
+    </div>
+  </div>
+</div>

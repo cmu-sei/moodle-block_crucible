@@ -299,3 +299,6 @@ $string['task_sync_keycloak_users'] = 'Sync Keycloak Users to Moodle';
 $string['learning_plan'] = 'Learning Plan';
 $string['framework'] = 'Framework';
 
+// Reports
+$string['reportnotsetmessage'] = 'No report is available for you right now.';
+$string['view_reports'] = 'Reports';

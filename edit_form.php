@@ -31,6 +31,7 @@ class block_crucible_edit_form extends block_edit_form {
                 'apps'          => get_string('view_apps', 'block_crucible'),
                 'learningplan'  => get_string('view_learningplan', 'block_crucible'),
                 'competencies'  => get_string('view_competencies', 'block_crucible'),
+                'reports'       => get_string('view_reports', 'block_crucible'),
             ]
         );
         $mform->setDefault('config_viewtype', 'apps');
