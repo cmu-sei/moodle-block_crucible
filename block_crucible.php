@@ -97,6 +97,8 @@ class block_crucible extends block_base {
                 $title = get_string('blockheading', 'block_crucible');
             } else if ($this->config->viewtype === 'competencies') {
                 $title = get_string('competenciesheader', 'block_crucible');
+            } else if ($this->config->viewtype === 'reports') {
+                $title = get_string('reportsheader', 'block_crucible');
             }
         }
 
