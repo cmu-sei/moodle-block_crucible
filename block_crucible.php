@@ -610,18 +610,13 @@ class block_crucible extends block_base {
             global $OUTPUT, $USER;
 
             $svc = new \block_crucible\reports();
-            $html = $svc->render_for_user(null, $USER->id);
+            $info  = $svc->get_cohort_roster_all($USER->id);
 
-            $vm = (object)[
-                'cardtitle'  => $cardtitle,
-                'reporthtml' => $html !== '' ? $html : \html_writer::div(
-                    get_string('reportnotsetmessage', 'block_crucible'),
-                    'alert alert-info'
-                ),
-            ];
+            $info->cardtitle = $cardtitle;
 
-            $this->content->text = $OUTPUT->render_from_template('block_crucible/with_report', $vm);
+            $this->content->text = $OUTPUT->render_from_template('block_crucible/with_report', $info);
             return $this->content;
         }
+
     }
 }

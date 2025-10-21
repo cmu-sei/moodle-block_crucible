@@ -302,3 +302,9 @@ $string['framework'] = 'Framework';
 // Reports
 $string['reportnotsetmessage'] = 'No report is available for you right now.';
 $string['view_reports'] = 'Reports';
+$string['organization'] = 'Organization';
+$string['workrole'] = 'Work Role';
+$string['roles'] = 'Moodle Role';
+$string['nousersfound'] = 'No users found.';
+$string['nocohorts'] = 'You are not in any cohorts.';
+$string['cohortroles'] = 'Team Role';

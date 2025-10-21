@@ -1,26 +1,46 @@
-{{!
-  @template block_crucible/with_report
-}}
 <div class="imcite-card imcite-report">
-  <!-- Header -->
   <div class="imcite-card__header">
-    <div class="imcite-card__icon">🤝</div>
+    <div class="imcite-card__icon">👥</div>
     <div class="imcite-card__titlewrap">
       <div class="imcite-card__title">{{cardtitle}}</div>
-
-      {{#subtitle}}
-        <div class="imcite-card__subtitle">{{subtitle}}</div>
-      {{/subtitle}}
-      {{^subtitle}}
-        {{! Keep empty state graceful; omit subtitle if not provided }}
-      {{/subtitle}}
     </div>
   </div>
 
-  <!-- Body -->
   <div class="imcite-card__body">
-    <div class="report-container">
-      {{{reporthtml}}}
-    </div>
+    {{#hascohorts}}
+      {{#cohorts}}
+        <h3 style="margin: 12px 0 6px; font-weight: 700;">{{name}}</h3>
+        <table class="generaltable" style="width:100%; margin-bottom: 16px;">
+          <thead>
+            <tr>
+              <th>{{#str}} fullname, core {{/str}}</th>
+              <th>{{#str}} organization, block_crucible {{/str}}</th>
+              <th>{{#str}} workrole, block_crucible {{/str}}</th>
+              <th>{{#str}} cohortroles, block_crucible {{/str}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#hasusers}}
+              {{#users}}
+              <tr>
+                <td><a href="{{profileurl}}">{{fullname}}</a></td>
+                <td>{{organization}}</td>
+                <td>{{workrole}}</td>
+                <td>{{cohortroles}}</td>
+              </tr>
+              {{/users}}
+            {{/hasusers}}
+            {{^hasusers}}
+              <tr>
+                <td colspan="5">{{#str}} nousersfound, block_crucible {{/str}}</td>
+              </tr>
+            {{/hasusers}}
+          </tbody>
+        </table>
+      {{/cohorts}}
+    {{/hascohorts}}
+    {{^hascohorts}}
+      <div class="alert alert-info">{{#str}} nocohorts, block_crucible {{/str}}</div>
+    {{/hascohorts}}
   </div>
 </div>
