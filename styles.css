@@ -1,139 +1,3 @@
-.block_crucible {
-    display: grid;
-}
-
-.card {
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto; 
-}
-
-.main-inner {
-    margin-right: 10%; 
-    max-width: calc(100% - 20%); 
-}
-
-
-.applications-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-}
-
-.application-block {
-    overflow: hidden;
-    border: 1px solid #ccc;
-}
-
-.application-content {
-    padding: 10px;
-}
-
-.application-title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.application-link {
-    font-size: 10px;
-}
-
-.application-image {
-    max-width: 80px; 
-    max-height: 80px;
-    margin-right: 10px; /* Add spacing between image and text */
-    margin-left: 10px;
-}
-
-.gameboard-image {
-    margin-top: 10px;
-    max-width: 70px; /* Ensure the image doesn't exceed the container width */
-    max-height: 70px;
-    margin-left: 10px;
-}
-
-.misp-icon {
-    margin-top: 20px;
-    max-width: 80px; /* Ensure the image doesn't exceed the container width */
-    max-height: 80px;
-    margin-left: 10px;
-}
-
-.keycloak-icon {
-    margin-top: 10px;
-    max-width: 70px; /* Ensure the image doesn't exceed the container width */
-    max-height: 70px;
-    margin-right: 10px; /* Add spacing between image and text */
-    margin-left: 10px;
-}
-
-.topo-image {
-    margin-top: 10px;
-    max-width: 70px; /* Ensure the image doesn't exceed the container width */
-    max-height: 70px;
-    margin-right: 10px; /* Add spacing between image and text */
-    margin-left: 10px;
-}
-
-.card-title {
-    font-size: 30px;
-}
-
-.application-content {
-    display: flex;
-}
-
-.application-details {
-    flex: 1;
-}
-
-.application-description {
-    font-size: 15px;
-    margin-bottom: 5px;
-}
-
-.misp-description {
-    font-size: 15px;
-    margin-bottom: 5px;
-}
-
-.gameboard-description {
-    font-size: 15px;
-    margin-bottom: 5px;
-}
-
-.center-message {
-    text-align: center;
-    margin: auto;
-    width: 60%; 
-}
-
-.application-logo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.rocketchat {
-    max-width: 70px;
-    max-height: 70px;
-    margin-right: 10px;
-    margin-left: 10px;
-}
-
-@media only screen and (max-width: 1000px) {
-    .application-grid {
-        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    }
-}
-
-@media only screen and (max-width: 500px) {
-    .application-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
-    }
-}
-
 .block-crucible-learningplan .list-group-item {
   border-left: 0; border-right: 0;
 }
@@ -314,6 +178,7 @@
 }
 
 /* ===== Landing (apps) ===== */
+.imcite-apps {container-type: inline-size;}
 .imcite-apps .imcite-card__body { padding:14px; }
 
 /* header subtitle color already covered by .imcite-card__subtitle */
@@ -321,7 +186,7 @@
 /* Grid */
 .apps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -331,24 +196,25 @@
   border-radius: 12px;
   background: #fff;
   overflow: hidden;
+  min-width: 0;
 }
 .app-card__content {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  padding: 12px;
+  padding: clamp(10px, 2.5cqw, 16px);
+  flex-wrap: nowrap;
 }
-.app-card__details { min-width: 0; }
+.app-card__details { min-width: 0; flex: 1 1 auto;}
 .app-card__title { font-weight: 800; color: #0f172a; }
-.app-card__desc  { font-size: 13px; color: #64748b; }
+.app-card__desc  { font-size: 13px; color: #64748b; overflow-wrap: anywhere;}
 
 .app-card__link { flex: 0 0 auto; }
 .app-card__logo {
-  width: 44px;
-  height: 44px;
+  width: clamp(32px, 8cqw, 56px);
+  height: clamp(32px, 8cqw, 56px);
   object-fit: contain;
-  display: inline-block;
 }
 
 /* Hover affordance */
