@@ -65,7 +65,7 @@ $string['showplayer'] = 'Show Player';
 $string['configplayershow'] = 'Show Player application regardless of user permissions';
 $string['playerapiurl'] = 'Player API';
 $string['playerappurl'] = 'Player UI';
-$string['playerdescription'] = 'Crucible\'s Exercise User Interface';
+$string['playerdescription'] = 'Exercise User Interface';
 $string['configplayerapiurl'] = 'Player API URL used to pull permissions';
 $string['configplayerappurl'] = 'Player UI URL used to redirect participants';
 $string['playersectionheading'] = 'Player Settings';
@@ -78,7 +78,7 @@ $string['alloyapiurl'] = 'Alloy API';
 $string['alloyappurl'] = 'Alloy UI';
 $string['configalloyapiurl'] = 'Alloy API URL used to pull permissions';
 $string['configalloyappurl'] = 'Alloy UI used to redirect content developers';
-$string['alloydescription'] = 'Crucible\'s On-Demand Exercise Deployment Dashboard';
+$string['alloydescription'] = 'On-Demand Exercise Deployment Dashboard';
 $string['alloysectionheading'] = 'Alloy Settings';
 $string['alloysectiondesc'] = 'Configure API and application URLs for Alloy integration.';
 
@@ -89,7 +89,7 @@ $string['blueprintapiurl'] = 'Blueprint API';
 $string['blueprintappurl'] = 'Blueprint UI';
 $string['configblueprintapiurl'] = 'Blueprint API URL used to pull permissions';
 $string['configblueprintappurl'] = 'Blueprint UI used to redirect content developers';
-$string['blueprintdescription'] = 'Crucible\'s Exercise Planning Tool';
+$string['blueprintdescription'] = 'Exercise Planning Tool';
 $string['blueprintsectionheading'] = 'Blueprint Settings';
 $string['blueprintsectiondesc'] = 'Configure API and application URLs for Blueprint integration.';
 
@@ -100,7 +100,7 @@ $string['casterapiurl'] = 'Caster API';
 $string['casterappurl'] = 'Caster UI';
 $string['configcasterapiurl'] = 'Caster API URL used to pull permissions';
 $string['configcasterappurl'] = 'Caster UI used to redirect content developers';
-$string['casterdescription'] = 'Crucible\'s Exercise Topology Builder';
+$string['casterdescription'] = 'Exercise Topology Builder';
 $string['castersectionheading'] = 'Caster Settings';
 $string['castersectiondesc'] = 'Configure API and application URLs for Caster integration.';
 
@@ -111,7 +111,7 @@ $string['citeapiurl'] = 'CITE API';
 $string['citeappurl'] = 'CITE UI';
 $string['configciteapiurl'] = 'CITE API URL used to pull permissions';
 $string['configciteappurl'] = 'CITE UI URL used to redirect participants';
-$string['citedescription'] = 'Crucible\'s Exercise Dashboard and Incident Evaluator';
+$string['citedescription'] = 'Exercise Dashboard and Incident Evaluator';
 $string['citesectionheading'] = 'CITE Settings';
 $string['citesectiondesc'] = 'Configure API and application URLs for CITE integration.';
 
@@ -122,7 +122,7 @@ $string['galleryapiurl'] = 'Gallery API';
 $string['galleryappurl'] = 'Gallery UI';
 $string['configgalleryapiurl'] = 'Gallery API URL used to pull permissions';
 $string['configgalleryappurl'] = 'Gallery UI URL used to redirect participants';
-$string['gallerydescription'] = 'Crucible\'s Exercise Information Sharing Tool';
+$string['gallerydescription'] = 'Exercise Information Sharing Tool';
 $string['gallerysectionheading'] = 'Gallery Settings';
 $string['gallerysectiondesc'] = 'Configure API and application URLs for Gallery integration.';
 
@@ -133,7 +133,7 @@ $string['steamfitterapiurl'] = 'Steamfitter API';
 $string['steamfitterappurl'] = 'Steamfitter UI';
 $string['configsteamfitterapiurl'] = 'Steamfitter API URL used to pull permissions';
 $string['configsteamfitterappurl'] = 'Steamfitter UI URL used to redirect participants';
-$string['steamfitterdescription'] = 'Crucible\'s Exercise Inject Automater';
+$string['steamfitterdescription'] = 'Exercise Inject Automater';
 $string['steamfittersectionheading'] = 'Steamfitter Settings';
 $string['steamfittersectiondesc'] = 'Configure API and application URLs for Steamfitter integration.';
 
@@ -168,7 +168,7 @@ $string['topomojoapiurl'] = 'TopoMojo API';
 $string['topomojoappurl'] = 'TopoMojo UI';
 $string['configtopomojoapiurl'] = 'TopoMojo API URL used to pull permissions';
 $string['configtopomojoappurl'] = 'TopoMojo UI URL used to redirect participants';
-$string['topomojodescription'] = 'Crucible\'s Training Lab Builder and Interface';
+$string['topomojodescription'] = 'Training Lab Builder and Interface';
 $string['topomojosectionheading'] = 'TopoMojo Settings';
 $string['topomojosectiondesc'] = 'Configure API, keys, and application URLs for TopoMojo integration.';
 
@@ -179,7 +179,7 @@ $string['gameboardapiurl'] = 'Gameboard API';
 $string['gameboardappurl'] = 'Gameboard UI';
 $string['configgameboardapiurl'] = 'Gameboard API URL used to pull permissions';
 $string['configgameboardappurl'] = 'Gameboard UI URL used to redirect participants';
-$string['gameboarddescription'] = 'Crucible\'s Competition Platform';
+$string['gameboarddescription'] = 'Competition Platform';
 $string['gameboardsectionheading'] = 'Gameboard Settings';
 $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for Gameboard integration.';
 
@@ -309,3 +309,6 @@ $string['nousersfound'] = 'No users found.';
 $string['nocohorts'] = 'You are not in any cohorts.';
 $string['cohortroles'] = 'Team Role';
 $string['reportsheader'] = 'My Team';
+$string['alreadyenrolled'] = 'You are already enrolled in this learning plan.';
+$string['alreadyenrolled_short'] = 'Enrolled';
+$string['viewplan'] = 'View plan';

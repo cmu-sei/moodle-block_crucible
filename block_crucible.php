@@ -579,12 +579,20 @@ class block_crucible extends block_base {
 
             $role = $lp->get_user_workrole_string($USER->id);
             $suggestions = $lp->suggest_templates_for_user($USER->id, 8);
+            foreach ($suggestions as $s) {
+                $plan = $lp->get_user_plan_from_template((int)$s->id, $USER->id);
+                if ($plan) {
+                    $s->hasplan = true;
+                } else {
+                    $s->hasplan = false;
+                }
+            }
 
             $lpdata = (object)[
-                'heading'     => get_string('view_learningplan', 'block_crucible'),
-                'role'        => $role,
+                'heading'        => get_string('view_learningplan', 'block_crucible'),
+                'role'           => $role,
                 'hassuggestions' => !empty($suggestions),
-                'suggestions' => array_map(function($s) {
+                'suggestions'    => array_map(function($s) {
                     return (object)[
                         'id'            => $s->id,
                         'name'          => $s->name,
@@ -593,6 +601,7 @@ class block_crucible extends block_base {
                         'url'           => $s->url,
                         'coursecount'   => $s->coursecount ?? 0,
                         'activitycount' => $s->activitycount ?? 0,
+                        'hasplan'       => !empty($s->hasplan),
                     ];
                 }, $suggestions),
             ];
@@ -601,6 +610,7 @@ class block_crucible extends block_base {
 
             $this->content->text = $OUTPUT->render_from_template('block_crucible/with_learningplan', $lpdata);
             return $this->content;
+
         } else if ($view === 'competencies') {
             $svc  = new \block_crucible\competencies();
             $data = $svc->get_view_data(20);

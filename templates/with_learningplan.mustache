@@ -23,7 +23,7 @@
   <!-- Body (table with counts) -->
   <div class="imcite-card__body">
 
-    {{#hassuggestions}}
+      {{#hassuggestions}}
       <div class="lp-table-wrap">
         <table role="table" class="lp-table">
           <thead>
@@ -42,9 +42,18 @@
           <tbody>
             {{#suggestions}}
               <tr class="lp-row">
-                <td class="lp-cell lp-name">
+               <td class="lp-cell lp-name">
+                <div class="lp-name__title">
                   <a href="{{url}}">{{name}}</a>
-                </td>
+                  {{#hasplan}}
+                    <span class="lp-chip" title="{{#str}} alreadyenrolled, block_crucible {{/str}}">
+                      <span class="lp-chip__label">
+                        {{#str}} alreadyenrolled_short, block_crucible {{/str}}
+                      </span>
+                    </span>
+                  {{/hasplan}}
+                </div>
+              </td>
                 <td class="lp-cell--num">{{coursecount}}</td>
                 <td class="lp-cell--num">{{activitycount}}</td>
               </tr>

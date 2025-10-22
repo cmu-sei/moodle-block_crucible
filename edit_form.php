@@ -19,11 +19,9 @@ class block_crucible_edit_form extends block_edit_form {
             null, null, [0, 1]
         );
 
-        $default = (int)get_config('block_crucible', 'showheader_default');
-        $mform->setDefault('config_showheader', $default ?: 1);
         $mform->addHelpButton('config_showheader', 'showheader', 'block_crucible');
 
-        $mform->setDefault('config_showheader', 1);
+        $mform->setDefault('config_showheader', 0);
 
         $mform->addElement('select', 'config_viewtype',
             get_string('config_viewtype', 'block_crucible'),
