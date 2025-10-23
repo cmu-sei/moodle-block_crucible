@@ -1,135 +1,242 @@
-.block_crucible {
-    display: grid;
+.block-crucible-learningplan .list-group-item {
+  border-left: 0; border-right: 0;
+}
+.block-crucible-learningplan .list-group-item:first-child { border-top: 0; }
+.block-crucible-learningplan .list-group-item:last-child  { border-bottom: 0; }
+.imcite-lp .imcite-lp-row:hover td a { text-decoration: underline; }
+.imcite-lp .imcite-lp-row:hover { background:#f8fafc; }
+.imcite-template a:hover { text-decoration: underline; background: #f8fafc; }
+
+.imcite-card {
+  margin: 16px auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(2,6,23,.06);
+  overflow: hidden;
+  font: 14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 }
 
-.card {
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto; 
+.imcite-card__header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg,#e0f2fe,#f8fafc);
+  border-bottom: 1px solid #dbeafe;
+}
+.imcite-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#60a5fa,#2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.imcite-card__titlewrap { display:flex; flex-direction:column; line-height:1.3; }
+.imcite-card__title { font-size:18px; font-weight:800; color:#1e3a8a; }
+.imcite-card__subtitle { font-size:13px; color:#475569; }
+
+.imcite-card__body { padding: 12px; background:#f8fafc; }
+
+.comp-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.comp-table__header {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px;
+  gap: 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  padding: 10px 14px;
+  font-weight: 800;
+  color: #334155;
+}
+.comp-table__row {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px;
+  gap: 0;
+  padding: 12px 14px;
+  border-top: 1px solid #f1f5f9;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+.imcite-comp a:hover .comp-table__row { background:#f8fafc; }
+
+.comp-name { font-weight:800; color:#1d4ed8; }
+.comp-meta { font-size:12px; color:#64748b; margin-top:2px; }
+.comp-cell--num { text-align:right; font-variant-numeric: tabular-nums; }
+
+
+.framework-band[role="rowgroup"] > .framework-band__inner {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: #111827;
+}
+.framework-chip {
+  font-size: 11px;
+  font-weight: 700;
+  color: #3730a3;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.framework-name { font-size: 15px; }
+
+.notice--empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px;
+  color: #475569;
+  text-align: center;
 }
 
-.main-inner {
-    margin-right: 10%; 
-    max-width: calc(100% - 20%); 
+.divider { border-top:1px solid #e5e7eb; margin-top:6px; }
+.unmapped-link {
+  display:block;
+  padding:12px 14px;
+  border-top:1px solid #f1f5f9;
+  background:#fffbeb;
+  font-weight:800;
+  color:#9a3412;
+  text-decoration:none;
+}
+.unmapped-link:focus,
+.unmapped-link:hover { background:#fff3d6; outline:none; }
+
+.lp-table-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.lp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.lp-table thead th {
+  background: #f1f5f9;
+  color: #334155;
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.lp-table thead th.is-num { text-align: right; }
+.lp-table thead th.w-140 { width: 140px; }
+.lp-table thead th.w-150 { width: 150px; }
+.lp-row { border-top: 1px solid #f1f5f9; }
+.lp-cell { padding: 14px 16px; }
+.lp-cell--num { padding: 14px 16px; text-align: right; color: #0f172a; }
+
+.lp-name a {
+  font-weight: 800;
+  font-size: 16px;
+  color: #1d4ed8;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.imcite-lp .lp-row:hover td .lp-name a { text-decoration: underline; }
+.imcite-lp .lp-row:hover { background: #f8fafc; }
+
+/* Role line states */
+.role-line { font-size:13px; }
+.role-line--ok { color:#475569; }
+.role-line--empty { color:#b91c1c; }
+
+/* Empty state */
+.notice--empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px;
+  color: #475569;
+  text-align: center;
 }
 
+.imcite-apps {container-type: inline-size;}
+.imcite-apps .imcite-card__body { padding:14px; }
 
-.applications-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
+/* Grid */
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 14px;
 }
 
-.application-block {
-    overflow: hidden;
-    border: 1px solid #ccc;
+/* App card */
+.app-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  min-width: 0;
+}
+.app-card__content {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: clamp(10px, 2.5cqw, 16px);
+  flex-wrap: nowrap;
+}
+.app-card__details { min-width: 0; flex: 1 1 auto;}
+.app-card__title { font-weight: 800; color: #0f172a; }
+.app-card__desc  { font-size: 13px; color: #64748b; overflow-wrap: anywhere;}
+
+.app-card__link { flex: 0 0 auto; }
+.app-card__logo {
+  width: clamp(32px, 8cqw, 56px);
+  height: clamp(32px, 8cqw, 56px);
+  object-fit: contain;
 }
 
-.application-content {
-    padding: 10px;
+.imcite-apps .app-card:hover { box-shadow: 0 2px 8px rgba(2,6,23,.06); }
+
+#dropdownFiltersButton {
+  display: none !important;
 }
 
-.application-title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 5px;
+.lp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .18rem .6rem;
+  border-radius: 999px;
+  background: #e6f4ea;
+  border: 1px solid #b7e0c2;
+  color: #155724;
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 0;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
-.application-link {
-    font-size: 10px;
-}
-
-.application-image {
-    max-width: 80px; 
-    max-height: 80px;
-    margin-right: 10px; /* Add spacing between image and text */
-    margin-left: 10px;
-}
-
-.gameboard-image {
-    margin-top: 10px;
-    max-width: 70px; /* Ensure the image doesn't exceed the container width */
-    max-height: 70px;
-    margin-left: 10px;
-}
-
-.misp-icon {
-    margin-top: 20px;
-    max-width: 80px; /* Ensure the image doesn't exceed the container width */
-    max-height: 80px;
-    margin-left: 10px;
-}
-
-.keycloak-icon {
-    margin-top: 10px;
-    max-width: 70px; /* Ensure the image doesn't exceed the container width */
-    max-height: 70px;
-    margin-right: 10px; /* Add spacing between image and text */
-    margin-left: 10px;
-}
-
-.topo-image {
-    margin-top: 10px;
-    max-width: 70px; /* Ensure the image doesn't exceed the container width */
-    max-height: 70px;
-    margin-right: 10px; /* Add spacing between image and text */
-    margin-left: 10px;
-}
-
-.card-title {
-    font-size: 30px;
-}
-
-.application-content {
-    display: flex;
-}
-
-.application-details {
-    flex: 1;
-}
-
-.application-description {
-    font-size: 15px;
-    margin-bottom: 5px;
-}
-
-.misp-description {
-    font-size: 15px;
-    margin-bottom: 5px;
-}
-
-.gameboard-description {
-    font-size: 15px;
-    margin-bottom: 5px;
-}
-
-.center-message {
-    text-align: center;
-    margin: auto;
-    width: 60%; 
-}
-
-.application-logo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.rocketchat {
-    max-width: 70px;
-    max-height: 70px;
-    margin-right: 10px;
-    margin-left: 10px;
-}
-
-@media only screen and (max-width: 1000px) {
-    .application-grid {
-        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    }
-}
-
-@media only screen and (max-width: 500px) {
-    .application-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
-    }
+.lp-name__title {
+  display: flex;
+  margin-top: 0;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
 }

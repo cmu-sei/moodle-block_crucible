@@ -1,0 +1,73 @@
+<div class="imcite-card imcite-lp" data-tour="lp-suggest">
+
+  <!-- Header -->
+  <div class="imcite-card__header">
+    <div class="imcite-card__icon">🎯</div>
+    <div class="imcite-card__titlewrap">
+      <div class="imcite-card__title">{{cardtitle}}</div>
+
+      {{#role}}
+        <div class="role-line role-line--ok">
+          {{#str}} suggestedforrole, block_crucible {{/str}}:
+          <strong>{{role}}</strong>
+        </div>
+      {{/role}}
+      {{^role}}
+        <div class="role-line role-line--empty">
+          {{#str}} emptyrolemsg, block_crucible {{/str}}
+        </div>
+      {{/role}}
+    </div>
+  </div>
+
+  <!-- Body (table with counts) -->
+  <div class="imcite-card__body">
+
+      {{#hassuggestions}}
+      <div class="lp-table-wrap">
+        <table role="table" class="lp-table">
+          <thead>
+            <tr>
+              <th scope="col">
+                {{#str}} lpname_header, block_crucible {{/str}}
+              </th>
+              <th scope="col" class="is-num w-140">
+                {{#str}} lpcoursecount_header, block_crucible {{/str}}
+              </th>
+              <th scope="col" class="is-num w-150">
+                {{#str}} lpactivitycount_header, block_crucible {{/str}}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#suggestions}}
+              <tr class="lp-row">
+               <td class="lp-cell lp-name">
+                <div class="lp-name__title">
+                  <a href="{{url}}">{{name}}</a>
+                  {{#hasplan}}
+                    <span class="lp-chip" title="{{#str}} alreadyenrolled, block_crucible {{/str}}">
+                      <span class="lp-chip__label">
+                        {{#str}} alreadyenrolled_short, block_crucible {{/str}}
+                      </span>
+                    </span>
+                  {{/hasplan}}
+                </div>
+              </td>
+                <td class="lp-cell--num">{{coursecount}}</td>
+                <td class="lp-cell--num">{{activitycount}}</td>
+              </tr>
+            {{/suggestions}}
+          </tbody>
+        </table>
+      </div>
+    {{/hassuggestions}}
+
+    {{^hassuggestions}}
+      <div class="notice--empty">
+        {{#str}} noplanssuggested, block_crucible {{/str}}
+      </div>
+    {{/hassuggestions}}
+
+  </div>
+</div>
