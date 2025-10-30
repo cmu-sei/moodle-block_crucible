@@ -122,28 +122,58 @@ class learningplans {
     }
 
     public function get_template_view_data(int $templateid, int $userid, \context $context): \stdClass {
-        global $DB, $CFG;
+        global $DB, $CFG, $SITE, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
 
-        // Load template object via API (gives visibility fields).
+        // 1) Template via API (visibility etc.).
         $template = \core_competency\template::get_record(['id' => $templateid]);
         if (!$template || !$template->get('visible')) {
             throw new \moodle_exception('invalidrecord', 'error');
         }
 
-        // Fetch competencies in the template.
+        // 2) Competencies in template + their immediate parent (single join).
         $comps = $DB->get_records_sql("
-            SELECT c.id, c.shortname, c.idnumber, c.description, c.descriptionformat,
-                   cf.shortname AS frameworkshortname, tc.sortorder
-              FROM {competency_templatecomp} tc
-              JOIN {competency} c ON c.id = tc.competencyid
-         LEFT JOIN {competency_framework} cf ON cf.id = c.competencyframeworkid
-             WHERE tc.templateid = :tid
-          ORDER BY tc.sortorder, c.shortname
+            SELECT
+                c.id, c.shortname, c.idnumber, c.description, c.descriptionformat,
+                c.parentid,
+                p.shortname AS parentname,
+                cf.shortname AS frameworkshortname,
+                tc.sortorder
+            FROM {competency_templatecomp} tc
+            JOIN {competency} c                ON c.id = tc.competencyid
+            LEFT JOIN {competency} p           ON p.id = c.parentid         -- immediate parent
+            LEFT JOIN {competency_framework} cf ON cf.id = c.competencyframeworkid
+            WHERE tc.templateid = :tid
+            ORDER BY tc.sortorder, c.shortname
         ", ['tid' => $templateid]);
 
+        // Early exit if no rows.
+        if (empty($comps)) {
+            $templatedesc = format_text(
+                (string)$template->get('description'),
+                (int)$template->get('descriptionformat'),
+                ['context' => $context]
+            );
+            $alreadyhas = $DB->record_exists('competency_plan', ['userid' => $userid, 'templateid' => $templateid]);
+
+            return (object)[
+                'templateid'   => (int)$template->get('id'),
+                'shortname'    => format_string($template->get('shortname'), true, ['context' => $context]),
+                'description'  => $templatedesc,
+                'hascomps'     => false,
+                'competencies' => [],
+                'compgroups'   => [],
+                'canselfenrol' => !$alreadyhas,
+                'selfenrolurl' => (new \moodle_url('/blocks/crucible/template.php', [
+                    'id' => $templateid, 'action' => 'selfenrol', 'sesskey' => sesskey()
+                ]))->out(false),
+            ];
+        }
+
+        // 3) Build items + course/activity mappings (unchanged logic).
         $items = [];
         $coursecache = [];
+
         foreach ($comps as $c) {
             $cid = (int)$c->id;
 
@@ -153,6 +183,7 @@ class learningplans {
 
             foreach ($courseSummaries as $cs) {
                 $courseid = (int)$cs->id;
+
                 if (!isset($coursecache[$courseid])) {
                     $coursecache[$courseid] = get_course($courseid);
                 }
@@ -160,7 +191,7 @@ class learningplans {
                 $cctx   = \context_course::instance($course->id);
 
                 // Activities mapped to this competency in this course.
-                $cmids = \core_competency\api::list_course_modules_using_competency($cid, $courseid);
+                $cmids   = \core_competency\api::list_course_modules_using_competency($cid, $courseid);
                 $modinfo = get_fast_modinfo($courseid);
                 $acts = [];
                 foreach ($cmids as $cmid) {
@@ -169,7 +200,7 @@ class learningplans {
                             'name' => $cm->get_formatted_name(),
                             'url'  => $cm->url
                                 ? $cm->url->out(false)
-                                : (new moodle_url('/course/view.php', ['id' => $courseid]))->out(false),
+                                : (new \moodle_url('/course/view.php', ['id' => $courseid]))->out(false),
                         ];
                     }
                 }
@@ -178,12 +209,21 @@ class learningplans {
                     'id'         => (int)$course->id,
                     'fullname'   => format_string($course->fullname, true, ['context' => $cctx]),
                     'shortname'  => s($course->shortname ?? ''),
-                    'url'        => (new moodle_url('/course/view.php', ['id' => $course->id]))->out(false),
+                    'url'        => (new \moodle_url('/course/view.php', ['id' => $course->id]))->out(false),
                     'actcount'   => count($acts),
                     'hasacts'    => !empty($acts),
                     'activities' => $acts,
                 ];
             }
+
+            // Decide the group label: parent shortname if exists; otherwise framework shortname or "Ungrouped".
+            $parentid   = (int)($c->parentid ?? 0);
+            $parentname = $c->parentname ?? '';
+            $grouplabel = $parentid
+                ? format_string($parentname, true, ['context' => $context])
+                : (!empty($c->frameworkshortname)
+                    ? format_string($c->frameworkshortname, true, ['context' => $context])
+                    : get_string('ungrouped', 'block_crucible'));
 
             $items[] = (object)[
                 'id'         => $cid,
@@ -193,33 +233,67 @@ class learningplans {
                 'desc'       => format_text((string)$c->description, (int)$c->descriptionformat, ['context' => $context]),
                 'hascourses' => !empty($courseitems),
                 'courses'    => $courseitems,
+
+                // for grouping:
+                'parentid'   => $parentid,
+                'parentname' => $grouplabel,
             ];
         }
 
-        // Description + header bits.
+        // 4) Group by parentid → compgroups for collapsible sections.
+        $byparent = [];
+        foreach ($items as $it) {
+            $pid = $it->parentid ?: 0;
+            if (!isset($byparent[$pid])) {
+                $byparent[$pid] = [
+                    'groupname' => $it->parentname ?: get_string('ungrouped', 'block_crucible'),
+                    'items'     => [],
+                ];
+            }
+            $byparent[$pid]['items'][] = $it;
+        }
+
+        // Sort groups by label; sort items by idnumber then shortname (natural, case-insensitive).
+        uasort($byparent, function($a, $b) {
+            return strnatcasecmp($a['groupname'], $b['groupname']);
+        });
+
+        $compgroups = [];
+        foreach ($byparent as $g) {
+            usort($g['items'], function($a, $b) {
+                $ka = $a->idnumber ?? $a->shortname ?? '';
+                $kb = $b->idnumber ?? $b->shortname ?? '';
+                $cmp = strnatcasecmp($ka, $kb);
+                if ($cmp !== 0) return $cmp;
+                return strnatcasecmp($a->shortname ?? '', $b->shortname ?? '');
+            });
+            $compgroups[] = (object)[
+                'groupname' => $g['groupname'],
+                'count'     => count($g['items']),
+                'items'     => $g['items'],
+            ];
+        }
+
+        // 5) Header/desc + enrol bits.
         $templatedesc = format_text(
             (string)$template->get('description'),
             (int)$template->get('descriptionformat'),
             ['context' => $context]
         );
+        $alreadyhas = $DB->record_exists('competency_plan', ['userid' => $userid, 'templateid' => $templateid]);
 
-        $alreadyhas = $DB->record_exists('competency_plan', [
-            'userid' => $userid, 'templateid' => $templateid
-        ]);
-
-        $data = (object)[
+        return (object)[
             'templateid'   => (int)$template->get('id'),
             'shortname'    => format_string($template->get('shortname'), true, ['context' => $context]),
             'description'  => $templatedesc,
-            'hascomps'     => !empty($items),
+            'hascomps'     => !empty($compgroups),
+            'compgroups'   => $compgroups,
             'competencies' => $items,
             'canselfenrol' => !$alreadyhas,
-            'selfenrolurl' => (new moodle_url('/blocks/crucible/template.php', [
+            'selfenrolurl' => (new \moodle_url('/blocks/crucible/template.php', [
                 'id' => $templateid, 'action' => 'selfenrol', 'sesskey' => sesskey()
             ]))->out(false),
         ];
-
-        return $data;
     }
 
     protected function counts_for_templates(array $templateids): array {
