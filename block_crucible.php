@@ -577,15 +577,24 @@ class block_crucible extends block_base {
         } else if ($view === 'learningplan') {
             $lp = new \block_crucible\learningplans();
 
+            $fwid = !empty($this->config->frameworkid) ? (int)$this->config->frameworkid : null;
+            $fwshort = '';
+             if ($fwid) {
+                if (class_exists('\core_competency\competency_framework')) {
+                    if ($pf = \core_competency\competency_framework::get_record(['id' => $fwid])) {
+                        $fwshort = (string)$pf->get('shortname');
+                    }
+                } else {
+                    $fwshort = (string)$DB->get_field('competency_framework', 'shortname', ['id' => $fwid]) ?: '';
+                }
+            }
+
             $role = $lp->get_user_workrole_string($USER->id);
-            $suggestions = $lp->suggest_templates_for_user($USER->id, 8);
+            $suggestions = $lp->suggest_templates_for_user($USER->id, 8, $fwid);
+
             foreach ($suggestions as $s) {
                 $plan = $lp->get_user_plan_from_template((int)$s->id, $USER->id);
-                if ($plan) {
-                    $s->hasplan = true;
-                } else {
-                    $s->hasplan = false;
-                }
+                $s->hasplan = (bool)$plan;
             }
 
             $lpdata = (object)[
@@ -604,13 +613,14 @@ class block_crucible extends block_base {
                         'hasplan'       => !empty($s->hasplan),
                     ];
                 }, $suggestions),
+                'fwshort'        => $fwshort,
+                'hasframework'   => !empty($fwshort),
             ];
 
             $lpdata->cardtitle = $cardtitle;
 
             $this->content->text = $OUTPUT->render_from_template('block_crucible/with_learningplan', $lpdata);
             return $this->content;
-
         } else if ($view === 'competencies') {
             $svc  = new \block_crucible\competencies();
             $data = $svc->get_view_data(20);

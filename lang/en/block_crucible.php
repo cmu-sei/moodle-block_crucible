@@ -312,3 +312,10 @@ $string['reportsheader'] = 'My Team';
 $string['alreadyenrolled'] = 'You are already enrolled in this learning plan.';
 $string['alreadyenrolled_short'] = 'Enrolled';
 $string['viewplan'] = 'View plan';
+$string['search_comp_course_activity'] = 'Search competencies, courses, activities…';
+$string['clear'] = 'Clear';
+$string['noresults'] = 'No matches found';
+$string['config_frameworkid'] = 'Competency framework';
+$string['config_frameworkid_help'] = 'Choose which competency framework this block should use.';
+
+

@@ -22,40 +22,72 @@ class learningplans {
      * Fetch learning plan templates. Uses API if present; otherwise queries
      * the 'competency_template' table (which has: id, shortname, description...).
      */
-    protected function list_templates(): array {
+    protected function list_templates(?int $frameworkid = null): array {
         global $DB;
 
-        // Prefer the API if available (handles permissions etc.).
+        // If a framework is specified, pull only templates that have at least one comp in it.
+        if (!empty($frameworkid)) {
+            $rows = $DB->get_records_sql("
+                SELECT DISTINCT t.id, t.shortname, t.description, t.visible, t.contextid
+                FROM {competency_template} t
+                JOIN {competency_templatecomp} tc ON tc.templateid = t.id
+                JOIN {competency} c ON c.id = tc.competencyid
+                WHERE c.competencyframeworkid = :fwid
+                ORDER BY t.shortname ASC",
+                ['fwid' => $frameworkid]
+            );
+
+            return array_map(function($t) {
+                return (object)[
+                    'id'        => (int)$t->id,
+                    'shortname' => (string)$t->shortname,
+                    'description' => (string)($t->description ?? ''),
+                    'visible'   => (int)($t->visible ?? 1),
+                    'contextid' => (int)($t->contextid ?? 1),
+                ];
+            }, $rows ?: []);
+        }
+
+        // No framework selected
         if (class_exists('\core_competency\template')) {
             $records = \core_competency\template::get_records([], 'shortname', 'ASC');
             return array_map(function($t) {
                 return (object)[
-                    'id'          => (int)$t->get('id'),
-                    'shortname'   => (string)$t->get('shortname'),
+                    'id'        => (int)$t->get('id'),
+                    'shortname' => (string)$t->get('shortname'),
                     'description' => (string)$t->get('description'),
-                    'visible'     => (int)$t->get('visible'),
-                    'contextid'   => (int)$t->get('contextid'),
+                    'visible'   => (int)$t->get('visible'),
+                    'contextid' => (int)$t->get('contextid'),
                 ];
             }, $records);
         }
+
+        return [];
     }
 
     /**
      * Suggest templates by token-matching user's work role to template fields.
      */
-    public function suggest_templates_for_user(int $userid, int $limit = 8): array {
+    public function suggest_templates_for_user(int $userid, int $limit = 8, ?int $frameworkid = null): array {
+        global $DB;
+
         $role = $this->get_user_workrole_string($userid);
         if (!$role) { return []; }
 
         $tokens = preg_split('/[^\p{L}\p{N}\+]+/u', core_text::strtolower($role), -1, PREG_SPLIT_NO_EMPTY);
         if (!$tokens) { return []; }
 
-        $templates = $this->list_templates();
+        $fwshort = '';
+        if (!empty($frameworkid)) {
+            $fwshort = (string)$DB->get_field('competency_framework', 'shortname', ['id' => $frameworkid]) ?: '';
+        }
+
+        // Filtered templates
+        $templates = $this->list_templates($frameworkid);
         if (!$templates) { return []; }
 
         $matches = [];
         foreach ($templates as $t) {
-            // Display name: use shortname (your table has no 'name').
             $display = $t->shortname ?? 'Template';
             $desc    = isset($t->description) ? core_text::strtolower(strip_tags($t->description)) : '';
             $hay     = core_text::strtolower($display.' '.$desc);
@@ -65,14 +97,18 @@ class learningplans {
                 if (core_text::strlen($tok) < 3) { continue; }
                 if (mb_stripos($hay, $tok) !== false) { $score++; }
             }
+
             if ($score > 0) {
+                $params = ['id' => $t->id];
+                if ($fwshort !== '') {
+                    $params['fw'] = $fwshort;
+                }
                 $matches[] = (object)[
                     'id'        => (int)$t->id,
                     'name'      => $display,
                     'shortname' => $t->shortname ?? '',
                     'score'     => $score,
-                    // tool_lp template details page (works if user has access).
-                    'url' => (new moodle_url('/blocks/crucible/template.php', ['id' => $t->id]))->out(false),
+                    'url'       => (new moodle_url('/blocks/crucible/template.php', $params))->out(false),
                 ];
             }
         }
@@ -80,13 +116,12 @@ class learningplans {
         usort($matches, fn($a,$b) => $b->score <=> $a->score);
         $matches = array_slice($matches, 0, $limit);
 
-        // Attach counts.
         $counts = $this->counts_for_templates(array_map(fn($m) => (int)$m->id, $matches));
         foreach ($matches as $m) {
             $m->coursecount   = $counts[$m->id]['courses']    ?? 0;
             $m->activitycount = $counts[$m->id]['activities'] ?? 0;
         }
-        return array_slice($matches, 0, $limit);
+        return $matches;
     }
 
      public function self_enrol_user_to_template(int $templateid, int $userid): string {
@@ -121,7 +156,7 @@ class learningplans {
         return 'created';
     }
 
-    public function get_template_view_data(int $templateid, int $userid, \context $context): \stdClass {
+    public function get_template_view_data(int $templateid, int $userid, \context $context, int $frameworkid = 0): \stdClass {
         global $DB, $CFG, $SITE, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
 
@@ -131,7 +166,13 @@ class learningplans {
             throw new \moodle_exception('invalidrecord', 'error');
         }
 
-        // 2) Competencies in template + their immediate parent (single join).
+        $fwsql = '';
+        $params = ['tid' => $templateid];
+        if ($frameworkid > 0) {
+            $fwsql = ' AND c.competencyframeworkid = :fwid ';
+            $params['fwid'] = $frameworkid;
+        }
+
         $comps = $DB->get_records_sql("
             SELECT
                 c.id, c.shortname, c.idnumber, c.description, c.descriptionformat,
@@ -140,12 +181,13 @@ class learningplans {
                 cf.shortname AS frameworkshortname,
                 tc.sortorder
             FROM {competency_templatecomp} tc
-            JOIN {competency} c                ON c.id = tc.competencyid
-            LEFT JOIN {competency} p           ON p.id = c.parentid         -- immediate parent
+            JOIN {competency} c                 ON c.id = tc.competencyid
+            LEFT JOIN {competency} p            ON p.id = c.parentid
             LEFT JOIN {competency_framework} cf ON cf.id = c.competencyframeworkid
             WHERE tc.templateid = :tid
+              $fwsql
             ORDER BY tc.sortorder, c.shortname
-        ", ['tid' => $templateid]);
+        ", $params);
 
         // Early exit if no rows.
         if (empty($comps)) {

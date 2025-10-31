@@ -1,3 +1,19 @@
+<!-- Search toolbar-->
+<div class="lp-toolbar"
+      style="display:flex;justify-content:flex-end;gap:8px;align-items:center;padding:12px 16px;background:#fff;">
+  <label style="position:relative;display:block;flex:0 0 350px;max-width:350px;min-width:220px;">
+    <input type="text" class="lp-search"
+            placeholder="{{#str}} search_comp_course_activity, block_crucible {{/str}}"
+            style="width:100%;padding:8px 32px 8px 32px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;font-size:13px;color:#0f172a;outline:none;height:34px;"
+            aria-label="{{#str}} search_comp_course_activity, block_crucible {{/str}}" />
+    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;">🔎</span>
+    <button type="button" class="lp-clear"
+            aria-label="{{#str}} clear, block_crucible {{/str}}"
+            title="{{#str}} clear, block_crucible {{/str}}"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;font-size:14px;cursor:pointer;display:none;">✕</button>
+  </label>
+</div>
+
 {{#hasplan}}
   <div style="margin:12px 0;border:1px solid #bbf7d0;background:#dcfce7;color:#166534;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center;">
     <div style="font-weight:700;">{{#str}} youalreadyhavethisplan, block_crucible {{/str}}</div>
@@ -7,10 +23,8 @@
   </div>
 {{/hasplan}}
 
-<div class="imcite-card imcite-template"
+<div class="imcite-card imcite-template lp-template"
      style="margin:16px auto;border:1px solid #e5e7eb;border-radius:16px;background:#fff;box-shadow:0 6px 16px rgba(2,6,23,.06);overflow:hidden;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-
-  <!-- Header: title left, action button right -->
   <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 16px;background:linear-gradient(135deg,#e0f2fe,#f8fafc);border-bottom:1px solid #dbeafe;">
     <div style="display:flex;gap:10px;align-items:center;">
       <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#60a5fa,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;">📘</div>
@@ -19,14 +33,16 @@
       </div>
     </div>
 
-    {{#canselfenrol}}
-      <form method="post" action="{{selfenrolurl}}" style="margin:0;">
-        <button type="submit"
-                style="padding:10px 14px;border:1px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;font-weight:700;cursor:pointer;">
-          {{#str}} addtomylearningplans, block_crucible {{/str}}
-        </button>
-      </form>
-    {{/canselfenrol}}
+    <div style="display:flex;gap:8px;align-items:center;min-width:280px;max-width:420px;flex:1;justify-content:flex-end;">
+      {{#canselfenrol}}
+        <form method="post" action="{{selfenrolurl}}" style="margin:0;">
+          <button type="submit"
+                  style="padding:10px 14px;border:1px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;font-weight:700;cursor:pointer;">
+            {{#str}} addtomylearningplans, block_crucible {{/str}}
+          </button>
+        </form>
+      {{/canselfenrol}}
+    </div>
   </div>
 
   <!-- Body -->
@@ -40,15 +56,21 @@
         {{#str}} competencies, block_crucible {{/str}}
       </div>
 
+      <!-- Empty / no matches -->
+      <div class="lp-empty" style="display:none;padding:10px 12px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#475569;">
+        {{#str}} noresults, block_crucible {{/str}}
+      </div>
+
       <div style="display:flex;flex-direction:column;gap:12px;" class="cru-groups">
         {{#compgroups}}
           <details class="cru-group"
-                  style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;overflow:hidden;">
+                   data-group-name="{{groupname}}"
+                   style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;overflow:hidden;">
             <summary style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;cursor:pointer;">
               <div style="font-weight:800;color:#0f172a;font-size:15px;line-height:1.3;">
                 {{groupname}}
               </div>
-              <span style="font-size:12px;background:#eef2ff;color:#1e3a8a;border:1px solid #dbeafe;border-radius:999px;padding:2px 8px;white-space:nowrap;">
+              <span class="cru-group-count" style="font-size:12px;background:#eef2ff;color:#1e3a8a;border:1px solid #dbeafe;border-radius:999px;padding:2px 8px;white-space:nowrap;">
                 {{count}}
               </span>
             </summary>
@@ -56,40 +78,44 @@
             <div style="padding:12px;display:flex;flex-direction:column;gap:12px;background:#fff;">
               {{#items}}
                 <div class="cru-comp"
-                        style="border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;">
+                         data-comp-name="{{shortname}}"
+                         {{#framework}}data-comp-framework="{{framework}}"{{/framework}}
+                         {{#idnumber}}data-comp-id="{{idnumber}}"{{/idnumber}}
+                         style="border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;">
                   <summary style="display:flex;justify-content:space-between;align-items:start;gap:10px;padding:12px;cursor:pointer;">
                     <div>
-                      <div style="font-weight:800;color:#0f172a;font-size:16px;line-height:1.3;">{{shortname}}</div>
+                      <div class="cru-comp-title" style="font-weight:800;color:#0f172a;font-size:16px;line-height:1.3;">{{shortname}}</div>
                       {{#framework}}
-                        <div style="font-size:12px;color:#64748b;margin-top:2px;">{{framework}}</div>
+                        <div class="cru-comp-framework" style="font-size:12px;color:#64748b;margin-top:2px;">{{framework}}</div>
                       {{/framework}}
                     </div>
                     {{#idnumber}}
-                      <span style="font-size:12px;background:#eef2ff;color:#1e3a8a;border:1px solid #dbeafe;border-radius:999px;padding:2px 8px;white-space:nowrap;">
+                      <span class="cru-comp-id" style="font-size:12px;background:#eef2ff;color:#1e3a8a;border:1px solid #dbeafe;border-radius:999px;padding:2px 8px;white-space:nowrap;">
                         {{idnumber}}
                       </span>
                     {{/idnumber}}
                   </summary>
 
                   {{#desc}}
-                    <div style="margin:0 12px 12px 12px;color:#0f172a;">{{{desc}}}</div>
+                    <div class="cru-comp-desc" style="margin:0 12px 12px 12px;color:#0f172a;">{{{desc}}}</div>
                   {{/desc}}
 
                   {{#hascourses}}
-                    <div style="margin:0 12px 12px 12px;">
+                    <div class="cru-courses" style="margin:0 12px 12px 12px;">
                       <div style="font-weight:700;color:#0f172a;margin-bottom:6px;">
                         {{#str}} courses, block_crucible {{/str}}
                       </div>
-                      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
+                      <ul class="cru-course-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
                         {{#courses}}
-                          <li style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+                          <li class="cru-course" data-course-name="{{fullname}} {{shortname}}"
+                              style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;">
                               <div>
-                                <a href="{{url}}" style="color:#1d4ed8;text-decoration:none;font-weight:800;">
+                                <a href="{{url}}" class="cru-course-link" style="color:#1d4ed8;text-decoration:none;font-weight:800;">
                                   {{fullname}}
                                 </a>
                                 {{#shortname}}
-                                  <span style="color:#64748b;"> ({{shortname}})</span>
+                                  <span class="cru-course-short" style="color:#64748b;"> ({{shortname}})</span>
                                 {{/shortname}}
                               </div>
                               <span style="font-size:12px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:999px;padding:2px 8px;white-space:nowrap;display:inline-flex;gap:6px;align-items:center;">
@@ -98,13 +124,15 @@
                             </div>
 
                             {{#hasacts}}
-                              <div style="border-top:1px solid #f1f5f9;padding:10px 12px;background:#f8fafc;border-bottom-left-radius:12px;border-bottom-right-radius:12px;">
+                              <div class="cru-activities" style="border-top:1px solid #f1f5f9;padding:10px 12px;background:#f8fafc;border-bottom-left-radius:12px;border-bottom-right-radius:12px;">
                                 <div style="font-size:12px;color:#64748b;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
                                   ▶️ {{#str}} mappedactivities, block_crucible {{/str}} {{#actcount}}({{actcount}}){{/actcount}}
                                 </div>
-                                <ul style="list-style:none;margin:0;padding:0 0 0 2px;display:flex;flex-direction:column;gap:4px;">
+                                <ul class="cru-activity-list" style="list-style:none;margin:0;padding:0 0 0 2px;display:flex;flex-direction:column;gap:4px;">
                                   {{#activities}}
-                                    <li><a href="{{url}}" style="color:#1d4ed8;text-decoration:none;">{{name}}</a></li>
+                                    <li class="cru-activity" data-activity-name="{{name}}">
+                                      <a href="{{url}}" style="color:#1d4ed8;text-decoration:none;">{{name}}</a>
+                                    </li>
                                   {{/activities}}
                                 </ul>
                               </div>
@@ -129,3 +157,10 @@
     {{/hascomps}}
   </div>
 </div>
+
+{{#js}}
+require(['block_crucible/search'], function(search) {
+  search.init({ root: '.lp-template', toolbar: '.lp-toolbar' });
+});
+{{/js}}
+
