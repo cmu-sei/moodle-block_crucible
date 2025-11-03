@@ -55,7 +55,6 @@ class block_crucible_edit_form extends block_edit_form {
         );
         $mform->setType('config_frameworkid', PARAM_INT);
         $mform->hideIf('config_frameworkid', 'config_viewtype', 'neq', 'learningplan');
-        $mform->addRule('config_frameworkid', get_string('required'), 'required', null, 'client');
 
         $mform->addHelpButton('config_frameworkid', 'config_frameworkid', 'block_crucible');
     }
