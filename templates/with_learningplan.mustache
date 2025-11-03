@@ -17,6 +17,13 @@
           {{#str}} emptyrolemsg, block_crucible {{/str}}
         </div>
       {{/role}}
+
+      {{#hasframework}}
+        <div class="role-line role-line--ok">
+          {{#str}} framework, block_crucible {{/str}}:
+          <strong>{{fwshort}}</strong>
+        </div>
+      {{/hasframework}}
     </div>
   </div>
 

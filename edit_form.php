@@ -18,9 +18,7 @@ class block_crucible_edit_form extends block_edit_form {
             get_string('showheader', 'block_crucible'),
             null, null, [0, 1]
         );
-
         $mform->addHelpButton('config_showheader', 'showheader', 'block_crucible');
-
         $mform->setDefault('config_showheader', 0);
 
         $mform->addElement('select', 'config_viewtype',
@@ -33,6 +31,33 @@ class block_crucible_edit_form extends block_edit_form {
             ]
         );
         $mform->setDefault('config_viewtype', 'apps');
+
+        // --- Framework selector (shown only for "learningplan") ---
+        $frameworkopts = [];
+        if (class_exists('\core_competency\competency_framework')) {
+            $records = \core_competency\competency_framework::get_records([], 'shortname', 'ASC');
+            foreach ($records as $fw) {
+                $id = (int)$fw->get('id');
+                $label = $fw->get('shortname');
+                $frameworkopts[$id] = format_string($label ?: (string)$id);
+            }
+        }
+        if (empty($frameworkopts)) {
+            // No frameworks found
+            $frameworkopts = ['' => get_string('none')];
+        }
+
+        $mform->addElement(
+            'select',
+            'config_frameworkid',
+            get_string('config_frameworkid', 'block_crucible'),
+            $frameworkopts
+        );
+        $mform->setType('config_frameworkid', PARAM_INT);
+        $mform->hideIf('config_frameworkid', 'config_viewtype', 'neq', 'learningplan');
+        $mform->addRule('config_frameworkid', get_string('required'), 'required', null, 'client');
+
+        $mform->addHelpButton('config_frameworkid', 'config_frameworkid', 'block_crucible');
     }
 
     public static function display_form_when_adding(): bool {
