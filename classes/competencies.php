@@ -57,8 +57,8 @@ class competencies {
             $out[] = (object)[
                 'id'            => $cid,
                 'name'          => format_string($shortname, true, ['context' => $ctx]),
-                'framework'     => s($frameworkshort),
-                'idnumber'      => s($idnumber),
+                'framework'     => $frameworkshort,
+                'idnumber'      => $idnumber,
                 'coursecount'   => $coursecount,
                 'activitycount' => $activitycount,
                 'url'           => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
@@ -88,8 +88,7 @@ class competencies {
             ];
         }
 
-        // --- NEW: unmapped summary per framework, linking to competency.php?fwid=... ---
-        $unmappedbuckets = []; // key: framework label
+        $unmappedbuckets = [];
         $all = \core_competency\competency::get_records([], 'shortname', 'ASC');
         $ctx = \context_system::instance();
 
@@ -241,8 +240,8 @@ class competencies {
         return (object)[
             'id'           => $cid,
             'name'         => format_string($name, true, ['context' => $ctxsys]),
-            'idnumber'     => s($idnumber),
-            'framework'    => s($fwshort),
+            'idnumber'     => $idnumber,
+            'framework'    => $fwshort,
             'hascourses'   => !empty($coursecards),
             'courses'      => $coursecards,
             'hasactivities'=> !empty($activitysets),
@@ -285,14 +284,14 @@ class competencies {
                 $items[] = (object)[
                     'id'       => $cid,
                     'name'     => format_string($shortname, true, ['context' => $ctx]),
-                    'idnumber' => s($idnumber),
+                    'idnumber' => $idnumber,
                     'url'      => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
                 ];
             }
         }
 
         return (object)[
-            'framework'  => s($fwname),
+            'framework'  => $fwname,
             'count'      => count($items),
             'hasitems'   => !empty($items),
             'items'      => $items,
