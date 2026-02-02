@@ -250,7 +250,7 @@ class learningplans {
                 $courseitems[] = (object)[
                     'id'         => (int)$course->id,
                     'fullname'   => format_string($course->fullname, true, ['context' => $cctx]),
-                    'shortname'  => s($course->shortname ?? ''),
+                    'shortname'  => $course->shortname ?? '',
                     'url'        => (new \moodle_url('/course/view.php', ['id' => $course->id]))->out(false),
                     'actcount'   => count($acts),
                     'hasacts'    => !empty($acts),
@@ -270,8 +270,8 @@ class learningplans {
             $items[] = (object)[
                 'id'         => $cid,
                 'shortname'  => format_string($c->shortname, true, ['context' => $context]),
-                'idnumber'   => s($c->idnumber ?? ''),
-                'framework'  => s($c->frameworkshortname ?? ''),
+                'idnumber'   => $c->idnumber ?? '',
+                'framework'  => $c->frameworkshortname ?? '',
                 'desc'       => format_text((string)$c->description, (int)$c->descriptionformat, ['context' => $context]),
                 'hascourses' => !empty($courseitems),
                 'courses'    => $courseitems,
