@@ -211,13 +211,13 @@ class block_crucible extends block_base {
             ////////////////////PLAYER/////////////////////////////
             $playerurl = get_config('block_crucible', 'playerappurl');
             $showplayer = null;
-            $views = null;
+            $views = $crucible->get_player_views();
 
             if ($playerurl) {
                 $showplayer = get_config('block_crucible', 'showplayer');
             }
 
-            if ($userperms || $showplayer) {
+            if ($userperms || $showplayer || $views) {
                 $data->player = $playerurl;
                 $data->playerDescription = get_string('playerdescription', 'block_crucible');
                 $data->playerLogo  = $OUTPUT->image_url('crucible-icon-player', 'block_crucible');
