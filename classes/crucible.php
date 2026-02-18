@@ -19,9 +19,9 @@ Crucible Applications Landing Page Block for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS.
+CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO,
+WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL.
 CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
 Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
 
@@ -43,7 +43,8 @@ DM24-1176
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
-class crucible {
+class crucible
+{
 
     /**
      * The client used for interacting with external services or APIs.
@@ -64,7 +65,8 @@ class crucible {
      *
      * @return bool True if the setup is successful, false otherwise.
      */
-    public function setup_system() {
+    public function setup_system()
+    {
         // Retrieve the issuer ID from the configuration
         $issuerid = get_config('block_crucible', 'issuerid');
         if (!$issuerid) {
@@ -144,7 +146,8 @@ class crucible {
      * @global \stdClass $USER The current Moodle user object.
      * @return string|int The matching role or group name if found; otherwise 0.
      */
-    public function get_user_permissions() {
+    public function get_user_permissions()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -152,18 +155,18 @@ class crucible {
         $groups = get_config('block_crucible', 'keycloakgroups');
 
         if ($this->client == null) {
-                debugging("Session not set up", DEBUG_DEVELOPER);
-                return;
-         }
+            debugging("Session not set up", DEBUG_DEVELOPER);
+            return;
+        }
         if (!$userid) {
-                debugging("User has no idnumber.", DEBUG_DEVELOPER);
-                return;
+            debugging("User has no idnumber.", DEBUG_DEVELOPER);
+            return;
         }
 
         // Check Keycloak roles and groups for Administrator.
         $userRoles = $this->get_keycloak_roles();
-         if (is_array($userRoles) && in_array($roles, $userRoles)) {
-                return $roles;
+        if (is_array($userRoles) && in_array($roles, $userRoles)) {
+            return $roles;
         }
 
         return 0;
@@ -182,7 +185,8 @@ class crucible {
      *
      * @return mixed The number of views as an integer if successful, or 0 in case of failure.
      */
-    public function get_player_views() {
+    public function get_player_views()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -203,7 +207,7 @@ class crucible {
         }
 
         // Web request
-        $url .= "/users/" . $userid . "/views";
+        $url .= "/users/" . $userid . "/view-memberships";
 
         $response = $this->client->get($url);
 
@@ -246,7 +250,8 @@ class crucible {
      *
      * @return mixed The MSEL data as an object if successful, or 0 in case of failure.
      */
-    public function get_blueprint_msels() {
+    public function get_blueprint_msels()
+    {
 
         global $USER;
         $userid = $USER->idnumber;
@@ -271,7 +276,7 @@ class crucible {
         $response = $this->client->get($url);
 
         if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) for User: ". $userid . " on " . $url, DEBUG_DEVELOPER);
+            debugging("Unauthorized access (401) for User: " . $userid . " on " . $url, DEBUG_DEVELOPER);
             return 0;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
@@ -308,7 +313,8 @@ class crucible {
      *
      * @return mixed The permissions data if available as an object, or 0 in case of failure or if permissions are empty.
      */
-    public function get_blueprint_permissions() {
+    public function get_blueprint_permissions()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -375,7 +381,8 @@ class crucible {
      *
      * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
      */
-    public function get_cite_permissions() {
+    public function get_cite_permissions()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -443,7 +450,8 @@ class crucible {
      *
      * @return mixed The evaluations data if available as an object, or 0 in case of failure or if no data is found.
      */
-    public function get_cite_evaluations() {
+    public function get_cite_evaluations()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -508,7 +516,8 @@ class crucible {
      *
      * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
      */
-    public function get_gallery_permissions() {
+    public function get_gallery_permissions()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -576,7 +585,8 @@ class crucible {
      *
      * @return mixed The exhibits data if available as an object, or 0 in case of failure or if no data is found.
      */
-    public function get_gallery_exhibits() {
+    public function get_gallery_exhibits()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -640,7 +650,8 @@ class crucible {
      *               `false` if the request fails due to network issues, or `0` if the user exists but
      *               no special permissions are found or if an API error occurs.
      */
-    public function get_rocketchat_user_info() {
+    public function get_rocketchat_user_info()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -715,7 +726,8 @@ class crucible {
      * @return mixed The user's permissions if the request is successful and valid,
      *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
      */
-    public function get_topomojo_permissions() {
+    public function get_topomojo_permissions()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -768,7 +780,6 @@ class crucible {
             return $r;
         }
         return 0;
-
     }
     //////////////////////Gameboard//////////////////////
     /**
@@ -786,7 +797,8 @@ class crucible {
      * @return mixed The user's permissions if the request is successful and valid,
      *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
      */
-    public function get_gameboard_permissions() {
+    public function get_gameboard_permissions()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -846,7 +858,6 @@ class crucible {
             return $r;
         }
         return 0;
-
     }
 
     /**
@@ -865,7 +876,8 @@ class crucible {
      *               is valid, `0` if the request fails due to network issues, HTTP errors, or if no
      *               challenges are found or the response is invalid.
      */
-    public function get_active_challenges() {
+    public function get_active_challenges()
+    {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -936,7 +948,8 @@ class crucible {
      *                   the user is not found, does not have an admin role, or if any issues
      *                   occur during the request or response parsing.
      */
-    public function get_misp_permissions() {
+    public function get_misp_permissions()
+    {
         global $USER;
         $email = $USER->email;
 
@@ -1006,7 +1019,8 @@ class crucible {
      * @return array|int The user information if found; otherwise, returns `0` if the user is not found
      *                   or if any issues occur during the request or response parsing.
      */
-    public function get_misp_user() {
+    public function get_misp_user()
+    {
         global $USER;
         $email = $USER->email;
 
@@ -1060,7 +1074,8 @@ class crucible {
         return 0;
     }
 
-    public function get_keycloak_groups() {
+    public function get_keycloak_groups()
+    {
         global $USER;
 
         if ($this->client == null) {
@@ -1199,7 +1214,8 @@ class crucible {
         return 0;
     }
 
-    public function get_keycloak_roles() {
+    public function get_keycloak_roles()
+    {
         global $USER;
 
         if ($this->client == null) {
@@ -1318,14 +1334,14 @@ class crucible {
             if (is_array($roles) && !empty($roles)) {
                 // Initialize an array to store role names.
                 $roleNames = [];
-            
+
                 // Loop through each role and collect the 'name' value.
                 foreach ($roles as $role) {
                     if (isset($role['name'])) {
                         $roleNames[] = $role['name'];
                     }
                 }
-            
+
                 // Output or return the array of role names.
                 return $roleNames;
             } else {

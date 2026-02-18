@@ -43,6 +43,7 @@ DM24-1176
 $string['crucible:addinstance'] = 'Add a new Application block';
 $string['crucible:myaddinstance'] = 'Add a new Application block to Dashboard';
 $string['pluginname'] = 'Applications';
+$string['appswelcome'] = 'Welcome';
 $string['issuerid'] = 'Issuer Id';
 $string['configissuerid'] = 'OAUTH Issuer Id for Applications';
 $string['enabled'] = 'Enabled';
