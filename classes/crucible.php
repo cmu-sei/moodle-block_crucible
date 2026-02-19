@@ -156,11 +156,11 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Check Keycloak roles and groups for Administrator.
@@ -192,18 +192,18 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up.", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Check if the URL is configured
         $url = get_config('block_crucible', 'playerapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         // Web request
@@ -213,21 +213,21 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("Player Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Player API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is Unable to Connect to Player Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to Player API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
         if (!$response) {
-            debugging("No response received from Player endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from Player endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -258,18 +258,18 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         if (!$userid) {
             debugging("User has no idnumber.", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'blueprintapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url .= "/users/" . $userid . "/msels";
@@ -277,21 +277,21 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) for User: " . $userid . " on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Blueprint API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to Blueprint API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
         if (!$response) {
-            debugging("No response received from Blueprint endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from Blueprint endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -299,73 +299,6 @@ class crucible
             return 0;
         }
         return $r;
-    }
-
-    /**
-     * Retrieves the permissions for a specific user from the blueprint API.
-     *
-     * This method sends a request to the configured blueprint API endpoint to get the permissions
-     * for the user identified by their `idnumber`. It handles various HTTP response codes to
-     * provide debugging information and returns the permissions data if available.
-     *
-     * If the client is not set up, the user ID is not available, or the URL is not configured, or if there
-     * are HTTP errors, no response, or no permissions data, the method returns 0.
-     *
-     * @return mixed The permissions data if available as an object, or 0 in case of failure or if permissions are empty.
-     */
-    public function get_blueprint_permissions()
-    {
-        global $USER;
-        $userid = $USER->idnumber;
-
-        if ($this->client == null) {
-            debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
-        }
-        if (!$userid) {
-            debugging("User has no idnumber.", DEBUG_DEVELOPER);
-            return;
-        }
-
-        // Web request
-        $url = get_config('block_crucible', 'blueprintapiurl');
-        if (empty($url)) {
-            return 0;
-        }
-
-        $url .= "/users/" . $userid;
-
-        $response = $this->client->get($url);
-
-        if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 404) {
-            debugging("Blueprint Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is Unable to Connect to Blueprint Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        if (!$response) {
-            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        $r = json_decode($response);
-
-        if (empty($r->permissions)) {
-            return 0;
-        } else {
-            return $r->permissions;
-        }
-
-        // User exists but no special perms
-        return 0;
     }
 
     //////////////////////CITE//////////////////////
@@ -388,17 +321,17 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'citeapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url .= "/users/" . $USER->idnumber;
@@ -407,21 +340,21 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("CITE API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
         if (!$response) {
-            debugging("No response received from endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -457,18 +390,18 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'citeapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url .= "/evaluations?userid=" . $userid;
@@ -477,21 +410,21 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("CITE Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("CITE API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . " is Unable to Connect to CITE Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
         if (!$response) {
-            debugging("No response received from CITE endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from CITE endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -499,76 +432,6 @@ class crucible
             return 0;
         }
         return $r;
-    }
-
-    //////////////////////GALLERY//////////////////////
-    /**
-     * Retrieves the permissions for a specific user from the Gallery API.
-     *
-     * This method sends a request to the configured Gallery API endpoint to get permissions
-     * for the user identified by their `idnumber`. It handles various HTTP response codes to
-     * provide debugging information and returns the permissions data if available.
-     *
-     * The URL is configured to fetch permissions using the user ID as a path parameter.
-     *
-     * If the client is not set up, the user ID is not available, or if the URL is not configured, or if there
-     * are HTTP errors, no response, or if the response is not valid JSON, the method returns 0.
-     *
-     * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
-     */
-    public function get_gallery_permissions()
-    {
-        global $USER;
-        $userid = $USER->idnumber;
-
-        if ($this->client == null) {
-            debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
-        }
-        if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
-        }
-
-        // Web request
-        $url = get_config('block_crucible', 'galleryapiurl');
-        if (empty($url)) {
-            return 0;
-        }
-
-        $url .= "/users/" . $userid;
-
-        $response = $this->client->get($url);
-
-        if ($this->client->info['http_code'] === 401) {
-            debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 403) {
-            debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] === 404) {
-            debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
-        } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . " is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        if (!$response) {
-            debugging("No response received from Gallery endpoint.", DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        $r = json_decode($response);
-
-        if (empty($r->permissions)) {
-            return 0;
-        } else {
-            return $r->permissions;
-        }
-
-        // User exists but no special perms
-        return 0;
     }
 
     /**
@@ -592,17 +455,17 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'galleryapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url .= "/users/" . $userid . '/exhibits';
@@ -610,21 +473,21 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("Gallery Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Gallery API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is Unable to Connect to Gallery Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to Gallery API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
         if (!$response) {
-            debugging("No response received from Gallery endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from Gallery endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -733,17 +596,17 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'topomojoapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url .= "/user/" . $userid;
@@ -752,21 +615,21 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("Topomojo Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Topomojo API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is unable to Connect to Topomojo Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to Topomojo API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
         if (!$response) {
-            debugging("No response received from Topomojo endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from Topomojo endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -804,17 +667,17 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'gameboardapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url .= "/user/" . $userid;
@@ -823,22 +686,22 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("Gameboard Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Gameboard API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
 
         if (!$response) {
-            debugging("No response received from Gamebaord endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from Gamebaord endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -883,17 +746,17 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$userid) {
             debugging("User has no idnumber", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'gameboardapiurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url .= "/user/" . $userid . "/challenges/active";
@@ -902,21 +765,21 @@ class crucible
 
         if ($this->client->info['http_code'] === 401) {
             debugging("Unauthorized access (401) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 403) {
             debugging("Forbidden (403) on " . $url, DEBUG_DEVELOPER);
-            return 0;
+            return false;
         } else if ($this->client->info['http_code'] === 404) {
-            debugging("Gameboard Not Found (404) " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Gameboard API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
+            return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("User: " . $userid . "is unable to Connect to Gameboard Endpoint " . $url, DEBUG_DEVELOPER);
-            return 0;
+            debugging("Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            return false;
         }
 
         if (!$response) {
-            debugging("No response received from Gamebaord endpoint.", DEBUG_DEVELOPER);
-            return 0;
+            debugging("No response received from Gamebaord endpoint. Check network connectivity.", DEBUG_DEVELOPER);
+            return false;
         }
 
         $r = json_decode($response);
@@ -955,21 +818,22 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$email) {
             debugging("User has no email", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'mispappurl');
-        if (empty($url)) {
-            return 0;
+        $apikey = get_config('block_crucible', 'mispapikey');
+
+        if (empty($url) || empty($apikey)) {
+            return null;
         }
 
         $url .= "/admin/users";
-        $apikey = get_config('block_crucible', 'mispapikey');
 
         $headers = [
             'Authorization: ' . $apikey,
@@ -983,6 +847,14 @@ class crucible
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
         $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            debugging('MISP API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
+            curl_close($ch);
+            return false;
+        }
+
+        curl_close($ch);
 
         $users = json_decode($response, true);
         $userfound = false;
@@ -1026,21 +898,22 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
         if (!$email) {
             debugging("User has no email", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         // Web request
         $url = get_config('block_crucible', 'mispappurl');
-        if (empty($url)) {
-            return 0;
+        $apikey = get_config('block_crucible', 'mispapikey');
+
+        if (empty($url) || empty($apikey)) {
+            return null;
         }
 
         $url .= "/admin/users";
-        $apikey = get_config('block_crucible', 'mispapikey');
 
         $headers = [
             'Authorization: ' . $apikey,
@@ -1054,6 +927,14 @@ class crucible
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
         $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            debugging('MISP API request failed: ' . curl_error($ch), DEBUG_DEVELOPER);
+            curl_close($ch);
+            return false;
+        }
+
+        curl_close($ch);
 
         $users = json_decode($response, true);
         $userfound = false;
@@ -1080,13 +961,13 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         //Web request
         $url = get_config('block_crucible', 'keycloakadminurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         // Convert /admin/{realm}/console → /admin/realms/{realm}
@@ -1129,7 +1010,7 @@ class crucible
         if (isset($tokenData['access_token'])) {
             $accessToken = $tokenData['access_token'];
         } else {
-            debugging("Failed to obtain access token from Keycloak.", DEBUG_DEVELOPER);
+            debugging("Failed to obtain access token from Keycloak. Check Keycloak configuration.", DEBUG_DEVELOPER);
             return false; // Exit early if token not set
         }
 
@@ -1220,13 +1101,13 @@ class crucible
 
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
-            return;
+            return null;
         }
 
         //Web request
         $url = get_config('block_crucible', 'keycloakadminurl');
         if (empty($url)) {
-            return 0;
+            return null;
         }
 
         $url = preg_replace('#/admin/([^/]+)/console$#', '/realms/$1', rtrim($url, '/'));
