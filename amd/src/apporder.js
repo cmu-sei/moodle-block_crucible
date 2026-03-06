@@ -96,8 +96,12 @@ const handleDragEnd = (e) => {
         card.classList.remove('drag-over');
     });
 
-    // Save the new order
-    saveOrder();
+    // Save the new order (handle promise to prevent unhandled rejection)
+    saveOrder().catch(error => {
+        // Already handled in saveOrder, but catch here to prevent unhandled rejection
+        // eslint-disable-next-line no-console
+        console.error('Unhandled error in saveOrder:', error);
+    });
 };
 
 /**
@@ -183,10 +187,25 @@ const saveOrder = async() => {
             }
         }]);
 
-        if (!result.success) {
-            throw new Error(result.message);
+        // eslint-disable-next-line no-console
+        console.log('Save order result:', result);
+
+        if (result && result.success) {
+            // Success - order saved
+            // Optional: Show success notification
+            // Notification.addNotification({message: 'Order saved', type: 'success'});
+        } else {
+            // Result exists but success is false
+            throw new Error(result && result.message ? result.message : 'Unknown error saving order');
         }
     } catch (error) {
-        Notification.exception(error);
+        // Log to console for debugging
+        // eslint-disable-next-line no-console
+        console.error('Error saving app order:', error);
+
+        // Only show notification if error has a message
+        if (error && (error.message || error.error)) {
+            Notification.exception(error);
+        }
     }
 };
