@@ -180,32 +180,23 @@ const saveOrder = async() => {
     const order = Array.from(cards).map(card => card.getAttribute('id'));
 
     try {
-        const [result] = await call([{
+        await call([{
             methodname: 'block_crucible_save_app_order',
             args: {
                 order: JSON.stringify(order)
             }
         }]);
 
+        // If we get here, the save was successful
+        // (call() throws an exception on error)
         // eslint-disable-next-line no-console
-        console.log('Save order result:', result);
-
-        if (result && result.success) {
-            // Success - order saved
-            // Optional: Show success notification
-            // Notification.addNotification({message: 'Order saved', type: 'success'});
-        } else {
-            // Result exists but success is false
-            throw new Error(result && result.message ? result.message : 'Unknown error saving order');
-        }
+        console.log('Application order saved successfully');
     } catch (error) {
         // Log to console for debugging
         // eslint-disable-next-line no-console
         console.error('Error saving app order:', error);
 
-        // Only show notification if error has a message
-        if (error && (error.message || error.error)) {
-            Notification.exception(error);
-        }
+        // Show error notification
+        Notification.exception(error);
     }
 };
