@@ -90,16 +90,10 @@ const handleDragStart = (e) => {
  */
 const handleDragEnd = (e) => {
     e.currentTarget.classList.remove('dragging');
-
-    // Remove all drag-over classes
     document.querySelectorAll('.app-card').forEach(card => {
         card.classList.remove('drag-over');
     });
-
-    // Save the new order (handle promise to prevent unhandled rejection)
     saveOrder().catch(error => {
-        // Already handled in saveOrder, but catch here to prevent unhandled rejection
-        // eslint-disable-next-line no-console
         console.error('Unhandled error in saveOrder:', error);
     });
 };
@@ -148,15 +142,12 @@ const handleDrop = (e) => {
     const dropTarget = e.currentTarget;
 
     if (draggedElement !== dropTarget) {
-        // Get parent container
         const container = dropTarget.parentNode;
         const allCards = Array.from(container.querySelectorAll('.app-card'));
 
-        // Find positions
         const draggedIndex = allCards.indexOf(draggedElement);
         const targetIndex = allCards.indexOf(dropTarget);
 
-        // Reorder DOM
         if (draggedIndex < targetIndex) {
             dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
         } else {
@@ -187,16 +178,10 @@ const saveOrder = async() => {
             }
         }]);
 
-        // If we get here, the save was successful
-        // (call() throws an exception on error)
-        // eslint-disable-next-line no-console
         console.log('Application order saved successfully');
     } catch (error) {
-        // Log to console for debugging
-        // eslint-disable-next-line no-console
         console.error('Error saving app order:', error);
 
-        // Show error notification
         Notification.exception(error);
     }
 };

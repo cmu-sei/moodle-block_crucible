@@ -595,7 +595,7 @@ class block_crucible extends block_base
                 }
             }
 
-            // Then add any apps not in saved order (new apps added since last save).
+            // Then add any apps not in saved order
             foreach ($appkeys as $key) {
                 if (!in_array($key, $userorder) && !empty($data->$key)) {
                     $orderedapps[] = [
@@ -609,7 +609,7 @@ class block_crucible extends block_base
             }
 
             $data->orderedapps = $orderedapps;
-            $data->hasdragdrop = !empty($orderedapps); // Flag to enable JS.
+            $data->hasdragdrop = !empty($orderedapps);
 
             $hasapps = false;
             foreach ($appkeys as $k) {

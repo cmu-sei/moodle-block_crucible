@@ -19,9 +19,9 @@ Crucible Applications Landing Page Block for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS.
+CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO,
+WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL.
 CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
 Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
 
@@ -231,7 +231,7 @@ $string['configureblock'] = 'Configure this block';
 $string['suggestedforrole'] = 'Suggestions based on your role';
 $string['noplanssuggested'] = 'No learning plans matched your role yet';
 $string['learningplantitle'] = 'Learning plan';
-$string['blockheading']= 'Suggested Learning Plans';
+$string['blockheading'] = 'Suggested Learning Plans';
 $string['competencies'] = 'Competencies';
 $string['nocompetenciesintemplate'] = 'This learning plan has no competencies yet.';
 $string['courses'] = 'Courses';
@@ -318,9 +318,3 @@ $string['clear'] = 'Clear';
 $string['noresults'] = 'No matches found';
 $string['config_frameworkid'] = 'Competency framework';
 $string['config_frameworkid_help'] = 'Choose which competency framework this block should use.';
-
-// Drag and drop
-$string['dragdrop_help'] = 'Drag and drop to reorder applications';
-$string['apporder_saved'] = 'Application order saved';
-
-
