@@ -240,3 +240,24 @@
   gap: .5rem;
   min-width: 0;
 }
+
+/* Drag and drop styles */
+.app-card.draggable-app {
+  cursor: move;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+.app-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.app-card.drag-over {
+  border: 2px dashed #2563eb;
+  background: #f0f9ff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.app-card:hover.draggable-app {
+  box-shadow: 0 4px 12px rgba(2,6,23,.12);
+}

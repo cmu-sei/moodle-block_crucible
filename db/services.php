@@ -33,16 +33,30 @@ DM24-1176
 */
 
 /**
- * Global Search version details.
+ * External functions and service definitions.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026030600;
-$plugin->requires  = 2025041400;
-$plugin->component = 'block_crucible';
-$plugin->maturity = MATURITY_ALPHA;
+$functions = [
+    'block_crucible_save_app_order' => [
+        'classname'     => 'block_crucible\external\save_app_order',
+        'methodname'    => 'execute',
+        'description'   => 'Save user application display order preference',
+        'type'          => 'write',
+        'ajax'          => true,
+        'loginrequired' => true,
+    ],
+    'block_crucible_get_app_order' => [
+        'classname'     => 'block_crucible\external\get_app_order',
+        'methodname'    => 'execute',
+        'description'   => 'Get user application display order preference',
+        'type'          => 'read',
+        'ajax'          => true,
+        'loginrequired' => true,
+    ],
+];

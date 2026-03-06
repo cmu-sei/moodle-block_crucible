@@ -319,4 +319,8 @@ $string['noresults'] = 'No matches found';
 $string['config_frameworkid'] = 'Competency framework';
 $string['config_frameworkid_help'] = 'Choose which competency framework this block should use.';
 
+// Drag and drop
+$string['dragdrop_help'] = 'Drag and drop to reorder applications';
+$string['apporder_saved'] = 'Application order saved';
+
 

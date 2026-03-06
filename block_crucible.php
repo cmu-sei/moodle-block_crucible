@@ -569,6 +569,48 @@ class block_crucible extends block_base
                 'docs'
             ];
 
+            // Get user's preferred order from preferences.
+            $savedorder = get_user_preferences('block_crucible_app_order', '');
+            $userorder = [];
+            if (!empty($savedorder)) {
+                $decoded = json_decode($savedorder, true);
+                if (is_array($decoded)) {
+                    $userorder = $decoded;
+                }
+            }
+
+            // Build ordered list of apps.
+            $orderedapps = [];
+
+            // First, add apps in user's preferred order.
+            foreach ($userorder as $key) {
+                if (in_array($key, $appkeys) && !empty($data->$key)) {
+                    $orderedapps[] = [
+                        'key' => $key,
+                        'url' => $data->$key,
+                        'description' => $data->{$key . 'Description'} ?? '',
+                        'logo' => $data->{$key . 'Logo'} ?? '',
+                        'name' => ucfirst($key),
+                    ];
+                }
+            }
+
+            // Then add any apps not in saved order (new apps added since last save).
+            foreach ($appkeys as $key) {
+                if (!in_array($key, $userorder) && !empty($data->$key)) {
+                    $orderedapps[] = [
+                        'key' => $key,
+                        'url' => $data->$key,
+                        'description' => $data->{$key . 'Description'} ?? '',
+                        'logo' => $data->{$key . 'Logo'} ?? '',
+                        'name' => ucfirst($key),
+                    ];
+                }
+            }
+
+            $data->orderedapps = $orderedapps;
+            $data->hasdragdrop = !empty($orderedapps); // Flag to enable JS.
+
             $hasapps = false;
             foreach ($appkeys as $k) {
                 if (!empty($data->$k)) {
