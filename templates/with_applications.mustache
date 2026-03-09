@@ -1,18 +1,18 @@
 {{!
   @template block_crucible/landing
 }}
-<div class="imcite-card imcite-apps">
+<div class="crucible-card crucible-apps">
   <!-- Header -->
-  <div class="imcite-card__header">
-    <div class="imcite-card__icon">🧩</div>
-    <div class="imcite-card__titlewrap">
-      <div class="imcite-card__title">{{cardtitle}}</div>
+  <div class="crucible-card__header">
+    <div class="crucible-card__icon">🧩</div>
+    <div class="crucible-card__titlewrap">
+      <div class="crucible-card__title">{{cardtitle}}</div>
 
       {{#welcomemessage}}
-        <div class="imcite-card__subtitle">{{welcomemessage}}</div>
+        <div class="crucible-card__subtitle">{{welcomemessage}}</div>
       {{/welcomemessage}}
       {{^welcomemessage}}
-        <div class="imcite-card__subtitle">
+        <div class="crucible-card__subtitle">
           {{#str}} appswelcome, block_crucible {{/str}}
           <strong>{{username}}</strong> · {{sitename}}
         </div>
@@ -21,7 +21,7 @@
   </div>
 
   <!-- Body -->
-  <div class="imcite-card__body">
+  <div class="crucible-card__body">
     <div class="apps-grid">
 
       {{#orderedapps}}
