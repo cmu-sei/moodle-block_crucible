@@ -261,9 +261,10 @@
 }
 
 .app-card.drag-over-highlight {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  background: #e8f4fd;
+  border-color: #0f6cbf;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
 }
 
 .app-card:hover.draggable-app {
@@ -272,42 +273,32 @@
 
 /* Drop indicator line - similar to Moodle course edit page */
 .crucible-drop-indicator {
-  height: 4px;
-  background: linear-gradient(90deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
-  margin: -2px 0;
-  border-radius: 2px;
+  height: 3px;
+  background: #0f6cbf;
+  margin: 4px 0;
   position: relative;
   z-index: 10;
-  box-shadow: 0 0 8px rgba(30, 64, 175, 0.5);
-  animation: pulse-indicator 1s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(15, 108, 191, 0.6);
 }
 
 .crucible-drop-indicator::before,
 .crucible-drop-indicator::after {
   content: '';
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background: #1e40af;
+  width: 10px;
+  height: 10px;
+  background: #0f6cbf;
+  border: 2px solid #fff;
   border-radius: 50%;
   top: 50%;
   transform: translateY(-50%);
-  box-shadow: 0 0 4px rgba(30, 64, 175, 0.6);
+  box-shadow: 0 0 4px rgba(15, 108, 191, 0.8);
 }
 
 .crucible-drop-indicator::before {
-  left: -4px;
+  left: -5px;
 }
 
 .crucible-drop-indicator::after {
-  right: -4px;
-}
-
-@keyframes pulse-indicator {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  right: -5px;
 }

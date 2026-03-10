@@ -106,6 +106,7 @@ const handleDragEnd = (e) => {
     document.querySelectorAll('.app-card').forEach(card => {
         card.classList.remove('drag-over');
         card.classList.remove('drag-over-highlight');
+        card.removeAttribute('data-drop-position');
     });
 
     // Remove drop indicator
@@ -131,23 +132,22 @@ const handleDragOver = (e) => {
 
     const dropTarget = e.currentTarget;
     if (dropTarget !== draggedElement) {
-        const container = dropTarget.parentNode;
-        const allCards = Array.from(container.querySelectorAll('.app-card'));
-        const draggedIndex = allCards.indexOf(draggedElement);
-        const targetIndex = allCards.indexOf(dropTarget);
-
-        // Show drop indicator
         const indicator = createDropIndicator();
+        const rect = dropTarget.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
 
-        if (draggedIndex < targetIndex) {
-            // Dropping after target
-            dropTarget.parentNode.insertBefore(indicator, dropTarget.nextSibling);
-        } else {
-            // Dropping before target
+        // Determine if mouse is in top half or bottom half of the card
+        if (e.clientY < midpoint) {
+            // Drop before this element
             dropTarget.parentNode.insertBefore(indicator, dropTarget);
+            dropTarget.setAttribute('data-drop-position', 'before');
+        } else {
+            // Drop after this element
+            dropTarget.parentNode.insertBefore(indicator, dropTarget.nextSibling);
+            dropTarget.setAttribute('data-drop-position', 'after');
         }
 
-        // Highlight the target position
+        // Highlight the target card
         dropTarget.classList.add('drag-over-highlight');
     }
 
@@ -191,17 +191,17 @@ const handleDrop = (e) => {
     const dropTarget = e.currentTarget;
 
     if (draggedElement !== dropTarget) {
-        const container = dropTarget.parentNode;
-        const allCards = Array.from(container.querySelectorAll('.app-card'));
+        const dropPosition = dropTarget.getAttribute('data-drop-position');
 
-        const draggedIndex = allCards.indexOf(draggedElement);
-        const targetIndex = allCards.indexOf(dropTarget);
-
-        if (draggedIndex < targetIndex) {
+        // Insert based on the position determined during dragover
+        if (dropPosition === 'after') {
             dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
         } else {
             dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
         }
+
+        // Clean up the position attribute
+        dropTarget.removeAttribute('data-drop-position');
     }
 
     return false;
