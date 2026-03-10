@@ -261,3 +261,36 @@
 .app-card:hover.draggable-app {
   box-shadow: 0 4px 12px rgba(2,6,23,.12);
 }
+
+/* Drop indicator line */
+.crucible-drop-line {
+  height: 3px;
+  background: #0f6cbf;
+  margin: 7px 0;
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 0 6px rgba(15, 108, 191, 0.5);
+  pointer-events: none;
+}
+
+.crucible-drop-line::before,
+.crucible-drop-line::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #0f6cbf;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 3px rgba(15, 108, 191, 0.7);
+}
+
+.crucible-drop-line::before {
+  left: -4px;
+}
+
+.crucible-drop-line::after {
+  right: -4px;
+}
