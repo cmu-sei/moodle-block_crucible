@@ -132,7 +132,7 @@ const handleDragOver = (e) => {
     const dropTarget = e.currentTarget;
     if (dropTarget !== draggedElement) {
         const container = dropTarget.parentNode;
-        const allCards = Array.from(container.querySelectorAll('.app-card:not(.dragging)'));
+        const allCards = Array.from(container.querySelectorAll('.app-card'));
         const draggedIndex = allCards.indexOf(draggedElement);
         const targetIndex = allCards.indexOf(dropTarget);
 
@@ -140,10 +140,10 @@ const handleDragOver = (e) => {
         const placeholderElement = createPlaceholder();
 
         if (draggedIndex < targetIndex) {
-            // Dropping after target
+            // Dropping after target (moving down/right)
             container.insertBefore(placeholderElement, dropTarget.nextSibling);
         } else {
-            // Dropping before target
+            // Dropping before target (moving up/left)
             container.insertBefore(placeholderElement, dropTarget);
         }
     }
@@ -181,14 +181,16 @@ const handleDrop = (e) => {
 
     if (draggedElement !== dropTarget) {
         const container = dropTarget.parentNode;
-        const allCards = Array.from(container.querySelectorAll('.app-card:not(.dragging)'));
+        const allCards = Array.from(container.querySelectorAll('.app-card'));
 
         const draggedIndex = allCards.indexOf(draggedElement);
         const targetIndex = allCards.indexOf(dropTarget);
 
         if (draggedIndex < targetIndex) {
+            // Moving down/right
             dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
         } else {
+            // Moving up/left
             dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
         }
     }
