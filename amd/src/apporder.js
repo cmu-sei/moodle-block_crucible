@@ -187,6 +187,11 @@ const handleDrop = (e) => {
 
     const dropTarget = e.currentTarget;
 
+    // Remove drop indicator first to avoid interference
+    if (dropIndicator && dropIndicator.parentNode) {
+        dropIndicator.parentNode.removeChild(dropIndicator);
+    }
+
     if (draggedElement && draggedElement !== dropTarget) {
         const container = dropTarget.parentNode;
         const allCards = Array.from(container.querySelectorAll('.app-card'));
