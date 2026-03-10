@@ -43,6 +43,52 @@ import {call} from 'core/ajax';
 import Notification from 'core/notification';
 
 let draggedElement = null;
+let dropIndicator = null;
+
+/**
+ * Create or get drop indicator element
+ * @returns {HTMLElement} - Drop indicator element
+ */
+const getDropIndicator = () => {
+    if (!dropIndicator) {
+        dropIndicator = document.createElement('div');
+        dropIndicator.className = 'crucible-drop-line';
+        document.body.appendChild(dropIndicator);
+    }
+    return dropIndicator;
+};
+
+/**
+ * Position the drop indicator at the correct location
+ * @param {HTMLElement} targetCard - The card being hovered over
+ * @param {Boolean} insertAfter - Whether to show indicator after the card
+ */
+const positionDropIndicator = (targetCard, insertAfter) => {
+    const indicator = getDropIndicator();
+    const rect = targetCard.getBoundingClientRect();
+    const containerRect = targetCard.parentNode.getBoundingClientRect();
+
+    indicator.style.display = 'block';
+    indicator.style.left = containerRect.left + 'px';
+    indicator.style.width = containerRect.width + 'px';
+
+    if (insertAfter) {
+        // Position below the card
+        indicator.style.top = (rect.bottom + 3) + 'px';
+    } else {
+        // Position above the card
+        indicator.style.top = (rect.top - 10) + 'px';
+    }
+};
+
+/**
+ * Hide the drop indicator
+ */
+const hideDropIndicator = () => {
+    if (dropIndicator) {
+        dropIndicator.style.display = 'none';
+    }
+};
 
 /**
  * Initialize drag-and-drop for application cards
@@ -93,6 +139,7 @@ const handleDragEnd = (e) => {
     document.querySelectorAll('.app-card').forEach(card => {
         card.classList.remove('drag-over');
     });
+    hideDropIndicator();
     saveOrder().catch(error => {
         console.error('Unhandled error in saveOrder:', error);
     });
@@ -108,6 +155,24 @@ const handleDragOver = (e) => {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
+
+    const dropTarget = e.currentTarget;
+    if (dropTarget !== draggedElement) {
+        const container = dropTarget.parentNode;
+        const allCards = Array.from(container.querySelectorAll('.app-card'));
+        const draggedIndex = allCards.indexOf(draggedElement);
+        const targetIndex = allCards.indexOf(dropTarget);
+
+        // Show drop indicator at the correct position
+        if (draggedIndex < targetIndex) {
+            // Moving forward - show line after target
+            positionDropIndicator(dropTarget, true);
+        } else {
+            // Moving backward - show line before target
+            positionDropIndicator(dropTarget, false);
+        }
+    }
+
     return false;
 };
 
