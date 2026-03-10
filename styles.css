@@ -244,64 +244,45 @@
 /* Drag and drop styles */
 .app-card.draggable-app {
   cursor: move;
-  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
-  position: relative;
+  transition: opacity 0.2s;
 }
 
 .app-card.dragging {
-  opacity: 0.4;
-  transform: scale(0.95);
-  cursor: grabbing;
-  box-shadow: 0 8px 24px rgba(2,6,23,.2);
-}
-
-.app-card.drag-over {
-  border: 2px dashed #2563eb;
-  background: #f0f9ff;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.app-card.drag-over-highlight {
-  background: #e8f4fd;
-  border-color: #0f6cbf;
-  transform: scale(1.01);
-  transition: all 0.15s ease;
+  opacity: 0.5;
 }
 
 .app-card:hover.draggable-app:not(.dragging) {
   box-shadow: 0 4px 12px rgba(2,6,23,.12);
 }
 
-/* Drop indicator using pseudo-elements - works with grid layout */
-.app-card.drop-before::before,
-.app-card.drop-after::after {
+/* Drop placeholder - simple line indicator */
+.crucible-drop-placeholder {
+  height: 3px;
+  background: #0f6cbf;
+  margin: 7px 0;
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 0 6px rgba(15, 108, 191, 0.5);
+}
+
+.crucible-drop-placeholder::before,
+.crucible-drop-placeholder::after {
   content: '';
   position: absolute;
-  left: -7px;
-  right: -7px;
-  height: 4px;
+  width: 8px;
+  height: 8px;
   background: #0f6cbf;
-  z-index: 100;
-  box-shadow: 0 0 8px rgba(15, 108, 191, 0.6);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 3px rgba(15, 108, 191, 0.7);
 }
 
-.app-card.drop-before::before {
-  top: -8px;
+.crucible-drop-placeholder::before {
+  left: -4px;
 }
 
-.app-card.drop-after::after {
-  bottom: -8px;
-}
-
-/* Drop indicator dots */
-.app-card.drop-before::before,
-.app-card.drop-after::after {
-  background:
-    radial-gradient(circle at 0% 50%, #0f6cbf 5px, transparent 5px),
-    linear-gradient(to right, #0f6cbf, #0f6cbf),
-    radial-gradient(circle at 100% 50%, #0f6cbf 5px, transparent 5px);
-  background-size: 10px 10px, calc(100% - 20px) 4px, 10px 10px;
-  background-position: left center, center, right center;
-  background-repeat: no-repeat;
-  height: 10px;
+.crucible-drop-placeholder::after {
+  right: -4px;
 }
