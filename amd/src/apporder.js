@@ -43,19 +43,6 @@ import {call} from 'core/ajax';
 import Notification from 'core/notification';
 
 let draggedElement = null;
-let dropIndicator = null;
-
-/**
- * Create or get drop indicator element
- * @returns {HTMLElement} - Drop indicator element
- */
-const getDropIndicator = () => {
-    if (!dropIndicator) {
-        dropIndicator = document.createElement('div');
-        dropIndicator.className = 'crucible-drop-line';
-    }
-    return dropIndicator;
-};
 
 /**
  * Initialize drag-and-drop for application cards
@@ -106,12 +93,6 @@ const handleDragEnd = (e) => {
     document.querySelectorAll('.app-card').forEach(card => {
         card.classList.remove('drag-over');
     });
-
-    // Remove drop indicator
-    if (dropIndicator && dropIndicator.parentNode) {
-        dropIndicator.parentNode.removeChild(dropIndicator);
-    }
-
     saveOrder().catch(error => {
         console.error('Unhandled error in saveOrder:', error);
     });
@@ -127,30 +108,6 @@ const handleDragOver = (e) => {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
-
-    const dropTarget = e.currentTarget;
-    if (dropTarget !== draggedElement) {
-        const container = dropTarget.parentNode;
-        const allCards = Array.from(container.querySelectorAll('.app-card'));
-        const draggedIndex = allCards.indexOf(draggedElement);
-        const targetIndex = allCards.indexOf(dropTarget);
-
-        // Show drop indicator line
-        const indicator = getDropIndicator();
-
-        if (draggedIndex < targetIndex) {
-            // Moving forward - show line after target
-            if (dropTarget.nextSibling) {
-                container.insertBefore(indicator, dropTarget.nextSibling);
-            } else {
-                container.appendChild(indicator);
-            }
-        } else {
-            // Moving backward - show line before target
-            container.insertBefore(indicator, dropTarget);
-        }
-    }
-
     return false;
 };
 
@@ -186,11 +143,6 @@ const handleDrop = (e) => {
     }
 
     const dropTarget = e.currentTarget;
-
-    // Remove drop indicator first to avoid interference
-    if (dropIndicator && dropIndicator.parentNode) {
-        dropIndicator.parentNode.removeChild(dropIndicator);
-    }
 
     if (draggedElement && draggedElement !== dropTarget) {
         const container = dropTarget.parentNode;
