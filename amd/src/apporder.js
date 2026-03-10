@@ -43,6 +43,19 @@ import {call} from 'core/ajax';
 import Notification from 'core/notification';
 
 let draggedElement = null;
+let dropIndicator = null;
+
+/**
+ * Create drop indicator element
+ * @returns {HTMLElement} - Drop indicator element
+ */
+const createDropIndicator = () => {
+    if (!dropIndicator) {
+        dropIndicator = document.createElement('div');
+        dropIndicator.className = 'crucible-drop-indicator';
+    }
+    return dropIndicator;
+};
 
 /**
  * Initialize drag-and-drop for application cards
@@ -92,7 +105,14 @@ const handleDragEnd = (e) => {
     e.currentTarget.classList.remove('dragging');
     document.querySelectorAll('.app-card').forEach(card => {
         card.classList.remove('drag-over');
+        card.classList.remove('drag-over-highlight');
     });
+
+    // Remove drop indicator
+    if (dropIndicator && dropIndicator.parentNode) {
+        dropIndicator.parentNode.removeChild(dropIndicator);
+    }
+
     saveOrder().catch(error => {
         console.error('Unhandled error in saveOrder:', error);
     });
@@ -108,6 +128,29 @@ const handleDragOver = (e) => {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
+
+    const dropTarget = e.currentTarget;
+    if (dropTarget !== draggedElement) {
+        const container = dropTarget.parentNode;
+        const allCards = Array.from(container.querySelectorAll('.app-card'));
+        const draggedIndex = allCards.indexOf(draggedElement);
+        const targetIndex = allCards.indexOf(dropTarget);
+
+        // Show drop indicator
+        const indicator = createDropIndicator();
+
+        if (draggedIndex < targetIndex) {
+            // Dropping after target
+            dropTarget.parentNode.insertBefore(indicator, dropTarget.nextSibling);
+        } else {
+            // Dropping before target
+            dropTarget.parentNode.insertBefore(indicator, dropTarget);
+        }
+
+        // Highlight the target position
+        dropTarget.classList.add('drag-over-highlight');
+    }
+
     return false;
 };
 
@@ -126,7 +169,13 @@ const handleDragEnter = (e) => {
  * @param {Event} e - Drag event
  */
 const handleDragLeave = (e) => {
-    e.currentTarget.classList.remove('drag-over');
+    // Only remove if we're actually leaving (not entering a child)
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (e.clientX < rect.left || e.clientX >= rect.right ||
+        e.clientY < rect.top || e.clientY >= rect.bottom) {
+        e.currentTarget.classList.remove('drag-over');
+        e.currentTarget.classList.remove('drag-over-highlight');
+    }
 };
 
 /**
