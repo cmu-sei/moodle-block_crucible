@@ -138,20 +138,33 @@ const handleDrop = (e) => {
     if (e.stopPropagation) {
         e.stopPropagation();
     }
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
 
     const dropTarget = e.currentTarget;
 
-    if (draggedElement !== dropTarget) {
+    if (draggedElement && draggedElement !== dropTarget) {
         const container = dropTarget.parentNode;
         const allCards = Array.from(container.querySelectorAll('.app-card'));
 
         const draggedIndex = allCards.indexOf(draggedElement);
         const targetIndex = allCards.indexOf(dropTarget);
 
-        if (draggedIndex < targetIndex) {
-            dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
-        } else {
-            dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+        console.log('Drop - dragged:', draggedIndex, 'target:', targetIndex);
+
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+            if (draggedIndex < targetIndex) {
+                // Moving forward - insert after target
+                if (dropTarget.nextSibling) {
+                    container.insertBefore(draggedElement, dropTarget.nextSibling);
+                } else {
+                    container.appendChild(draggedElement);
+                }
+            } else {
+                // Moving backward - insert before target
+                container.insertBefore(draggedElement, dropTarget);
+            }
         }
     }
 
