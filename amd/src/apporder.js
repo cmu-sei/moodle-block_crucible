@@ -180,18 +180,20 @@ const handleDrop = (e) => {
     const dropTarget = e.currentTarget;
 
     if (draggedElement !== dropTarget) {
-        const container = dropTarget.parentNode;
-        const allCards = Array.from(container.querySelectorAll('.app-card'));
+        // Get the placeholder's position before removing it
+        const placeholderParent = placeholder ? placeholder.parentNode : null;
+        const placeholderNext = placeholder ? placeholder.nextSibling : null;
 
-        const draggedIndex = allCards.indexOf(draggedElement);
-        const targetIndex = allCards.indexOf(dropTarget);
+        // Remove placeholder first to avoid interference
+        if (placeholder && placeholder.parentNode) {
+            placeholder.parentNode.removeChild(placeholder);
+        }
 
-        if (draggedIndex < targetIndex) {
-            // Moving down/right
-            dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
-        } else {
-            // Moving up/left
-            dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+        // Insert dragged element where the placeholder was
+        if (placeholderParent && placeholderNext) {
+            placeholderParent.insertBefore(draggedElement, placeholderNext);
+        } else if (placeholderParent) {
+            placeholderParent.appendChild(draggedElement);
         }
     }
 
