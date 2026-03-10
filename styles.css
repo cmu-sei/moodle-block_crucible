@@ -253,7 +253,6 @@
 }
 
 .app-card.drag-over {
-  border: 2px dashed #2563eb;
   background: #f0f9ff;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
