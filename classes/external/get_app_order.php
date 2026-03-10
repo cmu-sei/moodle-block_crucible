@@ -32,17 +32,56 @@ This Software includes and/or makes use of Third-Party Software each subject to 
 DM24-1176
 */
 
+namespace block_crucible\external;
+
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_value;
+use core_external\external_single_structure;
+
 /**
- * Global Search version details.
+ * External function to get user's application display order preference.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class get_app_order extends external_api {
 
-defined('MOODLE_INTERNAL') || die;
+    /**
+     * Returns description of method parameters.
+     *
+     * @return external_function_parameters
+     */
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([]);
+    }
 
-$plugin->version = 2026031008;
-$plugin->requires  = 2025041400;
-$plugin->component = 'block_crucible';
-$plugin->maturity = MATURITY_ALPHA;
+    /**
+     * Get user's application order preference.
+     *
+     * @return array Order data
+     */
+    public static function execute(): array {
+        global $USER;
+
+        self::validate_parameters(self::execute_parameters(), []);
+
+        $order = get_user_preferences('block_crucible_app_order', '[]');
+
+        return [
+            'order' => $order,
+        ];
+    }
+
+    /**
+     * Returns description of method result value.
+     *
+     * @return external_single_structure
+     */
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'order' => new external_value(PARAM_RAW, 'JSON array of application keys'),
+        ]);
+    }
+}
