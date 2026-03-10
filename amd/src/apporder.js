@@ -43,19 +43,6 @@ import {call} from 'core/ajax';
 import Notification from 'core/notification';
 
 let draggedElement = null;
-let dropIndicator = null;
-
-/**
- * Create drop indicator element
- * @returns {HTMLElement} - Drop indicator element
- */
-const createDropIndicator = () => {
-    if (!dropIndicator) {
-        dropIndicator = document.createElement('div');
-        dropIndicator.className = 'crucible-drop-indicator';
-    }
-    return dropIndicator;
-};
 
 /**
  * Initialize drag-and-drop for application cards
@@ -106,13 +93,10 @@ const handleDragEnd = (e) => {
     document.querySelectorAll('.app-card').forEach(card => {
         card.classList.remove('drag-over');
         card.classList.remove('drag-over-highlight');
+        card.classList.remove('drop-before');
+        card.classList.remove('drop-after');
         card.removeAttribute('data-drop-position');
     });
-
-    // Remove drop indicator
-    if (dropIndicator && dropIndicator.parentNode) {
-        dropIndicator.parentNode.removeChild(dropIndicator);
-    }
 
     saveOrder().catch(error => {
         console.error('Unhandled error in saveOrder:', error);
@@ -132,23 +116,28 @@ const handleDragOver = (e) => {
 
     const dropTarget = e.currentTarget;
     if (dropTarget !== draggedElement) {
-        const indicator = createDropIndicator();
+        // Clear previous highlights on all cards
+        document.querySelectorAll('.app-card').forEach(card => {
+            card.classList.remove('drag-over-highlight');
+            card.classList.remove('drop-before');
+            card.classList.remove('drop-after');
+        });
+
         const rect = dropTarget.getBoundingClientRect();
         const midpoint = rect.top + rect.height / 2;
 
         // Determine if mouse is in top half or bottom half of the card
         if (e.clientY < midpoint) {
             // Drop before this element
-            dropTarget.parentNode.insertBefore(indicator, dropTarget);
             dropTarget.setAttribute('data-drop-position', 'before');
+            dropTarget.classList.add('drag-over-highlight');
+            dropTarget.classList.add('drop-before');
         } else {
             // Drop after this element
-            dropTarget.parentNode.insertBefore(indicator, dropTarget.nextSibling);
             dropTarget.setAttribute('data-drop-position', 'after');
+            dropTarget.classList.add('drag-over-highlight');
+            dropTarget.classList.add('drop-after');
         }
-
-        // Highlight the target card
-        dropTarget.classList.add('drag-over-highlight');
     }
 
     return false;
@@ -175,6 +164,8 @@ const handleDragLeave = (e) => {
         e.clientY < rect.top || e.clientY >= rect.bottom) {
         e.currentTarget.classList.remove('drag-over');
         e.currentTarget.classList.remove('drag-over-highlight');
+        e.currentTarget.classList.remove('drop-before');
+        e.currentTarget.classList.remove('drop-after');
     }
 };
 

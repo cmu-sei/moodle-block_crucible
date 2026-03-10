@@ -245,6 +245,7 @@
 .app-card.draggable-app {
   cursor: move;
   transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  position: relative;
 }
 
 .app-card.dragging {
@@ -263,42 +264,44 @@
 .app-card.drag-over-highlight {
   background: #e8f4fd;
   border-color: #0f6cbf;
-  transform: scale(1.02);
+  transform: scale(1.01);
   transition: all 0.15s ease;
 }
 
-.app-card:hover.draggable-app {
+.app-card:hover.draggable-app:not(.dragging) {
   box-shadow: 0 4px 12px rgba(2,6,23,.12);
 }
 
-/* Drop indicator line - similar to Moodle course edit page */
-.crucible-drop-indicator {
-  height: 3px;
-  background: #0f6cbf;
-  margin: 4px 0;
-  position: relative;
-  z-index: 10;
-  box-shadow: 0 0 6px rgba(15, 108, 191, 0.6);
-}
-
-.crucible-drop-indicator::before,
-.crucible-drop-indicator::after {
+/* Drop indicator using pseudo-elements - works with grid layout */
+.app-card.drop-before::before,
+.app-card.drop-after::after {
   content: '';
   position: absolute;
-  width: 10px;
-  height: 10px;
+  left: -7px;
+  right: -7px;
+  height: 4px;
   background: #0f6cbf;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  top: 50%;
-  transform: translateY(-50%);
-  box-shadow: 0 0 4px rgba(15, 108, 191, 0.8);
+  z-index: 100;
+  box-shadow: 0 0 8px rgba(15, 108, 191, 0.6);
 }
 
-.crucible-drop-indicator::before {
-  left: -5px;
+.app-card.drop-before::before {
+  top: -8px;
 }
 
-.crucible-drop-indicator::after {
-  right: -5px;
+.app-card.drop-after::after {
+  bottom: -8px;
+}
+
+/* Drop indicator dots */
+.app-card.drop-before::before,
+.app-card.drop-after::after {
+  background:
+    radial-gradient(circle at 0% 50%, #0f6cbf 5px, transparent 5px),
+    linear-gradient(to right, #0f6cbf, #0f6cbf),
+    radial-gradient(circle at 100% 50%, #0f6cbf 5px, transparent 5px);
+  background-size: 10px 10px, calc(100% - 20px) 4px, 10px 10px;
+  background-position: left center, center, right center;
+  background-repeat: no-repeat;
+  height: 10px;
 }
