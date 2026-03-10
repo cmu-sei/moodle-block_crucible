@@ -43,19 +43,6 @@ import {call} from 'core/ajax';
 import Notification from 'core/notification';
 
 let draggedElement = null;
-let placeholder = null;
-
-/**
- * Create placeholder element for drop position
- * @returns {HTMLElement} - Placeholder element
- */
-const createPlaceholder = () => {
-    if (!placeholder) {
-        placeholder = document.createElement('div');
-        placeholder.className = 'crucible-drop-placeholder';
-    }
-    return placeholder;
-};
 
 /**
  * Initialize drag-and-drop for application cards
@@ -103,16 +90,9 @@ const handleDragStart = (e) => {
  */
 const handleDragEnd = (e) => {
     e.currentTarget.classList.remove('dragging');
-
-    // Remove placeholder
-    if (placeholder && placeholder.parentNode) {
-        placeholder.parentNode.removeChild(placeholder);
-    }
-
     document.querySelectorAll('.app-card').forEach(card => {
         card.classList.remove('drag-over');
     });
-
     saveOrder().catch(error => {
         console.error('Unhandled error in saveOrder:', error);
     });
@@ -128,26 +108,6 @@ const handleDragOver = (e) => {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
-
-    const dropTarget = e.currentTarget;
-    if (dropTarget !== draggedElement) {
-        const container = dropTarget.parentNode;
-        const allCards = Array.from(container.querySelectorAll('.app-card'));
-        const draggedIndex = allCards.indexOf(draggedElement);
-        const targetIndex = allCards.indexOf(dropTarget);
-
-        // Show placeholder line
-        const placeholderElement = createPlaceholder();
-
-        if (draggedIndex < targetIndex) {
-            // Dropping after target (moving down/right)
-            container.insertBefore(placeholderElement, dropTarget.nextSibling);
-        } else {
-            // Dropping before target (moving up/left)
-            container.insertBefore(placeholderElement, dropTarget);
-        }
-    }
-
     return false;
 };
 
@@ -156,7 +116,9 @@ const handleDragOver = (e) => {
  * @param {Event} e - Drag event
  */
 const handleDragEnter = (e) => {
-    // Intentionally minimal - dragover handles the visual feedback
+    if (e.currentTarget !== draggedElement) {
+        e.currentTarget.classList.add('drag-over');
+    }
 };
 
 /**
@@ -164,7 +126,7 @@ const handleDragEnter = (e) => {
  * @param {Event} e - Drag event
  */
 const handleDragLeave = (e) => {
-    // Intentionally minimal - dragover handles the visual feedback
+    e.currentTarget.classList.remove('drag-over');
 };
 
 /**
@@ -180,20 +142,16 @@ const handleDrop = (e) => {
     const dropTarget = e.currentTarget;
 
     if (draggedElement !== dropTarget) {
-        // Get the placeholder's position before removing it
-        const placeholderParent = placeholder ? placeholder.parentNode : null;
-        const placeholderNext = placeholder ? placeholder.nextSibling : null;
+        const container = dropTarget.parentNode;
+        const allCards = Array.from(container.querySelectorAll('.app-card'));
 
-        // Remove placeholder first to avoid interference
-        if (placeholder && placeholder.parentNode) {
-            placeholder.parentNode.removeChild(placeholder);
-        }
+        const draggedIndex = allCards.indexOf(draggedElement);
+        const targetIndex = allCards.indexOf(dropTarget);
 
-        // Insert dragged element where the placeholder was
-        if (placeholderParent && placeholderNext) {
-            placeholderParent.insertBefore(draggedElement, placeholderNext);
-        } else if (placeholderParent) {
-            placeholderParent.appendChild(draggedElement);
+        if (draggedIndex < targetIndex) {
+            dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
+        } else {
+            dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
         }
     }
 
