@@ -73,10 +73,8 @@ const positionDropIndicator = (targetCard, insertAfter) => {
     indicator.style.width = containerRect.width + 'px';
 
     if (insertAfter) {
-        // Position below the card
         indicator.style.top = (rect.bottom + 3) + 'px';
     } else {
-        // Position above the card
         indicator.style.top = (rect.top - 10) + 'px';
     }
 };
@@ -165,10 +163,8 @@ const handleDragOver = (e) => {
 
         // Show drop indicator at the correct position
         if (draggedIndex < targetIndex) {
-            // Moving forward - show line after target
             positionDropIndicator(dropTarget, true);
         } else {
-            // Moving backward - show line before target
             positionDropIndicator(dropTarget, false);
         }
     }
@@ -220,14 +216,12 @@ const handleDrop = (e) => {
 
         if (draggedIndex !== -1 && targetIndex !== -1) {
             if (draggedIndex < targetIndex) {
-                // Moving forward - insert after target
                 if (dropTarget.nextSibling) {
                     container.insertBefore(draggedElement, dropTarget.nextSibling);
                 } else {
                     container.appendChild(draggedElement);
                 }
             } else {
-                // Moving backward - insert before target
                 container.insertBefore(draggedElement, dropTarget);
             }
         }
