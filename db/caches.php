@@ -33,16 +33,22 @@ DM24-1176
 */
 
 /**
- * Global Search version details.
+ * Cache definitions for block_crucible.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026031200;
-$plugin->requires  = 2025041400;
-$plugin->component = 'block_crucible';
-$plugin->maturity = MATURITY_ALPHA;
+$definitions = [
+    'org_role_sync' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'ttl' => 300, // 5 minutes
+        'staticacceleration' => true,
+        'staticaccelerationsize' => 100,
+    ],
+];

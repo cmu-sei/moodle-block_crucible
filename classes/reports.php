@@ -1,4 +1,5 @@
 <?php
+
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
@@ -6,9 +7,11 @@ defined('MOODLE_INTERNAL') || die();
 use context_system;
 use core_user\fields;
 
-class reports {
+class reports
+{
 
-    public function get_cohort_roster_all(int $userid): \stdClass {
+    public function get_cohort_roster_all(int $userid): \stdClass
+    {
         global $DB;
 
         $info = (object)[
@@ -102,8 +105,7 @@ class reports {
         }
 
         // Fetch cohort-configured roles
-        $cohortrolesByCU = [];
-        {
+        $cohortrolesByCU = []; {
             // Cohort IDs
             $cohortids = array_map('intval', array_keys($byCohort));
             // User IDs
@@ -132,9 +134,40 @@ class reports {
             }
         }
 
+        // Fetch category-level roles assigned by block_crucible org role sync
+        $categoryRolesByUser = [];
+        {
+            $userids = array_map('intval', array_keys($allUserIds));
+
+            if ($userids) {
+                list($uInSql3, $uParams3) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
+
+                $sql3 = "
+                    SELECT DISTINCT
+                        ra.userid,
+                        COALESCE(NULLIF(r.name, ''), r.shortname) AS roledisplay
+                    FROM {role_assignments} ra
+                    JOIN {role} r ON r.id = ra.roleid
+                    JOIN {context} ctx ON ra.contextid = ctx.id
+                    WHERE ra.component = 'block_crucible'
+                    AND ctx.contextlevel = 40
+                    AND ra.userid {$uInSql3}
+                ";
+                $rows3 = $DB->get_records_sql($sql3, $uParams3);
+
+                foreach ($rows3 as $row) {
+                    $categoryRolesByUser[(int)$row->userid][] = trim($row->roledisplay);
+                }
+            }
+        }
+
         foreach ($byCohort as &$c) {
             foreach ($c['users'] as $uid => $u) {
-                $cr = $cohortrolesByCU[$c['id']][$uid] ?? [];
+                // Merge cohort roles and category roles
+                $cr = array_merge(
+                    $cohortrolesByCU[$c['id']][$uid] ?? [],
+                    $categoryRolesByUser[$uid] ?? []
+                );
                 if ($cr) {
                     $cr = array_values(array_unique($cr));
                     sort($cr, SORT_NATURAL | SORT_FLAG_CASE);
@@ -163,10 +196,11 @@ class reports {
         return $info;
     }
 
-    private function get_user_cohort_ids(int $userid): array {
+    private function get_user_cohort_ids(int $userid): array
+    {
         global $CFG;
         require_once($CFG->dirroot . '/cohort/lib.php');
-        $cohorts = cohort_get_user_cohorts($userid);
+        $cohorts = \cohort_get_user_cohorts($userid);
         return array_map('intval', array_keys($cohorts));
     }
 }

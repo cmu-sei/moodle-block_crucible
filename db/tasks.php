@@ -11,4 +11,13 @@ $tasks = [
         'dayofweek' => '*',
         'month'     => '*',
     ],
+    [
+        'classname' => '\block_crucible\task\sync_org_roles',
+        'blocking'  => 0,
+        'minute'    => '0',
+        'hour'      => '*',
+        'day'       => '*',
+        'month'     => '*',
+        'dayofweek' => '*',
+    ],
 ];

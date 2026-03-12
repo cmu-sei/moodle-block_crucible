@@ -33,16 +33,19 @@ DM24-1176
 */
 
 /**
- * Global Search version details.
+ * Event observers for block_crucible.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026031200;
-$plugin->requires  = 2025041400;
-$plugin->component = 'block_crucible';
-$plugin->maturity = MATURITY_ALPHA;
+$observers = [
+    [
+        'eventname' => '\core\event\user_loggedin',
+        'callback'  => '\block_crucible\observer::user_loggedin',
+        'internal'  => true,
+    ],
+];
