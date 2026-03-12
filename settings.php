@@ -79,7 +79,17 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/customwelcomemessage',
         get_string('customwelcomemessage', 'block_crucible'), get_string('configcustomwelcomemessage', 'block_crucible'),
          "", PARAM_RAW, 60));
-    
+
+    // Organization Role Sync Settings
+    $settings->add(new admin_setting_heading(
+        'block_crucible/orgrolsyncsectionheading',
+        get_string('orgrolsyncsectionheading', 'block_crucible'),
+        get_string('orgrolsyncsectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox('block_crucible/enableorgrolesync',
+        get_string('enableorgrolesync', 'block_crucible'),
+        get_string('configenableorgrolesync', 'block_crucible'), 0, 1, 0));
 
     // Alloy
     $settings->add(new admin_setting_heading(

@@ -297,6 +297,11 @@ $string['unmapped_summary']  = 'Unmapped {$a} Competencies';
 $string['unmapped_for_framework_title'] = 'Unmapped Competencies — {$a}';
 $string['unmapped_list_empty'] = 'No unmapped competencies in this framework.';
 $string['task_sync_keycloak_users'] = 'Sync Keycloak Users to Moodle';
+$string['task_sync_org_roles'] = 'Sync Org Group Roles';
+$string['orgrolsyncsectionheading'] = 'Organization Role Sync';
+$string['orgrolsyncsectiondesc'] = 'Configure automatic syncing of Keycloak group memberships to Moodle category-scoped roles based on user organization.';
+$string['enableorgrolesync'] = 'Enable Organization Role Sync';
+$string['configenableorgrolesync'] = 'When enabled, automatically assigns organization-scoped roles to users based on their Keycloak group membership. This runs as a scheduled task hourly and also on user login.';
 $string['learning_plan'] = 'Learning Plan';
 $string['framework'] = 'Framework';
 
