@@ -41,13 +41,15 @@ defined('MOODLE_INTERNAL') || die();
  *
  * Each run:
  *   1. Reads all distinct profile_field_ssoorg values from user profiles.
- *   2. Ensures a top-level course category exists for each org.
+ *   2. Looks for matching top-level course categories (must be created manually by admins).
  *   3. Ensures a dynamic cohort exists for each org × Keycloak group combination,
  *      filtered on auth=oauth2 + ssoorg contains org + ssogroups contains group.
  *   4. Syncs cohort members to the matching role assignment in the org's category context.
  *
- * Adding a new org requires no code changes — it is discovered automatically once
- * a user with that ssoorg value logs in via Keycloak.
+ * Adding a new org requires:
+ *   1. Admin manually creates a top-level course category with the org's exact name.
+ *   2. This task will discover the category and assign roles on its next run.
+ *   This prevents automatic category creation from typos or unauthorized orgs.
  *
  * Adding a new group/role mapping only requires extending GROUP_ROLE_MAP.
  *
@@ -117,9 +119,9 @@ class sync_org_roles extends \core\task\scheduled_task {
         foreach ($orgs as $org) {
             mtrace("sync_org_roles: processing org '{$org}'");
 
-            $categoryid = $this->ensure_org_category($org);
+            $categoryid = $this->get_org_category($org);
             if (!$categoryid) {
-                mtrace("  skipping '{$org}': could not resolve category.");
+                // Category doesn't exist - skip this org entirely
                 continue;
             }
 
@@ -168,44 +170,35 @@ class sync_org_roles extends \core\task\scheduled_task {
     }
 
     /**
-     * Ensure a top-level course category named after the org exists.
-     * Returns the category id, or 0 on failure.
+     * Check if a top-level course category named after the org exists.
+     * Returns the category id if it exists, or 0 if it doesn't.
+     *
+     * Note: Categories must be manually created by administrators.
+     * This prevents automatic creation of categories due to typos or unauthorized orgs.
      *
      * @param string $org
      * @return int
      */
-    private function ensure_org_category(string $org): int {
+    private function get_org_category(string $org): int {
         global $DB;
 
+        // Look for exact match by name (case-sensitive)
         $existing = $DB->get_record('course_categories', ['name' => $org, 'parent' => 0], 'id', IGNORE_MISSING);
         if ($existing) {
-            mtrace("  category '{$org}' already exists (id: {$existing->id}).");
+            mtrace("  category '{$org}' found (id: {$existing->id}).");
             return (int)$existing->id;
         }
 
+        // Also check by idnumber in case it was created with the expected idnumber pattern
         $idnumber = 'org-' . $this->slugify($org);
-
-        // Guard against duplicate idnumber from a previous partial run.
-        if ($DB->record_exists('course_categories', ['idnumber' => $idnumber])) {
-            // idnumber exists but name doesn't match — fetch by idnumber.
-            $cat = $DB->get_record('course_categories', ['idnumber' => $idnumber], 'id', IGNORE_MISSING);
-            return $cat ? (int)$cat->id : 0;
+        $cat = $DB->get_record('course_categories', ['idnumber' => $idnumber, 'parent' => 0], 'id', IGNORE_MISSING);
+        if ($cat) {
+            mtrace("  category found by idnumber '{$idnumber}' (id: {$cat->id}).");
+            return (int)$cat->id;
         }
 
-        try {
-            $category = \core_course_category::create((object)[
-                'name'              => $org,
-                'idnumber'          => $idnumber,
-                'parent'            => 0,
-                'description'       => '',
-                'descriptionformat' => FORMAT_HTML,
-            ]);
-            mtrace("  created category '{$org}' (idnumber: {$idnumber}, id: {$category->id}).");
-            return (int)$category->id;
-        } catch (\Exception $e) {
-            mtrace("  ERROR creating category '{$org}': " . $e->getMessage());
-            return 0;
-        }
+        mtrace("  category '{$org}' does not exist - skipping (create it manually to enable role sync).");
+        return 0;
     }
 
     /**
@@ -314,6 +307,9 @@ class sync_org_roles extends \core\task\scheduled_task {
         if (class_exists('\\cache_helper')) {
             \cache_helper::purge_all();
         }
+
+        // Queue adhoc task to process this dynamic cohort rule immediately
+        $this->queue_cohort_processing($ruleid);
 
         return (int)$cohort->id;
     }
@@ -458,5 +454,29 @@ class sync_org_roles extends \core\task\scheduled_task {
      */
     private function slugify(string $value): string {
         return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($value)));
+    }
+
+    /**
+     * Queue an adhoc task to process the dynamic cohort rule immediately.
+     *
+     * @param int $ruleid The dynamic cohort rule ID
+     */
+    private function queue_cohort_processing(int $ruleid): void {
+        // Check if the adhoc task class exists
+        if (!class_exists('tool_dynamic_cohorts\\task\\process_rule')) {
+            mtrace("  WARNING: tool_dynamic_cohorts plugin not found - cohort membership may be delayed.");
+            return;
+        }
+
+        try {
+            // Queue adhoc task to process this specific rule (same as scheduled task does)
+            $adhoctask = new \tool_dynamic_cohorts\task\process_rule();
+            $adhoctask->set_custom_data($ruleid);
+            $adhoctask->set_component('tool_dynamic_cohorts');
+            \core\task\manager::queue_adhoc_task($adhoctask, true);
+            mtrace("  queued cohort processing task for rule (id: {$ruleid}).");
+        } catch (\Exception $e) {
+            mtrace("  WARNING: failed to queue cohort processing: " . $e->getMessage());
+        }
     }
 }

@@ -47,7 +47,8 @@ class observer {
 
     /**
      * Triggered when a user logs in.
-     * Syncs the user's organization roles if they have ssoorg and ssogroups data.
+     * Syncs the user's organization roles if they have ssoorg and ssogroups data,
+     * and if a matching course category exists (must be created manually by admins).
      *
      * @param \core\event\user_loggedin $event
      */
@@ -101,6 +102,7 @@ class observer {
     /**
      * Sync organization roles for a specific user.
      * This is a lightweight version of the scheduled task that only processes one user's org.
+     * Only syncs if a course category matching the org name already exists (must be created manually).
      *
      * @param object $user
      * @param string $ssoorg
@@ -112,9 +114,10 @@ class observer {
         require_once($CFG->dirroot . '/cohort/lib.php');
         require_once($CFG->libdir  . '/accesslib.php');
 
-        // Ensure the org category exists.
-        $categoryid = self::ensure_org_category($ssoorg);
+        // Check if the org category exists (must be created manually by admins).
+        $categoryid = self::get_org_category($ssoorg);
         if (!$categoryid) {
+            // Category doesn't exist yet - will be synced by scheduled task once created.
             return;
         }
 
@@ -160,38 +163,31 @@ class observer {
     }
 
     /**
-     * Ensure org category exists (simplified version).
+     * Check if org category exists.
+     * Returns the category id if it exists, or 0 if it doesn't.
+     * Categories must be manually created by administrators.
      *
      * @param string $org
-     * @return int Category ID or 0 on failure
+     * @return int Category ID or 0 if not found
      */
-    private static function ensure_org_category(string $org): int {
+    private static function get_org_category(string $org): int {
         global $DB;
 
+        // Look for exact match by name (case-sensitive)
         $existing = $DB->get_record('course_categories', ['name' => $org, 'parent' => 0], 'id', IGNORE_MISSING);
         if ($existing) {
             return (int)$existing->id;
         }
 
+        // Also check by idnumber in case it was created with the expected idnumber pattern
         $idnumber = 'org-' . self::slugify($org);
-
-        if ($DB->record_exists('course_categories', ['idnumber' => $idnumber])) {
-            $cat = $DB->get_record('course_categories', ['idnumber' => $idnumber], 'id', IGNORE_MISSING);
-            return $cat ? (int)$cat->id : 0;
+        $cat = $DB->get_record('course_categories', ['idnumber' => $idnumber, 'parent' => 0], 'id', IGNORE_MISSING);
+        if ($cat) {
+            return (int)$cat->id;
         }
 
-        try {
-            $category = \core_course_category::create((object)[
-                'name'              => $org,
-                'idnumber'          => $idnumber,
-                'parent'            => 0,
-                'description'       => '',
-                'descriptionformat' => FORMAT_HTML,
-            ]);
-            return (int)$category->id;
-        } catch (\Exception $e) {
-            return 0;
-        }
+        // Category doesn't exist - admin needs to create it manually
+        return 0;
     }
 
     /**
