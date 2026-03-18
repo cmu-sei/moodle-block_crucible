@@ -57,7 +57,8 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class sync_org_roles extends \core\task\scheduled_task {
+class sync_org_roles extends \core\task\scheduled_task
+{
 
     /**
      * Maps Keycloak group name => Moodle role shortname.
@@ -72,14 +73,16 @@ class sync_org_roles extends \core\task\scheduled_task {
     /**
      * @return string
      */
-    public function get_name(): string {
+    public function get_name(): string
+    {
         return get_string('task_sync_org_roles', 'block_crucible');
     }
 
     /**
      * Execute the scheduled task.
      */
-    public function execute(): void {
+    public function execute(): void
+    {
         global $CFG, $DB;
 
         // Check if org role sync is enabled.
@@ -151,7 +154,8 @@ class sync_org_roles extends \core\task\scheduled_task {
      *
      * @return array
      */
-    private function get_distinct_orgs(): array {
+    private function get_distinct_orgs(): array
+    {
         global $DB;
 
         $field = $DB->get_record('user_info_field', ['shortname' => 'ssoorg'], 'id', IGNORE_MISSING);
@@ -162,7 +166,7 @@ class sync_org_roles extends \core\task\scheduled_task {
 
         $values = $DB->get_fieldset_sql(
             'SELECT DISTINCT data FROM {user_info_data} WHERE fieldid = ? AND ' .
-            $DB->sql_isnotempty('user_info_data', 'data', false, true),
+                $DB->sql_isnotempty('user_info_data', 'data', false, true),
             [$field->id]
         );
 
@@ -179,7 +183,8 @@ class sync_org_roles extends \core\task\scheduled_task {
      * @param string $org
      * @return int
      */
-    private function get_org_category(string $org): int {
+    private function get_org_category(string $org): int
+    {
         global $DB;
 
         // Look for exact match by name (case-sensitive)
@@ -296,8 +301,12 @@ class sync_org_roles extends \core\task\scheduled_task {
         foreach ($DB->get_records('tool_dynamic_cohorts_c', ['ruleid' => $ruleid, 'classname' => $CLASS_PROFILE]) as $rec) {
             $cfg = json_decode($rec->configdata, true);
             if (isset($cfg['profilefield'])) {
-                if ($cfg['profilefield'] === $orgkey) { $orgcond = $rec; }
-                if ($cfg['profilefield'] === $grpkey) { $grpcond = $rec; }
+                if ($cfg['profilefield'] === $orgkey) {
+                    $orgcond = $rec;
+                }
+                if ($cfg['profilefield'] === $grpkey) {
+                    $grpcond = $rec;
+                }
             }
         }
 
@@ -308,8 +317,7 @@ class sync_org_roles extends \core\task\scheduled_task {
             \cache_helper::purge_all();
         }
 
-        // Queue adhoc task to process this dynamic cohort rule immediately
-        $this->queue_cohort_processing($ruleid);
+        $this->process_cohort_rule_now($ruleid);
 
         return (int)$cohort->id;
     }
@@ -388,7 +396,8 @@ class sync_org_roles extends \core\task\scheduled_task {
      * @param int $adminid
      * @param int $now
      */
-    private function upsert_condition(int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void {
+    private function upsert_condition(int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void
+    {
         global $DB;
 
         $json     = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -423,7 +432,8 @@ class sync_org_roles extends \core\task\scheduled_task {
      * @param int $adminid
      * @param int $now
      */
-    private function upsert_profile_condition(?object $existing, int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void {
+    private function upsert_profile_condition(?object $existing, int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void
+    {
         global $DB;
 
         $json = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -452,31 +462,34 @@ class sync_org_roles extends \core\task\scheduled_task {
      * @param string $value
      * @return string
      */
-    private function slugify(string $value): string {
+    private function slugify(string $value): string
+    {
         return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($value)));
     }
 
     /**
-     * Queue an adhoc task to process the dynamic cohort rule immediately.
+     * Process a dynamic cohort rule synchronously right now.
      *
-     * @param int $ruleid The dynamic cohort rule ID
+     * @param int $ruleid
      */
-    private function queue_cohort_processing(int $ruleid): void {
-        // Check if the adhoc task class exists
-        if (!class_exists('tool_dynamic_cohorts\\task\\process_rule')) {
-            mtrace("  WARNING: tool_dynamic_cohorts plugin not found - cohort membership may be delayed.");
+    private function process_cohort_rule_now(int $ruleid): void
+    {
+        if (!class_exists('\\tool_dynamic_cohorts\\rule')) {
+            mtrace("  WARNING: tool_dynamic_cohorts rule class not found - cannot process rule synchronously.");
+            return;
+        }
+
+        if (!class_exists('\\tool_dynamic_cohorts\\rule_manager')) {
+            mtrace("  WARNING: tool_dynamic_cohorts rule_manager class not found - cannot process rule synchronously.");
             return;
         }
 
         try {
-            // Queue adhoc task to process this specific rule (same as scheduled task does)
-            $adhoctask = new \tool_dynamic_cohorts\task\process_rule();
-            $adhoctask->set_custom_data($ruleid);
-            $adhoctask->set_component('tool_dynamic_cohorts');
-            \core\task\manager::queue_adhoc_task($adhoctask, true);
-            mtrace("  queued cohort processing task for rule (id: {$ruleid}).");
-        } catch (\Exception $e) {
-            mtrace("  WARNING: failed to queue cohort processing: " . $e->getMessage());
+            $rule = \tool_dynamic_cohorts\rule::get_record(['id' => $ruleid]);
+            \tool_dynamic_cohorts\rule_manager::process_rule($rule);
+            mtrace("  processed cohort rule synchronously (id: {$ruleid}).");
+        } catch (\Throwable $e) {
+            mtrace("  WARNING: failed to process cohort rule synchronously: " . $e->getMessage());
         }
     }
 }
