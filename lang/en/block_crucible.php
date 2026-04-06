@@ -330,19 +330,37 @@ $string['manageapps']       = 'Manage Applications';
 $string['manageappslink']   = 'Add or edit applications →';
 $string['addnewapp']        = 'Add new application';
 $string['editapp']          = 'Edit application';
+
 $string['appname']          = 'App name';
-$string['appname_help']     = 'The display name shown on the app card (e.g. "My Tool").';
+$string['appname_help']     = 'The display name shown on the application card, for example "My Tool". This is what users will see as the card title.';
+
 $string['appkey']           = 'App key';
-$string['appkey_help']      = 'A unique lowercase identifier (letters, numbers, underscores). Leave blank to auto-generate from the name.';
+$string['appkey_help']      = 'A unique internal identifier for this application. Use only lowercase letters, numbers, and underscores (e.g. "my_tool"). Leave blank to auto-generate one from the app name. Cannot be changed after other apps have saved ordering preferences that reference it.';
+
 $string['appdescription']   = 'Description';
+$string['appdescription_help'] = 'A short tagline or description displayed below the app name on the card. Keep it brief — one sentence works best.';
+
 $string['appurl']           = 'App URL';
+$string['appurl_help']      = 'The full URL users are taken to when they click the application card (e.g. "https://player.example.com"). Must include the protocol (https://).';
+
 $string['applogo']          = 'Logo';
-$string['applogo_help']     = 'Upload an image (PNG, SVG, JPEG) to use as the app logo on the card. Maximum 2 MB.';
-$string['appuseapi']        = 'Uses API?';
+$string['applogo_help']     = 'Upload an image to display as the application logo on the card. Accepted formats: PNG, SVG, JPEG. Maximum file size: 2 MB. A square image of at least 64 × 64 px is recommended for best results.';
+
+$string['appuseapi']        = 'Enable API integration';
+$string['appuseapi_help']   = 'Check this if the application exposes an API that this plugin should communicate with. When enabled, you can provide the API base URL below. The URL will be used for permission checks and data retrieval.';
+
 $string['appapiurl']        = 'API URL';
-$string['appuseapikey']     = 'Uses API key?';
+$string['appapiurl_help']   = 'The base URL of the application\'s API (e.g. "https://api.player.example.com"). Do not include a trailing slash. This is used internally by the plugin and is not shown to users.';
+
+$string['appuseapikey']     = 'API requires authentication key';
+$string['appuseapikey_help']= 'Check this if the API endpoint requires an authentication key or token to be sent with requests. When enabled, you can provide the key below. It will be stored securely and included in API calls made by the plugin.';
+
 $string['appapikey']        = 'API key';
+$string['appapikey_help']   = 'The secret key or token used to authenticate requests to this application\'s API. Treat this value like a password — do not share it. It is stored in the database and never shown to end users.';
+
 $string['appenabled']       = 'Enabled';
+$string['appenabled_help']  = 'When checked, this application is visible to users on the applications block. Uncheck to hide it temporarily without deleting it.';
+
 $string['actions']          = 'Actions';
 $string['noapps']           = 'No applications have been added yet.';
 $string['appadded']         = 'Application added successfully.';

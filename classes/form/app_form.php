@@ -91,11 +91,13 @@ class app_form extends \moodleform {
             ['rows' => 3, 'cols' => 50]
         );
         $mform->setType('description', PARAM_TEXT);
+        $mform->addHelpButton('description', 'appdescription', 'block_crucible');
 
         // Application URL.
         $mform->addElement('text', 'appurl', get_string('appurl', 'block_crucible'), ['size' => 60]);
         $mform->setType('appurl', PARAM_URL);
         $mform->addRule('appurl', null, 'required', null, 'client');
+        $mform->addHelpButton('appurl', 'appurl', 'block_crucible');
 
         // Logo upload via Moodle file manager.
         $mform->addElement(
@@ -109,25 +111,30 @@ class app_form extends \moodleform {
 
         // --- API section ---
 
-        // "Uses API?" checkbox — reveals the API URL field when checked.
+        // "Enable API integration" checkbox — reveals the API URL field when checked.
         $mform->addElement('advcheckbox', 'useapi', get_string('appuseapi', 'block_crucible'));
         $mform->setDefault('useapi', 0);
+        $mform->addHelpButton('useapi', 'appuseapi', 'block_crucible');
 
         $mform->addElement('text', 'apiurl', get_string('appapiurl', 'block_crucible'), ['size' => 60]);
         $mform->setType('apiurl', PARAM_URL);
+        $mform->addHelpButton('apiurl', 'appapiurl', 'block_crucible');
         $mform->hideIf('apiurl', 'useapi', 'notchecked');
 
-        // "Uses API key?" checkbox — reveals the API key field when checked.
+        // "API requires authentication key" checkbox — reveals the API key field when checked.
         $mform->addElement('advcheckbox', 'useapikey', get_string('appuseapikey', 'block_crucible'));
         $mform->setDefault('useapikey', 0);
+        $mform->addHelpButton('useapikey', 'appuseapikey', 'block_crucible');
 
         $mform->addElement('text', 'apikey', get_string('appapikey', 'block_crucible'), ['size' => 60]);
         $mform->setType('apikey', PARAM_RAW);
+        $mform->addHelpButton('apikey', 'appapikey', 'block_crucible');
         $mform->hideIf('apikey', 'useapikey', 'notchecked');
 
         // Enabled toggle.
         $mform->addElement('advcheckbox', 'enabled', get_string('appenabled', 'block_crucible'));
         $mform->setDefault('enabled', 1);
+        $mform->addHelpButton('enabled', 'appenabled', 'block_crucible');
 
         $this->add_action_buttons();
     }
