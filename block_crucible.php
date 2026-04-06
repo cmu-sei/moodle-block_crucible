@@ -617,11 +617,11 @@ class block_crucible extends block_base
                             $userroles = $crucible->get_keycloak_roles();
                             $userroleschecked = true;
                         }
-                        $requiredrole = trim($customapp->keycloakrole ?? '');
-                        // Hide the app if the user does not have the required role.
+                        $requiredroles = array_filter(array_map('trim', explode('|', $customapp->keycloakrole ?? '')));
+                        // Hide the app if the user has none of the required roles.
                         if (
-                            $requiredrole !== '' &&
-                            (!is_array($userroles) || !in_array($requiredrole, $userroles))
+                            !empty($requiredroles) &&
+                            (!is_array($userroles) || empty(array_intersect($requiredroles, $userroles)))
                         ) {
                             continue;
                         }
