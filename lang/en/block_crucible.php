@@ -49,11 +49,7 @@ $string['configissuerid'] = 'OAUTH Issuer Id for Applications';
 $string['enabled'] = 'Enabled';
 $string['configenabled'] = 'Enable permissions checking via OAUTH';
 $string['showallapps'] = 'Show All Apps to Users';
-$string['enablecommapps'] = 'Enable Communication Apps';
-$string['commsectionheading'] = 'Communication Apps Settings';
-$string['commsectiondesc'] = 'Enable Communication Apps to configure application URLs and settings for Roundcube and Rocketchat integrations.';
 $string['configappshow'] = 'Enable User Access to all Apps';
-$string['configcommshow'] = 'Enable Access to Communication Apps';
 $string['customwelcomemessagecb'] = 'Enable Custom Welcome Message';
 $string['customwelcomemessagedesc'] = 'Enable custom welcome message to override system message';
 $string['customwelcomemessage'] = 'Custom Welcome Message';
@@ -138,29 +134,6 @@ $string['steamfitterdescription'] = 'Exercise Inject Automater';
 $string['steamfittersectionheading'] = 'Steamfitter Settings';
 $string['steamfittersectiondesc'] = 'Configure API and application URLs for Steamfitter integration.';
 
-// Rocketchat
-$string['rocketchatsectionheading'] = 'Rocket.Chat Settings';
-$string['showrocketchat'] = 'Show Rocket.Chat';
-$string['configrocketchatshow'] = 'Show Rocket.Chat application regardless of user permissions';
-$string['rocketchatsectiondesc'] = 'Configure API and application URLs for Rocket.Chat integration.';
-$string['rocketchatapiurl'] = 'Rocket.Chat API';
-$string['rocketchatappurl'] = 'Rocket.Chat UI';
-$string['rocketchatauthtoken'] = 'Rocket.Chat Auth Token';
-$string['configrocketchatapiurl'] = 'Rocket.Chat API URL used to pull permissions';
-$string['configrocketchatappurl'] = 'Rocket.Chat UI URL used to redirect participants';
-$string['configrocketchatauthtoken'] = 'Add Admin\'s Auth Token for API Calls';
-$string['rocketchatdescription'] = 'Communications Platform';
-$string['rocketchatuserid'] = 'Rocket.Chat User Id';
-$string['configrocketchatuserid'] = 'Add Admin\'s User Id for API Calls';
-
-// Roundcube
-$string['roundcubesectionheading'] = 'Roundcube Settings';
-$string['showroundcube'] = 'Show Roundcube';
-$string['configroundcubeshow'] = 'Show Roundcube application regardless of user permissions';
-$string['roundcubesectiondesc'] = 'Configure application URL for Roundcube integration.';
-$string['roundcubeappurl'] = 'Roundcube UI';
-$string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
-$string['roundcubedescription'] = 'Webmail';
 
 // TopoMojo
 $string['showtopomojo'] = 'Show TopoMojo';
@@ -208,16 +181,6 @@ $string['configkeycloakroles'] = 'Enter the names of Keycloak Admin Roles, separ
 $string['userredirect'] = "User Account Redirect";
 $string['configuserredirect'] = 'When enabled, redirects all users to the same page used for user account management.';
 
-// MISP
-$string['showmisp'] = 'Show MISP';
-$string['configmispshow'] = 'Show MISP application regardless of user permissions';
-$string['mispappurl'] = 'MISP UI';
-$string['configmispappurl'] = 'MISP UI URL used to redirect participants';
-$string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
-$string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
-$string['mispapikey'] = 'MISP API Key';
-$string['mispsectionheading'] = 'MISP Settings';
-$string['mispsectiondesc'] = 'Configure API, keys, and application URLs for MISP integration.';
 
 // privacy
 $string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';

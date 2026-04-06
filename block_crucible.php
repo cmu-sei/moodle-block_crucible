@@ -366,50 +366,6 @@ class block_crucible extends block_base
                 debugging("User permissions not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            // ////////////////////RocketChat/////////////////////////////
-            //
-            // $rocketchaturl = get_config('block_crucible', 'rocketchatappurl');
-            // $rocketchat = null;
-            // $showrocketchat = null;
-            //
-            // if ($rocketchaturl) {
-            //     $rocketchat = $crucible->get_rocketchat_user_info();
-            //     $showrocketchat = get_config('block_crucible', 'showrocketchat');
-            // }
-            //
-            // if ($rocketchat) {
-            //     $rocketperms = $rocketchat->user->roles;
-            //
-            //     if ($showapps || in_array("admin", $rocketperms)) {
-            //         $data->rocket = $rocketchaturl;
-            //         $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-            //         $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-            //     }
-            // } else if ($showrocketchat) {
-            //     $data->rocket = $rocketchaturl;
-            //     $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-            //     $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-            // } else if ($rocketchat === -1) {
-            //     debugging("Rocket.Chat is not configured", DEBUG_DEVELOPER);
-            // }
-
-
-            // ////////////////////Roundcube/////////////////////////////
-            // $roundcubeurl = get_config('block_crucible', 'roundcubeappurl');
-            // $showroundcube = null;
-            //
-            // if ($roundcubeurl) {
-            //     $showroundcube = get_config('block_crucible', 'showroundcube');
-            // }
-            //
-            // if ($showroundcube) {
-            //     $data->roundcube = get_config('block_crucible', 'roundcubeappurl');
-            //     $data->roundcubeDescription = get_string('roundcubedescription', 'block_crucible');
-            //     $data->roundcubeLogo = $OUTPUT->image_url('icon-roundcube', 'block_crucible');
-            // } else {
-            //     debugging("Roundcube not enabled", DEBUG_DEVELOPER);
-            // }
-
             ////////////////////TOPOMOJO////////////////////////////
             $topomojourl = get_config('block_crucible', 'topomojoappurl');
             $permstopomojo = null;
@@ -519,30 +475,6 @@ class block_crucible extends block_base
                 debugging("Keycloak not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            // ////////////////////MISP/////////////////////////////
-            // $mispurl = get_config('block_crucible', 'mispappurl');
-            // $permsmisp = null;
-            // $usermisp = null;
-            // $showmisp = null;
-            //
-            // if ($mispurl) {
-            //     $permsmisp = $crucible->get_misp_permissions();
-            //     $usermisp = $crucible->get_misp_user();
-            //     $showmisp = get_config('block_crucible', 'showmisp');
-            // }
-            //
-            // if (($usermisp && $showapps) || $permsmisp || $showmisp) {
-            //     $data->misp = $mispurl;
-            //     $data->mispDescription = get_string('mispdescription', 'block_crucible');
-            //     $data->mispLogo  = $OUTPUT->image_url('misp-icon', 'block_crucible');
-            // } else if ($permsmisp === 0 || $usermisp === 0) {
-            //     debugging("No user data found on MISP for User: " . $userid, DEBUG_DEVELOPER);
-            // } else if ($permsmisp === false || $usermisp === false) {
-            //     debugging("Unable to connect to MISP API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            // } else if ($permsmisp === null && $usermisp === null) {
-            //     debugging("MISP not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
-            // }
-
             ////////////////////DOCS/////////////////////////////
             $docsurl = get_config('block_crucible', 'docsappurl');
 
@@ -561,22 +493,16 @@ class block_crucible extends block_base
                 'cite',
                 'gallery',
                 'steamfitter',
-                // 'rocket',
-                // 'roundcube',
                 'topomojo',
                 'gameboard',
                 'keycloak',
-                // 'misp',
                 'docs'
             ];
 
             // Display name overrides for hardcoded apps whose keys don't title-case correctly.
             $appnames = [
                 'cite'       => 'CITE',
-                // 'misp'       => 'MISP',
                 'topomojo'   => 'TopoMojo',
-                // 'rocket'     => 'Rocket.Chat',
-                // 'roundcube'  => 'Roundcube',
                 'steamfitter'=> 'Steamfitter',
                 'gameboard'  => 'Gameboard',
                 'keycloak'   => 'Keycloak',
