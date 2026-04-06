@@ -76,5 +76,22 @@ function xmldb_block_crucible_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026040100, 'crucible');
     }
 
+    if ($oldversion < 2026040200) {
+        // Add apiurl and apikey columns to block_crucible_apps.
+        $table = new xmldb_table('block_crucible_apps');
+
+        $apiurlfield = new xmldb_field('apiurl', XMLDB_TYPE_CHAR, '1333', null, null, null, null, 'appurl');
+        if (!$dbman->field_exists($table, $apiurlfield)) {
+            $dbman->add_field($table, $apiurlfield);
+        }
+
+        $apikeyfield = new xmldb_field('apikey', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'apiurl');
+        if (!$dbman->field_exists($table, $apikeyfield)) {
+            $dbman->add_field($table, $apikeyfield);
+        }
+
+        upgrade_block_savepoint(true, 2026040200, 'crucible');
+    }
+
     return true;
 }

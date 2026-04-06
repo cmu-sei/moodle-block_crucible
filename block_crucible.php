@@ -570,6 +570,27 @@ class block_crucible extends block_base
                 'docs'
             ];
 
+            // Display name overrides for hardcoded apps whose keys don't title-case correctly.
+            $appnames = [
+                'cite'       => 'CITE',
+                'misp'       => 'MISP',
+                'topomojo'   => 'TopoMojo',
+                'rocket'     => 'Rocket.Chat',
+                'roundcube'  => 'Roundcube',
+                'steamfitter'=> 'Steamfitter',
+                'gameboard'  => 'Gameboard',
+                'keycloak'   => 'Keycloak',
+                'blueprint'  => 'Blueprint',
+                'caster'     => 'Caster',
+                'gallery'    => 'Gallery',
+                'player'     => 'Player',
+                'alloy'      => 'Alloy',
+                'docs'       => 'Docs',
+            ];
+            foreach ($appnames as $k => $displayname) {
+                $data->{$k . 'Name'} = $displayname;
+            }
+
             // Load custom apps from the database and merge them in.
             $customapps = $DB->get_records('block_crucible_apps', ['enabled' => 1], 'sortorder ASC, name ASC');
             $syscontext = \context_system::instance();

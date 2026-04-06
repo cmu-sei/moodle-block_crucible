@@ -324,24 +324,27 @@ $string['noresults'] = 'No matches found';
 $string['config_frameworkid'] = 'Competency framework';
 $string['config_frameworkid_help'] = 'Choose which competency framework this block should use.';
 
-// Custom / dynamic app management.
-$string['customapps']       = 'Custom Applications';
-$string['manageapps']       = 'Manage Custom Applications';
-$string['manageappslink']   = 'Add or edit custom applications →';
+// Application management.
+$string['customapps']       = 'Applications';
+$string['manageapps']       = 'Manage Applications';
+$string['manageappslink']   = 'Add or edit applications →';
 $string['addnewapp']        = 'Add new application';
 $string['editapp']          = 'Edit application';
 $string['appname']          = 'App name';
 $string['appname_help']     = 'The display name shown on the app card (e.g. "My Tool").';
 $string['appkey']           = 'App key';
 $string['appkey_help']      = 'A unique lowercase identifier (letters, numbers, underscores). Leave blank to auto-generate from the name.';
-$string['appdescription']   = 'Slogan / description';
+$string['appdescription']   = 'Description';
 $string['appurl']           = 'App URL';
 $string['applogo']          = 'Logo';
 $string['applogo_help']     = 'Upload an image (PNG, SVG, JPEG) to use as the app logo on the card. Maximum 2 MB.';
-$string['appsortorder']     = 'Sort order';
+$string['appuseapi']        = 'Uses API?';
+$string['appapiurl']        = 'API URL';
+$string['appuseapikey']     = 'Uses API key?';
+$string['appapikey']        = 'API key';
 $string['appenabled']       = 'Enabled';
 $string['actions']          = 'Actions';
-$string['noapps']           = 'No custom applications have been added yet.';
+$string['noapps']           = 'No applications have been added yet.';
 $string['appadded']         = 'Application added successfully.';
 $string['appupdated']       = 'Application updated successfully.';
 $string['appdeleted']       = 'Application deleted.';

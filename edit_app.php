@@ -33,7 +33,7 @@ DM24-1176
 */
 
 /**
- * Add / edit a custom Crucible application.
+ * Add / edit a Crucible application.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
@@ -73,23 +73,26 @@ if ($formdata = $mform->get_data()) {
         $key = trim($key, '_');
     }
 
+    // Only persist API URL / key when the corresponding checkbox was checked.
+    $apiurl = !empty($formdata->useapi)    ? trim($formdata->apiurl ?? '') : '';
+    $apikey = !empty($formdata->useapikey) ? trim($formdata->apikey ?? '') : '';
+
     $now = time();
 
     if ($appid > 0) {
-        // Update existing record.
         $record = (object)[
             'id'           => $appid,
             'name'         => $formdata->name,
             'appkey'       => $key,
             'description'  => $formdata->description,
             'appurl'       => $formdata->appurl,
+            'apiurl'       => $apiurl,
+            'apikey'       => $apikey,
             'enabled'      => (int)(!empty($formdata->enabled)),
-            'sortorder'    => (int)($formdata->sortorder ?? 0),
             'timemodified' => $now,
         ];
         $DB->update_record('block_crucible_apps', $record);
 
-        // Save uploaded logo.
         file_save_draft_area_files(
             $formdata->logo,
             $context->id,
@@ -101,20 +104,20 @@ if ($formdata = $mform->get_data()) {
 
         redirect($manageurl, get_string('appupdated', 'block_crucible'), null, \core\output\notification::NOTIFY_SUCCESS);
     } else {
-        // Insert new record.
         $record = (object)[
             'name'         => $formdata->name,
             'appkey'       => $key,
             'description'  => $formdata->description,
             'appurl'       => $formdata->appurl,
+            'apiurl'       => $apiurl,
+            'apikey'       => $apikey,
             'enabled'      => (int)(!empty($formdata->enabled)),
-            'sortorder'    => (int)($formdata->sortorder ?? 0),
+            'sortorder'    => 0,
             'timecreated'  => $now,
             'timemodified' => $now,
         ];
         $newid = $DB->insert_record('block_crucible_apps', $record);
 
-        // Save uploaded logo (itemid is the new record's id).
         file_save_draft_area_files(
             $formdata->logo,
             $context->id,
@@ -130,7 +133,6 @@ if ($formdata = $mform->get_data()) {
 
 // Pre-populate form with existing data (editing) or defaults (adding).
 if ($app) {
-    // Prepare the draft file area with any existing logo.
     $draftitemid = file_get_submitted_draft_itemid('logo');
     file_prepare_draft_area(
         $draftitemid,
@@ -147,12 +149,14 @@ if ($app) {
         'appkey'      => $app->appkey,
         'description' => $app->description,
         'appurl'      => $app->appurl,
+        'useapi'      => !empty($app->apiurl) ? 1 : 0,
+        'apiurl'      => $app->apiurl ?? '',
+        'useapikey'   => !empty($app->apikey) ? 1 : 0,
+        'apikey'      => $app->apikey ?? '',
         'enabled'     => $app->enabled,
-        'sortorder'   => $app->sortorder,
         'logo'        => $draftitemid,
     ]);
 } else {
-    // For a new app, initialise an empty draft area.
     $draftitemid = file_get_submitted_draft_itemid('logo');
     file_prepare_draft_area($draftitemid, $context->id, 'block_crucible', 'app_logo', 0, $logooptions);
     $mform->set_data(['id' => 0, 'logo' => $draftitemid]);

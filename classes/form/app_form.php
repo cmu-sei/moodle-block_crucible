@@ -33,7 +33,7 @@ DM24-1176
 */
 
 /**
- * Form for adding and editing custom applications in the Crucible block.
+ * Form for adding and editing applications in the Crucible block.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
@@ -48,7 +48,7 @@ global $CFG;
 require_once($CFG->libdir . '/formslib.php');
 
 /**
- * Moodle form for creating and editing a custom Crucible application.
+ * Moodle form for creating and editing a Crucible application.
  */
 class app_form extends \moodleform {
 
@@ -83,7 +83,7 @@ class app_form extends \moodleform {
         $mform->setType('appkey', PARAM_ALPHANUMEXT);
         $mform->addHelpButton('appkey', 'appkey', 'block_crucible');
 
-        // Short description / slogan shown on the app card.
+        // Description shown on the app card.
         $mform->addElement(
             'textarea',
             'description',
@@ -107,10 +107,23 @@ class app_form extends \moodleform {
         );
         $mform->addHelpButton('logo', 'applogo', 'block_crucible');
 
-        // Sort order (lower numbers appear first).
-        $mform->addElement('text', 'sortorder', get_string('appsortorder', 'block_crucible'), ['size' => 5]);
-        $mform->setType('sortorder', PARAM_INT);
-        $mform->setDefault('sortorder', 0);
+        // --- API section ---
+
+        // "Uses API?" checkbox — reveals the API URL field when checked.
+        $mform->addElement('advcheckbox', 'useapi', get_string('appuseapi', 'block_crucible'));
+        $mform->setDefault('useapi', 0);
+
+        $mform->addElement('text', 'apiurl', get_string('appapiurl', 'block_crucible'), ['size' => 60]);
+        $mform->setType('apiurl', PARAM_URL);
+        $mform->hideIf('apiurl', 'useapi', 'notchecked');
+
+        // "Uses API key?" checkbox — reveals the API key field when checked.
+        $mform->addElement('advcheckbox', 'useapikey', get_string('appuseapikey', 'block_crucible'));
+        $mform->setDefault('useapikey', 0);
+
+        $mform->addElement('text', 'apikey', get_string('appapikey', 'block_crucible'), ['size' => 60]);
+        $mform->setType('apikey', PARAM_RAW);
+        $mform->hideIf('apikey', 'useapikey', 'notchecked');
 
         // Enabled toggle.
         $mform->addElement('advcheckbox', 'enabled', get_string('appenabled', 'block_crucible'));
@@ -134,7 +147,6 @@ class app_form extends \moodleform {
         // Validate or auto-generate the app key.
         $key = trim($data['appkey'] ?? '');
         if ($key === '') {
-            // Auto-generate from name: lowercase, replace non-alphanumeric with underscore.
             $key = preg_replace('/[^a-z0-9]+/', '_', strtolower(trim($data['name'] ?? '')));
             $key = trim($key, '_');
         }

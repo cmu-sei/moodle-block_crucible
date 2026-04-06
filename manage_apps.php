@@ -106,7 +106,6 @@ if ($apps) {
         get_string('appkey', 'block_crucible'),
         get_string('appurl', 'block_crucible'),
         get_string('appdescription', 'block_crucible'),
-        get_string('appsortorder', 'block_crucible'),
         get_string('appenabled', 'block_crucible'),
         get_string('actions', 'block_crucible'),
     ];
@@ -169,7 +168,6 @@ if ($apps) {
             $app->appkey,
             format_string($app->appurl),
             format_string($app->description),
-            $app->sortorder,
             $enabledbadge,
             $actions,
         ];
