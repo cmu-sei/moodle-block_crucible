@@ -93,5 +93,27 @@ function xmldb_block_crucible_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026040200, 'crucible');
     }
 
+    if ($oldversion < 2026040300) {
+        // Add Keycloak role mapping fields to block_crucible_apps.
+        $table = new xmldb_table('block_crucible_apps');
+
+        $keycloakenabledfield = new xmldb_field('keycloakenabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'apikey');
+        if (!$dbman->field_exists($table, $keycloakenabledfield)) {
+            $dbman->add_field($table, $keycloakenabledfield);
+        }
+
+        $keycloakrolefield = new xmldb_field('keycloakrole', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'keycloakenabled');
+        if (!$dbman->field_exists($table, $keycloakrolefield)) {
+            $dbman->add_field($table, $keycloakrolefield);
+        }
+
+        $overriderolefield = new xmldb_field('overriderole', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'keycloakrole');
+        if (!$dbman->field_exists($table, $overriderolefield)) {
+            $dbman->add_field($table, $overriderolefield);
+        }
+
+        upgrade_block_savepoint(true, 2026040300, 'crucible');
+    }
+
     return true;
 }

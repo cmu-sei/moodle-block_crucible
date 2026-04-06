@@ -131,6 +131,24 @@ class app_form extends \moodleform {
         $mform->addHelpButton('apikey', 'appapikey', 'block_crucible');
         $mform->hideIf('apikey', 'useapikey', 'notchecked');
 
+        // --- Keycloak role mapping section ---
+
+        // "Keycloak Role Mapping Enabled?" checkbox — reveals role name field when checked.
+        $mform->addElement('advcheckbox', 'keycloakenabled', get_string('appkeycloakenabled', 'block_crucible'));
+        $mform->setDefault('keycloakenabled', 0);
+        $mform->addHelpButton('keycloakenabled', 'appkeycloakenabled', 'block_crucible');
+
+        $mform->addElement('text', 'keycloakrole', get_string('appkeycloakrole', 'block_crucible'), ['size' => 50]);
+        $mform->setType('keycloakrole', PARAM_TEXT);
+        $mform->addHelpButton('keycloakrole', 'appkeycloakrole', 'block_crucible');
+        $mform->hideIf('keycloakrole', 'keycloakenabled', 'notchecked');
+
+        // "Override role permissions" checkbox — show app regardless of token role.
+        $mform->addElement('advcheckbox', 'overriderole', get_string('appoverriderole', 'block_crucible'));
+        $mform->setDefault('overriderole', 0);
+        $mform->addHelpButton('overriderole', 'appoverriderole', 'block_crucible');
+        $mform->hideIf('overriderole', 'keycloakenabled', 'notchecked');
+
         // Enabled toggle.
         $mform->addElement('advcheckbox', 'enabled', get_string('appenabled', 'block_crucible'));
         $mform->setDefault('enabled', 1);

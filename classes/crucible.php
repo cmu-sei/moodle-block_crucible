@@ -497,7 +497,7 @@ class crucible
         return $r;
     }
 
-    //////////////////////Rocket.Chat//////////////////////
+    // //////////////////////Rocket.Chat//////////////////////
     /**
      * Retrieves user information from Rocket.Chat based on the current user's username.
      *
@@ -513,6 +513,7 @@ class crucible
      *               `false` if the request fails due to network issues, or `0` if the user exists but
      *               no special permissions are found or if an API error occurs.
      */
+    /* DISABLED - Rocket.Chat
     public function get_rocketchat_user_info()
     {
         global $USER;
@@ -572,6 +573,7 @@ class crucible
         // User exists but no special perms
         return 0;
     }
+    */ // END DISABLED - Rocket.Chat
 
     //////////////////////TopoMojo//////////////////////
     /**
@@ -811,6 +813,7 @@ class crucible
      *                   the user is not found, does not have an admin role, or if any issues
      *                   occur during the request or response parsing.
      */
+    /* DISABLED - MISP
     public function get_misp_permissions()
     {
         global $USER;
@@ -876,6 +879,7 @@ class crucible
         }
         return 0;
     }
+    */ // END DISABLED - MISP (get_misp_permissions)
 
     /**
      * Retrieves the current user's information from the MISP (Malware Information Sharing Platform) service.
@@ -891,6 +895,7 @@ class crucible
      * @return array|int The user information if found; otherwise, returns `0` if the user is not found
      *                   or if any issues occur during the request or response parsing.
      */
+    /* DISABLED - MISP
     public function get_misp_user()
     {
         global $USER;
@@ -954,6 +959,7 @@ class crucible
         }
         return 0;
     }
+    */ // END DISABLED - MISP (get_misp_user)
 
     public function get_keycloak_groups()
     {

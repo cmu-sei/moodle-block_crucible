@@ -77,19 +77,27 @@ if ($formdata = $mform->get_data()) {
     $apiurl = !empty($formdata->useapi)    ? trim($formdata->apiurl ?? '') : '';
     $apikey = !empty($formdata->useapikey) ? trim($formdata->apikey ?? '') : '';
 
+    // Only persist Keycloak role fields when role mapping is enabled.
+    $keycloakenabled = (int)(!empty($formdata->keycloakenabled));
+    $keycloakrole    = $keycloakenabled ? trim($formdata->keycloakrole ?? '') : '';
+    $overriderole    = $keycloakenabled ? (int)(!empty($formdata->overriderole)) : 0;
+
     $now = time();
 
     if ($appid > 0) {
         $record = (object)[
-            'id'           => $appid,
-            'name'         => $formdata->name,
-            'appkey'       => $key,
-            'description'  => $formdata->description,
-            'appurl'       => $formdata->appurl,
-            'apiurl'       => $apiurl,
-            'apikey'       => $apikey,
-            'enabled'      => (int)(!empty($formdata->enabled)),
-            'timemodified' => $now,
+            'id'             => $appid,
+            'name'           => $formdata->name,
+            'appkey'         => $key,
+            'description'    => $formdata->description,
+            'appurl'         => $formdata->appurl,
+            'apiurl'         => $apiurl,
+            'apikey'         => $apikey,
+            'keycloakenabled' => $keycloakenabled,
+            'keycloakrole'   => $keycloakrole,
+            'overriderole'   => $overriderole,
+            'enabled'        => (int)(!empty($formdata->enabled)),
+            'timemodified'   => $now,
         ];
         $DB->update_record('block_crucible_apps', $record);
 
@@ -105,16 +113,19 @@ if ($formdata = $mform->get_data()) {
         redirect($manageurl, get_string('appupdated', 'block_crucible'), null, \core\output\notification::NOTIFY_SUCCESS);
     } else {
         $record = (object)[
-            'name'         => $formdata->name,
-            'appkey'       => $key,
-            'description'  => $formdata->description,
-            'appurl'       => $formdata->appurl,
-            'apiurl'       => $apiurl,
-            'apikey'       => $apikey,
-            'enabled'      => (int)(!empty($formdata->enabled)),
-            'sortorder'    => 0,
-            'timecreated'  => $now,
-            'timemodified' => $now,
+            'name'            => $formdata->name,
+            'appkey'          => $key,
+            'description'     => $formdata->description,
+            'appurl'          => $formdata->appurl,
+            'apiurl'          => $apiurl,
+            'apikey'          => $apikey,
+            'keycloakenabled' => $keycloakenabled,
+            'keycloakrole'    => $keycloakrole,
+            'overriderole'    => $overriderole,
+            'enabled'         => (int)(!empty($formdata->enabled)),
+            'sortorder'       => 0,
+            'timecreated'     => $now,
+            'timemodified'    => $now,
         ];
         $newid = $DB->insert_record('block_crucible_apps', $record);
 
@@ -144,17 +155,20 @@ if ($app) {
     );
 
     $mform->set_data([
-        'id'          => $app->id,
-        'name'        => $app->name,
-        'appkey'      => $app->appkey,
-        'description' => $app->description,
-        'appurl'      => $app->appurl,
-        'useapi'      => !empty($app->apiurl) ? 1 : 0,
-        'apiurl'      => $app->apiurl ?? '',
-        'useapikey'   => !empty($app->apikey) ? 1 : 0,
-        'apikey'      => $app->apikey ?? '',
-        'enabled'     => $app->enabled,
-        'logo'        => $draftitemid,
+        'id'              => $app->id,
+        'name'            => $app->name,
+        'appkey'          => $app->appkey,
+        'description'     => $app->description,
+        'appurl'          => $app->appurl,
+        'useapi'          => !empty($app->apiurl) ? 1 : 0,
+        'apiurl'          => $app->apiurl ?? '',
+        'useapikey'       => !empty($app->apikey) ? 1 : 0,
+        'apikey'          => $app->apikey ?? '',
+        'keycloakenabled' => (int)($app->keycloakenabled ?? 0),
+        'keycloakrole'    => $app->keycloakrole ?? '',
+        'overriderole'    => (int)($app->overriderole ?? 0),
+        'enabled'         => $app->enabled,
+        'logo'            => $draftitemid,
     ]);
 } else {
     $draftitemid = file_get_submitted_draft_itemid('logo');

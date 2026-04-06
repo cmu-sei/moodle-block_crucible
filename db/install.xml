@@ -12,6 +12,9 @@
         <FIELD NAME="appurl" TYPE="char" LENGTH="1333" NOTNULL="false" SEQUENCE="false" COMMENT="URL the app card links to"/>
         <FIELD NAME="apiurl" TYPE="char" LENGTH="1333" NOTNULL="false" SEQUENCE="false" COMMENT="Optional API endpoint URL"/>
         <FIELD NAME="apikey" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Optional API key"/>
+        <FIELD NAME="keycloakenabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether Keycloak role mapping is enabled for this app"/>
+        <FIELD NAME="keycloakrole" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Required Keycloak role name to view this app"/>
+        <FIELD NAME="overriderole" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="When set, bypasses role check and always shows the app"/>
         <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether the app is visible to users"/>
         <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Default display order"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
