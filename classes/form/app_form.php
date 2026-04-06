@@ -78,11 +78,6 @@ class app_form extends \moodleform {
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addHelpButton('name', 'appname', 'block_crucible');
 
-        // App key / slug (auto-generated from name if left blank).
-        $mform->addElement('text', 'appkey', get_string('appkey', 'block_crucible'), ['size' => 30]);
-        $mform->setType('appkey', PARAM_ALPHANUMEXT);
-        $mform->addHelpButton('appkey', 'appkey', 'block_crucible');
-
         // Description shown on the app card.
         $mform->addElement(
             'textarea',
@@ -169,22 +164,9 @@ class app_form extends \moodleform {
 
         $errors = parent::validation($data, $files);
 
-        // Validate or auto-generate the app key.
-        $key = trim($data['appkey'] ?? '');
-        if ($key === '') {
-            $key = preg_replace('/[^a-z0-9]+/', '_', strtolower(trim($data['name'] ?? '')));
-            $key = trim($key, '_');
-        }
-
-        if ($key === '') {
-            $errors['appkey'] = get_string('appkeyrequired', 'block_crucible');
-        } else {
-            // Check uniqueness, ignoring the current record when editing.
-            $existing = $DB->get_record('block_crucible_apps', ['appkey' => $key]);
-            if ($existing && (int)$existing->id !== (int)($data['id'] ?? 0)) {
-                $errors['appkey'] = get_string('appkeyexists', 'block_crucible');
-            }
-        }
+        // Auto-generate the app key from the name.
+        $key = preg_replace('/[^a-z0-9]+/', '_', strtolower(trim($data['name'] ?? '')));
+        $key = trim($key, '_');
 
         return $errors;
     }

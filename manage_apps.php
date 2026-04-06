@@ -103,7 +103,6 @@ if ($apps) {
     $table->head = [
         get_string('applogo', 'block_crucible'),
         get_string('appname', 'block_crucible'),
-        get_string('appkey', 'block_crucible'),
         get_string('appurl', 'block_crucible'),
         get_string('appdescription', 'block_crucible'),
         get_string('appenabled', 'block_crucible'),
@@ -165,7 +164,6 @@ if ($apps) {
         $table->data[] = [
             $logohtml,
             format_string($app->name),
-            $app->appkey,
             format_string($app->appurl),
             format_string($app->description),
             $enabledbadge,

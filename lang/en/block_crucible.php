@@ -334,8 +334,6 @@ $string['editapp']          = 'Edit application';
 $string['appname']          = 'App name';
 $string['appname_help']     = 'The display name shown on the application card, for example "My Tool". This is what users will see as the card title.';
 
-$string['appkey']           = 'App key';
-$string['appkey_help']      = 'A unique internal identifier for this application. Use only lowercase letters, numbers, and underscores (e.g. "my_tool"). Leave blank to auto-generate one from the app name. Cannot be changed after other apps have saved ordering preferences that reference it.';
 
 $string['appdescription']   = 'Description';
 $string['appdescription_help'] = 'A short tagline or description displayed below the app name on the card. Keep it brief — one sentence works best.';
@@ -376,5 +374,3 @@ $string['appadded']         = 'Application added successfully.';
 $string['appupdated']       = 'Application updated successfully.';
 $string['appdeleted']       = 'Application deleted.';
 $string['confirmdelete']    = 'Are you sure you want to delete this application? This cannot be undone.';
-$string['appkeyexists']     = 'This app key is already in use. Please choose a different key.';
-$string['appkeyrequired']   = 'An app key is required. Either enter one or provide a name so it can be auto-generated.';

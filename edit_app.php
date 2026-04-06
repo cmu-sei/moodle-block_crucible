@@ -66,12 +66,9 @@ if ($mform->is_cancelled()) {
 $logooptions = \block_crucible\form\app_form::logo_options();
 
 if ($formdata = $mform->get_data()) {
-    // Derive the app key if the user left it blank.
-    $key = trim($formdata->appkey ?? '');
-    if ($key === '') {
-        $key = preg_replace('/[^a-z0-9]+/', '_', strtolower(trim($formdata->name)));
-        $key = trim($key, '_');
-    }
+    // Auto-generate the app key from the name.
+    $key = preg_replace('/[^a-z0-9]+/', '_', strtolower(trim($formdata->name)));
+    $key = trim($key, '_');
 
     // Only persist API URL / key when the corresponding checkbox was checked.
     $apiurl = !empty($formdata->useapi)    ? trim($formdata->apiurl ?? '') : '';
@@ -157,7 +154,6 @@ if ($app) {
     $mform->set_data([
         'id'              => $app->id,
         'name'            => $app->name,
-        'appkey'          => $app->appkey,
         'description'     => $app->description,
         'appurl'          => $app->appurl,
         'useapi'          => !empty($app->apiurl) ? 1 : 0,
