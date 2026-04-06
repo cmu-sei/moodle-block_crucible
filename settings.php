@@ -44,6 +44,17 @@ DM24-1176
 // This line protects the file from being accessed by a URL directly.
 defined('MOODLE_INTERNAL') || die();
 
+// Register the Manage Apps admin page so it appears in the admin navigation
+// and can be set up with admin_externalpage_setup() in manage_apps.php / edit_app.php.
+if ($hassiteconfig) {
+    $ADMIN->add('blocksettings', new admin_externalpage(
+        'block_crucible_manageapps',
+        get_string('manageapps', 'block_crucible'),
+        new moodle_url('/blocks/crucible/manage_apps.php'),
+        'moodle/site:config'
+    ));
+}
+
 if ($ADMIN->fulltree) {
     // General Settings
     $options = [];
@@ -53,6 +64,16 @@ if ($ADMIN->fulltree) {
                 $options[$issuer->get('id')] = s($issuer->get('name'));
         }
     }
+
+    // Link to the Manage Apps page where custom applications can be added/edited.
+    $settings->add(new admin_setting_heading(
+        'block_crucible/customappsheading',
+        get_string('customapps', 'block_crucible'),
+        html_writer::link(
+            new moodle_url('/blocks/crucible/manage_apps.php'),
+            get_string('manageappslink', 'block_crucible')
+        )
+    ));
 
     // Enable/Disable plugin
     $settings->add(new admin_setting_configcheckbox('block_crucible/enabled',

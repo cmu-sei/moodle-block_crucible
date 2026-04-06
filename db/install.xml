@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="blocks/crucible/db" VERSION="20260401" COMMENT="XMLDB file for Moodle blocks/crucible"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+  <TABLES>
+    <TABLE NAME="block_crucible_apps" COMMENT="Custom applications registered in the Crucible block">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Display name of the application"/>
+        <FIELD NAME="appkey" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="Unique slug for the application"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Short description or slogan shown on the app card"/>
+        <FIELD NAME="appurl" TYPE="char" LENGTH="1333" NOTNULL="false" SEQUENCE="false" COMMENT="URL the app card links to"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether the app is visible to users"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Default display order"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="appkey_unique" TYPE="unique" FIELDS="appkey"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

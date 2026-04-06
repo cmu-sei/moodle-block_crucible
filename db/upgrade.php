@@ -33,16 +33,48 @@ DM24-1176
 */
 
 /**
- * Global Search version details.
+ * Upgrade script for block_crucible.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026040100;
-$plugin->requires  = 2025041400;
-$plugin->component = 'block_crucible';
-$plugin->maturity = MATURITY_ALPHA;
+/**
+ * Upgrade function for block_crucible.
+ *
+ * @param int $oldversion
+ * @return bool
+ */
+function xmldb_block_crucible_upgrade($oldversion) {
+    global $DB;
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026040100) {
+        // Create block_crucible_apps table for dynamically managed applications.
+        $table = new xmldb_table('block_crucible_apps');
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('appkey', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('description', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('appurl', XMLDB_TYPE_CHAR, '1333', null, null, null, null);
+        $table->add_field('enabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1');
+        $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('appkey_unique', XMLDB_KEY_UNIQUE, ['appkey']);
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        upgrade_block_savepoint(true, 2026040100, 'crucible');
+    }
+
+    return true;
+}

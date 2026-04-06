@@ -551,7 +551,7 @@ class block_crucible extends block_base
                 $data->docsLogo  = $OUTPUT->image_url('docs-logo', 'block_crucible');
             }
 
-            // List only the keys that represent real apps.
+            // List only the keys that represent real (hardcoded) apps.
             $appkeys = [
                 'player',
                 'alloy',
@@ -568,6 +568,50 @@ class block_crucible extends block_base
                 'misp',
                 'docs'
             ];
+
+            // Load custom apps from the database and merge them in.
+            $customapps = $DB->get_records('block_crucible_apps', ['enabled' => 1], 'sortorder ASC, name ASC');
+            $syscontext = \context_system::instance();
+            $customappdata = []; // keyed by appkey for easy lookup.
+            foreach ($customapps as $customapp) {
+                $key = $customapp->appkey;
+
+                // Avoid collisions with hardcoded app keys.
+                if (in_array($key, $appkeys)) {
+                    continue;
+                }
+
+                // Resolve the uploaded logo URL, if any.
+                $fs = get_file_storage();
+                $logofiles = $fs->get_area_files(
+                    $syscontext->id,
+                    'block_crucible',
+                    'app_logo',
+                    $customapp->id,
+                    'id DESC',
+                    false
+                );
+                $logourl = '';
+                if ($logofiles) {
+                    $logofile = reset($logofiles);
+                    $logourl  = (string) \moodle_url::make_pluginfile_url(
+                        $logofile->get_contextid(),
+                        $logofile->get_component(),
+                        $logofile->get_filearea(),
+                        $logofile->get_itemid(),
+                        $logofile->get_filepath(),
+                        $logofile->get_filename()
+                    );
+                }
+
+                $appkeys[] = $key;
+                $data->$key = $customapp->appurl;
+                $data->{$key . 'Description'} = $customapp->description;
+                $data->{$key . 'Logo'}        = $logourl;
+                $data->{$key . 'Name'}        = $customapp->name;
+
+                $customappdata[$key] = $customapp->name;
+            }
 
             // Get user's preferred order from preferences.
             $savedorder = get_user_preferences('block_crucible_app_order', '');
@@ -586,24 +630,24 @@ class block_crucible extends block_base
             foreach ($userorder as $key) {
                 if (in_array($key, $appkeys) && !empty($data->$key)) {
                     $orderedapps[] = [
-                        'key' => $key,
-                        'url' => $data->$key,
+                        'key'         => $key,
+                        'url'         => $data->$key,
                         'description' => $data->{$key . 'Description'} ?? '',
-                        'logo' => $data->{$key . 'Logo'} ?? '',
-                        'name' => ucfirst($key),
+                        'logo'        => $data->{$key . 'Logo'} ?? '',
+                        'name'        => $data->{$key . 'Name'} ?? ucfirst($key),
                     ];
                 }
             }
 
-            // Then add any apps not in saved order
+            // Then add any apps not in saved order.
             foreach ($appkeys as $key) {
                 if (!in_array($key, $userorder) && !empty($data->$key)) {
                     $orderedapps[] = [
-                        'key' => $key,
-                        'url' => $data->$key,
+                        'key'         => $key,
+                        'url'         => $data->$key,
                         'description' => $data->{$key . 'Description'} ?? '',
-                        'logo' => $data->{$key . 'Logo'} ?? '',
-                        'name' => ucfirst($key),
+                        'logo'        => $data->{$key . 'Logo'} ?? '',
+                        'name'        => $data->{$key . 'Name'} ?? ucfirst($key),
                     ];
                 }
             }
