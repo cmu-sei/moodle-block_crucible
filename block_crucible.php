@@ -166,6 +166,7 @@ class block_crucible extends block_base
         global $OUTPUT;
         global $USER;
         global $SITE;
+        global $DB;
         if ($this->content !== null) {
             return $this->content;
         }
