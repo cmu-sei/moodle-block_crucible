@@ -192,6 +192,14 @@ class app_form extends \moodleform {
             }
         }
 
+        // Require at least one role when Keycloak mapping is on and override is off.
+        if (!empty($data['keycloakenabled']) && empty($data['overriderole'])) {
+            $role = trim($data['keycloakrole'] ?? '');
+            if ($role === '') {
+                $errors['keycloakrole'] = get_string('appkeycloakrolerequired', 'block_crucible');
+            }
+        }
+
         return $errors;
     }
 }

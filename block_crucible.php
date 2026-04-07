@@ -544,11 +544,13 @@ class block_crucible extends block_base
                             $userroleschecked = true;
                         }
                         $requiredroles = array_filter(array_map('trim', explode('|', $customapp->keycloakrole ?? '')));
+                        // If role mapping is enabled but no roles are specified, hide the app
+                        // (misconfiguration — the form enforces this, but guard against direct DB edits).
+                        if (empty($requiredroles)) {
+                            continue;
+                        }
                         // Hide the app if the user has none of the required roles.
-                        if (
-                            !empty($requiredroles) &&
-                            (!is_array($userroles) || empty(array_intersect($requiredroles, $userroles)))
-                        ) {
+                        if (!is_array($userroles) || empty(array_intersect($requiredroles, $userroles))) {
                             continue;
                         }
                     }
