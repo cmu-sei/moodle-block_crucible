@@ -626,7 +626,7 @@ class block_crucible extends block_base
             }
 
             $data->orderedapps = $orderedapps;
-            $data->hasdragdrop = !empty($orderedapps);
+            $data->hasdragdrop = !empty($orderedapps) && $this->page->user_is_editing();
 
             $hasapps = false;
             foreach ($appkeys as $k) {
