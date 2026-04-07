@@ -134,5 +134,39 @@ function xmldb_block_crucible_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026040800, 'crucible');
     }
 
+    if ($oldversion < 2026040801) {
+        // Clean up orphaned config rows for settings that were removed from the plugin.
+        $stalesettings = [
+            'showrocketchat',
+            'rocketchatapiurl',
+            'rocketchatauthtoken',
+            'rocketchatuserid',
+            'showroundcube',
+            'roundcubeappurl',
+            'showmisp',
+            'mispappurl',
+            'mispapikey',
+        ];
+        foreach ($stalesettings as $setting) {
+            unset_config($setting, 'block_crucible');
+        }
+
+        // Strip stale app keys from users' saved app-order preferences.
+        $staleappkeys = ['rocketchat', 'roundcube', 'misp'];
+        $prefs = $DB->get_records('user_preferences', ['name' => 'block_crucible_app_order']);
+        foreach ($prefs as $pref) {
+            $order = json_decode($pref->value, true);
+            if (!is_array($order)) {
+                continue;
+            }
+            $filtered = array_values(array_diff($order, $staleappkeys));
+            if (count($filtered) !== count($order)) {
+                $DB->set_field('user_preferences', 'value', json_encode($filtered), ['id' => $pref->id]);
+            }
+        }
+
+        upgrade_block_savepoint(true, 2026040801, 'crucible');
+    }
+
     return true;
 }

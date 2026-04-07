@@ -520,6 +520,7 @@ class block_crucible extends block_base
             // Load custom apps from the database and merge them in.
             $customapps = $DB->get_records('block_crucible_apps', ['enabled' => 1], 'sortorder ASC, name ASC');
             $syscontext = \context_system::instance();
+            $fs = get_file_storage();
             $customappdata = []; // keyed by appkey for easy lookup.
 
             // Lazily fetch the user's Keycloak roles the first time a role-mapped app is encountered.
@@ -557,7 +558,6 @@ class block_crucible extends block_base
                 }
 
                 // Resolve the uploaded logo URL, if any.
-                $fs = get_file_storage();
                 $logofiles = $fs->get_area_files(
                     $syscontext->id,
                     'block_crucible',
