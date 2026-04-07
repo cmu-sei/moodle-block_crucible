@@ -108,6 +108,13 @@ export const init = (containerSelector = '.apps-grid') => {
         card.setAttribute('draggable', 'true');
         card.classList.add('draggable-app');
 
+        // Prevent the inner <a> from starting its own native link drag,
+        // which would override the card's drag behavior.
+        const link = card.querySelector('a');
+        if (link) {
+            link.setAttribute('draggable', 'false');
+        }
+
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragend', handleDragEnd);
         card.addEventListener('dragover', handleDragOver);
