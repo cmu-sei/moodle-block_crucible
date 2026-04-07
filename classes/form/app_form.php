@@ -121,7 +121,7 @@ class app_form extends \moodleform {
         $mform->setDefault('useapikey', 0);
         $mform->addHelpButton('useapikey', 'appuseapikey', 'block_crucible');
 
-        $mform->addElement('text', 'apikey', get_string('appapikey', 'block_crucible'), ['size' => 60]);
+        $mform->addElement('passwordunmask', 'apikey', get_string('appapikey', 'block_crucible'), ['size' => 60]);
         $mform->setType('apikey', PARAM_RAW);
         $mform->addHelpButton('apikey', 'appapikey', 'block_crucible');
         $mform->hideIf('apikey', 'useapikey', 'notchecked');

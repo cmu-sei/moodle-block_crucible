@@ -72,7 +72,8 @@ if ($formdata = $mform->get_data()) {
 
     // Only persist API URL / key when the corresponding checkbox was checked.
     $apiurl = !empty($formdata->useapi)    ? trim($formdata->apiurl ?? '') : '';
-    $apikey = !empty($formdata->useapikey) ? trim($formdata->apikey ?? '') : '';
+    $apikeyplain = !empty($formdata->useapikey) ? trim($formdata->apikey ?? '') : '';
+    $apikey = ($apikeyplain !== '') ? \core\encryption::encrypt($apikeyplain) : '';
 
     // Only persist Keycloak role fields when role mapping is enabled.
     $keycloakenabled = (int)(!empty($formdata->keycloakenabled));
@@ -159,7 +160,7 @@ if ($app) {
         'useapi'          => !empty($app->apiurl) ? 1 : 0,
         'apiurl'          => $app->apiurl ?? '',
         'useapikey'       => !empty($app->apikey) ? 1 : 0,
-        'apikey'          => $app->apikey ?? '',
+        'apikey'          => !empty($app->apikey) ? \core\encryption::decrypt($app->apikey) : '',
         'keycloakenabled' => (int)($app->keycloakenabled ?? 0),
         'keycloakrole'    => $app->keycloakrole ?? '',
         'overriderole'    => (int)($app->overriderole ?? 0),

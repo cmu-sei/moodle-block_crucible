@@ -115,5 +115,24 @@ function xmldb_block_crucible_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026040300, 'crucible');
     }
 
+    if ($oldversion < 2026040800) {
+        // Change apikey column from CHAR(255) to TEXT so it can hold encrypted values.
+        $table = new xmldb_table('block_crucible_apps');
+        $field = new xmldb_field('apikey', XMLDB_TYPE_TEXT, null, null, null, null, null, 'apiurl');
+        $dbman->change_field_type($table, $field);
+
+        // Encrypt any existing plain-text API keys.
+        $apps = $DB->get_records_select('block_crucible_apps', "apikey IS NOT NULL AND apikey <> ''");
+        foreach ($apps as $app) {
+            // Skip values that are already encrypted (they start with the method prefix).
+            if (strpos($app->apikey, 'sodium:') === 0 || strpos($app->apikey, 'openssl-') === 0) {
+                continue;
+            }
+            $DB->set_field('block_crucible_apps', 'apikey', \core\encryption::encrypt($app->apikey), ['id' => $app->id]);
+        }
+
+        upgrade_block_savepoint(true, 2026040800, 'crucible');
+    }
+
     return true;
 }

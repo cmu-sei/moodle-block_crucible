@@ -314,10 +314,10 @@ $string['appapiurl']        = 'API URL';
 $string['appapiurl_help']   = 'The base URL of the application\'s API (e.g. "https://api.player.example.com"). Do not include a trailing slash. This is used internally by the plugin and is not shown to users.';
 
 $string['appuseapikey']     = 'API requires authentication key';
-$string['appuseapikey_help']= 'Check this if the API endpoint requires an authentication key or token to be sent with requests. When enabled, you can provide the key below. It will be stored securely and included in API calls made by the plugin.';
+$string['appuseapikey_help']= 'Check this if the API endpoint requires an authentication key or token to be sent with requests. When enabled, you can provide the key below. It will be encrypted at rest and included in API calls made by the plugin.';
 
 $string['appapikey']        = 'API key';
-$string['appapikey_help']   = 'The secret key or token used to authenticate requests to this application\'s API. Treat this value like a password — do not share it. It is stored in the database and never shown to end users.';
+$string['appapikey_help']   = 'The secret key or token used to authenticate requests to this application\'s API. Treat this value like a password — do not share it. It is encrypted at rest using the server\'s encryption key.';
 
 $string['appenabled']       = 'Enabled';
 $string['appenabled_help']  = 'When checked, this application is visible to users on the applications block. Uncheck to hide it temporarily without deleting it.';
