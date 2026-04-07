@@ -288,7 +288,7 @@ $string['config_frameworkid'] = 'Competency framework';
 $string['config_frameworkid_help'] = 'Choose which competency framework this block should use.';
 
 // Application management.
-$string['customapps']       = 'Applications';
+$string['customapps']       = 'Crucible Applications';
 $string['manageapps']       = 'Manage Applications';
 $string['manageappslink']   = 'Add or edit applications →';
 $string['addnewapp']        = 'Add new application';
