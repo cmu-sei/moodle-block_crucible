@@ -33,16 +33,51 @@ DM24-1176
 */
 
 /**
- * Global Search version details.
+ * Lib functions for block_crucible.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026040801;
-$plugin->requires  = 2025041400;
-$plugin->component = 'block_crucible';
-$plugin->maturity = MATURITY_ALPHA;
+/**
+ * Serves uploaded files for the block_crucible plugin.
+ *
+ * Handles the 'app_logo' filearea, which stores logos for custom applications
+ * managed via the Manage Apps admin page.
+ *
+ * @param stdClass $course   The course object (unused for system-level files).
+ * @param stdClass $cm       The course module object (unused).
+ * @param context  $context  The context the file is stored in (system context).
+ * @param string   $filearea The file area ('app_logo').
+ * @param array    $args     Extra arguments: [itemid, filename].
+ * @param bool     $forcedownload Whether to force a file download.
+ * @param array    $options  Additional options for send_stored_file().
+ * @return bool False if the file is not found or the request is invalid.
+ */
+function block_crucible_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options = []) {
+    if ($filearea !== 'app_logo') {
+        return false;
+    }
+
+    require_login();
+
+    // The first element is the itemid (the app record id).
+    $itemid = (int) array_shift($args);
+    // The last element is the filename.
+    $filename = array_pop($args);
+    // Any remaining elements form the filepath.
+    $filepath = $args ? '/' . implode('/', $args) . '/' : '/';
+
+    $fs = get_file_storage();
+    $file = $fs->get_file($context->id, 'block_crucible', 'app_logo', $itemid, $filepath, $filename);
+
+    if (!$file || $file->is_directory()) {
+        return false;
+    }
+
+    // Cache for 1 day; logos change infrequently.
+    send_stored_file($file, 86400, 0, false, $options);
+}

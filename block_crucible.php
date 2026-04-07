@@ -166,6 +166,7 @@ class block_crucible extends block_base
         global $OUTPUT;
         global $USER;
         global $SITE;
+        global $DB;
         if ($this->content !== null) {
             return $this->content;
         }
@@ -365,50 +366,6 @@ class block_crucible extends block_base
                 debugging("User permissions not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////RocketChat/////////////////////////////
-
-            $rocketchaturl = get_config('block_crucible', 'rocketchatappurl');
-            $rocketchat = null;
-            $showrocketchat = null;
-
-            if ($rocketchaturl) {
-                $rocketchat = $crucible->get_rocketchat_user_info();
-                $showrocketchat = get_config('block_crucible', 'showrocketchat');
-            }
-
-            if ($rocketchat) {
-                $rocketperms = $rocketchat->user->roles;
-
-                if ($showapps || in_array("admin", $rocketperms)) {
-                    $data->rocket = $rocketchaturl;
-                    $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-                    $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-                }
-            } else if ($showrocketchat) {
-                $data->rocket = $rocketchaturl;
-                $data->rocketDescription = get_string('rocketchatdescription', 'block_crucible');
-                $data->rocketLogo = $OUTPUT->image_url('icon-rocketchat', 'block_crucible');
-            } else if ($rocketchat === -1) {
-                debugging("Rocket.Chat is not configured", DEBUG_DEVELOPER);
-            }
-
-
-            ////////////////////Roundcube/////////////////////////////
-            $roundcubeurl = get_config('block_crucible', 'roundcubeappurl');
-            $showroundcube = null;
-
-            if ($roundcubeurl) {
-                $showroundcube = get_config('block_crucible', 'showroundcube');
-            }
-
-            if ($showroundcube) {
-                $data->roundcube = get_config('block_crucible', 'roundcubeappurl');
-                $data->roundcubeDescription = get_string('roundcubedescription', 'block_crucible');
-                $data->roundcubeLogo = $OUTPUT->image_url('icon-roundcube', 'block_crucible');
-            } else {
-                debugging("Roundcube not enabled", DEBUG_DEVELOPER);
-            }
-
             ////////////////////TOPOMOJO////////////////////////////
             $topomojourl = get_config('block_crucible', 'topomojoappurl');
             $permstopomojo = null;
@@ -518,40 +475,7 @@ class block_crucible extends block_base
                 debugging("Keycloak not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////MISP/////////////////////////////
-            $mispurl = get_config('block_crucible', 'mispappurl');
-            $permsmisp = null;
-            $usermisp = null;
-            $showmisp = null;
-
-            if ($mispurl) {
-                $permsmisp = $crucible->get_misp_permissions();
-                $usermisp = $crucible->get_misp_user();
-                $showmisp = get_config('block_crucible', 'showmisp');
-            }
-
-            if (($usermisp && $showapps) || $permsmisp || $showmisp) {
-                $data->misp = $mispurl;
-                $data->mispDescription = get_string('mispdescription', 'block_crucible');
-                $data->mispLogo  = $OUTPUT->image_url('misp-icon', 'block_crucible');
-            } else if ($permsmisp === 0 || $usermisp === 0) {
-                debugging("No user data found on MISP for User: " . $userid, DEBUG_DEVELOPER);
-            } else if ($permsmisp === false || $usermisp === false) {
-                debugging("Unable to connect to MISP API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($permsmisp === null && $usermisp === null) {
-                debugging("MISP not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
-            }
-
-            ////////////////////DOCS/////////////////////////////
-            $docsurl = get_config('block_crucible', 'docsappurl');
-
-            if ($docsurl) {
-                $data->docs = $docsurl;
-                $data->docsDescription = get_string('docsdescription', 'block_crucible');
-                $data->docsLogo  = $OUTPUT->image_url('docs-logo', 'block_crucible');
-            }
-
-            // List only the keys that represent real apps.
+            // List only the keys that represent real (hardcoded) apps.
             $appkeys = [
                 'player',
                 'alloy',
@@ -560,14 +484,98 @@ class block_crucible extends block_base
                 'cite',
                 'gallery',
                 'steamfitter',
-                'rocket',
-                'roundcube',
                 'topomojo',
                 'gameboard',
-                'keycloak',
-                'misp',
-                'docs'
+                'keycloak'
             ];
+
+            // Display name overrides for hardcoded apps whose keys don't title-case correctly.
+            $appnames = [
+                'cite'       => 'CITE',
+                'topomojo'   => 'TopoMojo',
+                'steamfitter'=> 'Steamfitter',
+                'gameboard'  => 'Gameboard',
+                'keycloak'   => 'Keycloak',
+                'blueprint'  => 'Blueprint',
+                'caster'     => 'Caster',
+                'gallery'    => 'Gallery',
+                'player'     => 'Player',
+                'alloy'      => 'Alloy',
+            ];
+            foreach ($appnames as $k => $displayname) {
+                $data->{$k . 'Name'} = $displayname;
+            }
+
+            // Load custom apps from the database and merge them in.
+            $customapps = $DB->get_records('block_crucible_apps', ['enabled' => 1], 'sortorder ASC, name ASC');
+            $syscontext = \context_system::instance();
+            $fs = get_file_storage();
+            $customappdata = []; // keyed by appkey for easy lookup.
+
+            // Lazily fetch the user's Keycloak roles the first time a role-mapped app is encountered.
+            $userroles = null;
+            $userroleschecked = false;
+
+            foreach ($customapps as $customapp) {
+                $key = $customapp->appkey;
+
+                // Avoid collisions with hardcoded app keys.
+                if (in_array($key, $appkeys)) {
+                    continue;
+                }
+
+                // Apply Keycloak role-mapping check when enabled.
+                if (!empty($customapp->keycloakenabled)) {
+                    // Override skips the role check entirely — always show the app.
+                    if (empty($customapp->overriderole)) {
+                        // Fetch roles once per block render.
+                        if (!$userroleschecked) {
+                            $userroles = $crucible->get_keycloak_roles();
+                            $userroleschecked = true;
+                        }
+                        $requiredroles = array_filter(array_map('trim', explode('|', $customapp->keycloakrole ?? '')));
+                        // If role mapping is enabled but no roles are specified, hide the app
+                        // (misconfiguration — the form enforces this, but guard against direct DB edits).
+                        if (empty($requiredroles)) {
+                            continue;
+                        }
+                        // Hide the app if the user has none of the required roles.
+                        if (!is_array($userroles) || empty(array_intersect($requiredroles, $userroles))) {
+                            continue;
+                        }
+                    }
+                }
+
+                // Resolve the uploaded logo URL, if any.
+                $logofiles = $fs->get_area_files(
+                    $syscontext->id,
+                    'block_crucible',
+                    'app_logo',
+                    $customapp->id,
+                    'id DESC',
+                    false
+                );
+                $logourl = '';
+                if ($logofiles) {
+                    $logofile = reset($logofiles);
+                    $logourl  = (string) \moodle_url::make_pluginfile_url(
+                        $logofile->get_contextid(),
+                        $logofile->get_component(),
+                        $logofile->get_filearea(),
+                        $logofile->get_itemid(),
+                        $logofile->get_filepath(),
+                        $logofile->get_filename()
+                    );
+                }
+
+                $appkeys[] = $key;
+                $data->$key = $customapp->appurl;
+                $data->{$key . 'Description'} = $customapp->description;
+                $data->{$key . 'Logo'}        = $logourl;
+                $data->{$key . 'Name'}        = $customapp->name;
+
+                $customappdata[$key] = $customapp->name;
+            }
 
             // Get user's preferred order from preferences.
             $savedorder = get_user_preferences('block_crucible_app_order', '');
@@ -586,30 +594,30 @@ class block_crucible extends block_base
             foreach ($userorder as $key) {
                 if (in_array($key, $appkeys) && !empty($data->$key)) {
                     $orderedapps[] = [
-                        'key' => $key,
-                        'url' => $data->$key,
+                        'key'         => $key,
+                        'url'         => $data->$key,
                         'description' => $data->{$key . 'Description'} ?? '',
-                        'logo' => $data->{$key . 'Logo'} ?? '',
-                        'name' => ucfirst($key),
+                        'logo'        => $data->{$key . 'Logo'} ?? '',
+                        'name'        => $data->{$key . 'Name'} ?? ucfirst($key),
                     ];
                 }
             }
 
-            // Then add any apps not in saved order
+            // Then add any apps not in saved order.
             foreach ($appkeys as $key) {
                 if (!in_array($key, $userorder) && !empty($data->$key)) {
                     $orderedapps[] = [
-                        'key' => $key,
-                        'url' => $data->$key,
+                        'key'         => $key,
+                        'url'         => $data->$key,
                         'description' => $data->{$key . 'Description'} ?? '',
-                        'logo' => $data->{$key . 'Logo'} ?? '',
-                        'name' => ucfirst($key),
+                        'logo'        => $data->{$key . 'Logo'} ?? '',
+                        'name'        => $data->{$key . 'Name'} ?? ucfirst($key),
                     ];
                 }
             }
 
             $data->orderedapps = $orderedapps;
-            $data->hasdragdrop = !empty($orderedapps);
+            $data->hasdragdrop = !empty($orderedapps) && $this->page->user_is_editing();
 
             $hasapps = false;
             foreach ($appkeys as $k) {

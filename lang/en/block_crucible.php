@@ -49,11 +49,7 @@ $string['configissuerid'] = 'OAUTH Issuer Id for Applications';
 $string['enabled'] = 'Enabled';
 $string['configenabled'] = 'Enable permissions checking via OAUTH';
 $string['showallapps'] = 'Show All Apps to Users';
-$string['enablecommapps'] = 'Enable Communication Apps';
-$string['commsectionheading'] = 'Communication Apps Settings';
-$string['commsectiondesc'] = 'Enable Communication Apps to configure application URLs and settings for Roundcube and Rocketchat integrations.';
 $string['configappshow'] = 'Enable User Access to all Apps';
-$string['configcommshow'] = 'Enable Access to Communication Apps';
 $string['customwelcomemessagecb'] = 'Enable Custom Welcome Message';
 $string['customwelcomemessagedesc'] = 'Enable custom welcome message to override system message';
 $string['customwelcomemessage'] = 'Custom Welcome Message';
@@ -138,29 +134,6 @@ $string['steamfitterdescription'] = 'Exercise Inject Automater';
 $string['steamfittersectionheading'] = 'Steamfitter Settings';
 $string['steamfittersectiondesc'] = 'Configure API and application URLs for Steamfitter integration.';
 
-// Rocketchat
-$string['rocketchatsectionheading'] = 'Rocket.Chat Settings';
-$string['showrocketchat'] = 'Show Rocket.Chat';
-$string['configrocketchatshow'] = 'Show Rocket.Chat application regardless of user permissions';
-$string['rocketchatsectiondesc'] = 'Configure API and application URLs for Rocket.Chat integration.';
-$string['rocketchatapiurl'] = 'Rocket.Chat API';
-$string['rocketchatappurl'] = 'Rocket.Chat UI';
-$string['rocketchatauthtoken'] = 'Rocket.Chat Auth Token';
-$string['configrocketchatapiurl'] = 'Rocket.Chat API URL used to pull permissions';
-$string['configrocketchatappurl'] = 'Rocket.Chat UI URL used to redirect participants';
-$string['configrocketchatauthtoken'] = 'Add Admin\'s Auth Token for API Calls';
-$string['rocketchatdescription'] = 'Communications Platform';
-$string['rocketchatuserid'] = 'Rocket.Chat User Id';
-$string['configrocketchatuserid'] = 'Add Admin\'s User Id for API Calls';
-
-// Roundcube
-$string['roundcubesectionheading'] = 'Roundcube Settings';
-$string['showroundcube'] = 'Show Roundcube';
-$string['configroundcubeshow'] = 'Show Roundcube application regardless of user permissions';
-$string['roundcubesectiondesc'] = 'Configure application URL for Roundcube integration.';
-$string['roundcubeappurl'] = 'Roundcube UI';
-$string['configroundcubeappurl'] = 'Roundcube UI URL used to redirect participants';
-$string['roundcubedescription'] = 'Webmail';
 
 // TopoMojo
 $string['showtopomojo'] = 'Show TopoMojo';
@@ -184,13 +157,6 @@ $string['gameboarddescription'] = 'Competition Platform';
 $string['gameboardsectionheading'] = 'Gameboard Settings';
 $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for Gameboard integration.';
 
-// Docs
-$string['docsappurl'] = 'Docs UI';
-$string['configdocsappurl'] = 'Docs URL used to redirect participants';
-$string['docsdescription'] = 'Documentation';
-$string['docsectionheading'] = 'Docs Settings';
-$string['docsectiondesc'] = 'Configure URLs for Docs integration.';
-
 // Keycloak
 $string['showkeycloak'] = 'Show Keycloak';
 $string['configkeycloakshow'] = 'Show Keycloak application regardless of user permissions';
@@ -208,16 +174,6 @@ $string['configkeycloakroles'] = 'Enter the names of Keycloak Admin Roles, separ
 $string['userredirect'] = "User Account Redirect";
 $string['configuserredirect'] = 'When enabled, redirects all users to the same page used for user account management.';
 
-// MISP
-$string['showmisp'] = 'Show MISP';
-$string['configmispshow'] = 'Show MISP application regardless of user permissions';
-$string['mispappurl'] = 'MISP UI';
-$string['configmispappurl'] = 'MISP UI URL used to redirect participants';
-$string['mispdescription'] = 'Threat Intelligence and Sharing Platform';
-$string['configmispapikey'] = 'Add Admin\'s API Key for API Calls';
-$string['mispapikey'] = 'MISP API Key';
-$string['mispsectionheading'] = 'MISP Settings';
-$string['mispsectiondesc'] = 'Configure API, keys, and application URLs for MISP integration.';
 
 // privacy
 $string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';
@@ -323,3 +279,57 @@ $string['clear'] = 'Clear';
 $string['noresults'] = 'No matches found';
 $string['config_frameworkid'] = 'Competency framework';
 $string['config_frameworkid_help'] = 'Choose which competency framework this block should use.';
+
+// Application management.
+$string['customapps']       = 'Crucible Applications';
+$string['manageapps']       = 'Manage Applications';
+$string['manageappslink']   = 'Add or edit applications →';
+$string['addnewapp']        = 'Add new application';
+$string['editapp']          = 'Edit application';
+
+$string['appname']          = 'App name';
+$string['appname_help']     = 'The display name shown on the application card, for example "My Tool". This is what users will see as the card title.';
+
+
+$string['appdescription']   = 'Description';
+$string['appdescription_help'] = 'A short tagline or description displayed below the app name on the card. Keep it brief — one sentence works best.';
+
+$string['appurl']           = 'App URL';
+$string['appurl_help']      = 'The full URL users are taken to when they click the application card (e.g. "https://player.example.com"). Must include the protocol (https://).';
+
+$string['applogo']          = 'Logo';
+$string['applogo_help']     = 'Upload an image to display as the application logo on the card. Accepted formats: PNG, SVG, JPEG. Maximum file size: 2 MB. A square image of at least 64 × 64 px is recommended for best results.';
+
+$string['appuseapi']        = 'Enable API integration';
+$string['appuseapi_help']   = 'Check this if the application exposes an API that this plugin should communicate with. When enabled, you can provide the API base URL below. The URL will be used for permission checks and data retrieval.';
+
+$string['appapiurl']        = 'API URL';
+$string['appapiurl_help']   = 'The base URL of the application\'s API (e.g. "https://api.player.example.com"). Do not include a trailing slash. This is used internally by the plugin and is not shown to users.';
+
+$string['appuseapikey']     = 'API requires authentication key';
+$string['appuseapikey_help']= 'Check this if the API endpoint requires an authentication key or token to be sent with requests. When enabled, you can provide the key below. It will be encrypted at rest and included in API calls made by the plugin.';
+
+$string['appapikey']        = 'API key';
+$string['appapikey_help']   = 'The secret key or token used to authenticate requests to this application\'s API. Treat this value like a password — do not share it. It is encrypted at rest using the server\'s encryption key.';
+
+$string['appenabled']       = 'Enabled';
+$string['appenabled_help']  = 'When checked, this application is visible to users on the applications block. Uncheck to hide it temporarily without deleting it.';
+
+$string['appkeycloakenabled']      = 'Keycloak Role Mapping Enabled?';
+$string['appkeycloakenabled_help'] = 'When checked, this application will only be shown to users who have a specific Keycloak realm role on their token. Enter the required role name in the field below.';
+
+$string['appkeycloakrole']         = 'Required Keycloak role(s)';
+$string['appkeycloakrole_help']    = 'One or more Keycloak realm role names, separated by "|" (e.g. "operator|content-developer"). The app will be shown if the user has at least one of the listed roles on their token. This field is required when role mapping is enabled.';
+$string['appkeycloakrolerequired'] = 'You must specify at least one role when Keycloak role mapping is enabled (or check "Override role permissions" to show the app to everyone).';
+
+$string['appoverriderole']         = 'Override role permissions';
+$string['appoverriderole_help']    = 'When checked, the required Keycloak role check is bypassed and the application is shown to all users regardless of their token roles. Useful for testing or for temporarily making an app universally visible.';
+
+$string['actions']          = 'Actions';
+$string['noapps']           = 'No applications have been added yet.';
+$string['appnamereserved']  = 'This name conflicts with a built-in Crucible application. Please choose a different name, or configure the built-in application under Site Administration > Plugins > Crucible Applications.';
+$string['appnameexists']    = 'An application with this name already exists. Please choose a different name.';
+$string['appadded']         = 'Application added successfully.';
+$string['appupdated']       = 'Application updated successfully.';
+$string['appdeleted']       = 'Application deleted.';
+$string['confirmdelete']    = 'Are you sure you want to delete this application? This cannot be undone.';

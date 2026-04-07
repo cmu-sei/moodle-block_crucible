@@ -198,6 +198,9 @@
   align-items: center;
   padding: clamp(10px, 2.5cqw, 16px);
   flex-wrap: nowrap;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
 }
 .app-card__details { min-width: 0; flex: 1 1 auto;}
 .app-card__title { font-weight: 800; color: #0f172a; }
@@ -245,6 +248,9 @@
 .app-card.draggable-app {
   cursor: move;
   transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+.app-card.draggable-app .app-card__content {
+  cursor: move;
 }
 
 .app-card.dragging {

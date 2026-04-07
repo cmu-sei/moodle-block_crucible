@@ -44,6 +44,17 @@ DM24-1176
 // This line protects the file from being accessed by a URL directly.
 defined('MOODLE_INTERNAL') || die();
 
+// Register the Manage Apps admin page so it appears in the admin navigation
+// and can be set up with admin_externalpage_setup() in manage_apps.php / edit_app.php.
+if ($hassiteconfig) {
+    $ADMIN->add('blocksettings', new admin_externalpage(
+        'block_crucible_manageapps',
+        get_string('manageapps', 'block_crucible'),
+        new moodle_url('/blocks/crucible/manage_apps.php'),
+        'moodle/site:config'
+    ));
+}
+
 if ($ADMIN->fulltree) {
     // General Settings
     $options = [];
@@ -53,6 +64,16 @@ if ($ADMIN->fulltree) {
                 $options[$issuer->get('id')] = s($issuer->get('name'));
         }
     }
+
+    // Link to the Manage Apps page where custom applications can be added/edited.
+    $settings->add(new admin_setting_heading(
+        'block_crucible/customappsheading',
+        get_string('customapps', 'block_crucible'),
+        html_writer::link(
+            new moodle_url('/blocks/crucible/manage_apps.php'),
+            get_string('manageappslink', 'block_crucible')
+        )
+    ));
 
     // Enable/Disable plugin
     $settings->add(new admin_setting_configcheckbox('block_crucible/enabled',
@@ -155,17 +176,6 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/citeappurl',
         get_string('citeappurl', 'block_crucible'), get_string('configciteappurl', 'block_crucible'), "", PARAM_URL, 60));
 
-    // Docs
-    $settings->add(new admin_setting_heading(
-        'block_crucible/docsectionheading',
-        get_string('docsectionheading', 'block_crucible'),
-        get_string('docsectiondesc', 'block_crucible')
-    ));
-
-    $settings->add(new admin_setting_configtext('block_crucible/docsappurl',
-      get_string('docsappurl', 'block_crucible'), get_string('configdocsappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-
     // Gallery
     $settings->add(new admin_setting_heading(
         'block_crucible/gallerysectionheading',
@@ -225,23 +235,6 @@ if ($ADMIN->fulltree) {
     get_string('keycloakroles', 'block_crucible'), get_string('configkeycloakroles', 'block_crucible'),
     "", PARAM_RAW, 60));
 
-      // MISP
-    $settings->add(new admin_setting_heading(
-        'block_crucible/mispsectionheading',
-        get_string('mispsectionheading', 'block_crucible'), 
-        get_string('mispsectiondesc', 'block_crucible')
-    ));
-
-    // Checkbox
-    $settings->add(new admin_setting_configcheckbox('block_crucible/showmisp',
-        get_string('showmisp', 'block_crucible'), get_string('configmispshow', 'block_crucible'), 0, 1, 0));
-
-    $settings->add(new admin_setting_configtext('block_crucible/mispappurl',
-      get_string('mispappurl', 'block_crucible'), get_string('configmispappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/mispapikey',
-      get_string('mispapikey', 'block_crucible'), get_string('configmispapikey', 'block_crucible'), "", PARAM_RAW, 60));
-
     // Player
     $settings->add(new admin_setting_heading(
         'block_crucible/playersectionheading',
@@ -257,47 +250,6 @@ if ($ADMIN->fulltree) {
 
     $settings->add(new admin_setting_configtext('block_crucible/playerappurl',
         get_string('playerappurl', 'block_crucible'), get_string('configplayerappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-    // Rocket.Chat
-    $settings->add(new admin_setting_heading(
-        'block_crucible/rocketchatsectionheading',
-        get_string('rocketchatsectionheading', 'block_crucible'),
-        get_string('rocketchatsectiondesc', 'block_crucible')
-    ));
-
-    $settings->add(new admin_setting_configcheckbox('block_crucible/showrocketchat',
-        get_string('showrocketchat', 'block_crucible'), get_string('configrocketchatshow', 'block_crucible'), 0, 1, 0));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatapiurl',
-        get_string('rocketchatapiurl', 'block_crucible'), get_string('configrocketchatapiurl', 'block_crucible'),
-        "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatappurl',
-        get_string('rocketchatappurl', 'block_crucible'), get_string('configrocketchatappurl', 'block_crucible'),
-        "", PARAM_URL, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatauthtoken',
-        get_string('rocketchatauthtoken', 'block_crucible'), get_string('configrocketchatauthtoken', 'block_crucible'),
-        "", PARAM_RAW, 60));
-
-    $settings->add(new admin_setting_configtext('block_crucible/rocketchatuserid',
-        get_string('rocketchatuserid', 'block_crucible'), get_string('configrocketchatuserid', 'block_crucible'),
-        "", PARAM_RAW, 60));
-
-    // Roundcube
-    $settings->add(new admin_setting_heading(
-        'block_crucible/roundcubesectionheading',
-        get_string('roundcubesectionheading', 'block_crucible'),
-        get_string('roundcubesectiondesc', 'block_crucible')
-    ));
-
-    $settings->add(new admin_setting_configcheckbox('block_crucible/showroundcube',
-        get_string('showroundcube', 'block_crucible'), get_string('configroundcubeshow', 'block_crucible'), 0, 1, 0));
-    
-    $settings->add(new admin_setting_configtext('block_crucible/roundcubeappurl',
-        get_string('roundcubeappurl', 'block_crucible'), get_string('configroundcubeappurl', 'block_crucible'),
-         "", PARAM_URL, 60));
-
 
     // Steamfitter
     $settings->add(new admin_setting_heading(

@@ -26,17 +26,15 @@
 
       {{#orderedapps}}
         <div class="app-card" id="{{key}}">
-          <div class="app-card__content">
+          <a class="app-card__content" href="{{url}}" target="_blank">
             <div class="app-card__details">
               <div class="app-card__title">{{name}}</div>
-              <div class="app-card__desc">{{{description}}}</div>
+              <div class="app-card__desc">{{description}}</div>
             </div>
             <div class="app-card__link">
-              <a href="{{url}}" target="_blank">
-                <img class="app-card__logo" src="{{logo}}" alt="{{name}}">
-              </a>
+              <img class="app-card__logo" src="{{logo}}" alt="{{name}}">
             </div>
-          </div>
+          </a>
         </div>
       {{/orderedapps}}
 
