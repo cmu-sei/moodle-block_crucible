@@ -138,6 +138,7 @@ function xmldb_block_crucible_upgrade($oldversion) {
         // Clean up orphaned config rows for settings that were removed from the plugin.
         $stalesettings = [
             'showrocketchat',
+            'rocketchatappurl',
             'rocketchatapiurl',
             'rocketchatauthtoken',
             'rocketchatuserid',
@@ -146,13 +147,14 @@ function xmldb_block_crucible_upgrade($oldversion) {
             'showmisp',
             'mispappurl',
             'mispapikey',
+            'docsappurl',
         ];
         foreach ($stalesettings as $setting) {
             unset_config($setting, 'block_crucible');
         }
 
         // Strip stale app keys from users' saved app-order preferences.
-        $staleappkeys = ['rocketchat', 'roundcube', 'misp'];
+        $staleappkeys = ['rocketchat', 'roundcube', 'misp', 'docs'];
         $prefs = $DB->get_records('user_preferences', ['name' => 'block_crucible_app_order']);
         foreach ($prefs as $pref) {
             $order = json_decode($pref->value, true);
