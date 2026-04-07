@@ -157,13 +157,6 @@ $string['gameboarddescription'] = 'Competition Platform';
 $string['gameboardsectionheading'] = 'Gameboard Settings';
 $string['gameboardsectiondesc'] = 'Configure API, keys, and application URLs for Gameboard integration.';
 
-// Docs
-$string['docsappurl'] = 'Docs UI';
-$string['configdocsappurl'] = 'Docs URL used to redirect participants';
-$string['docsdescription'] = 'Documentation';
-$string['docsectionheading'] = 'Docs Settings';
-$string['docsectiondesc'] = 'Configure URLs for Docs integration.';
-
 // Keycloak
 $string['showkeycloak'] = 'Show Keycloak';
 $string['configkeycloakshow'] = 'Show Keycloak application regardless of user permissions';

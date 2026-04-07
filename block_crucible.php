@@ -475,15 +475,6 @@ class block_crucible extends block_base
                 debugging("Keycloak not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////DOCS/////////////////////////////
-            $docsurl = get_config('block_crucible', 'docsappurl');
-
-            if ($docsurl) {
-                $data->docs = $docsurl;
-                $data->docsDescription = get_string('docsdescription', 'block_crucible');
-                $data->docsLogo  = $OUTPUT->image_url('docs-logo', 'block_crucible');
-            }
-
             // List only the keys that represent real (hardcoded) apps.
             $appkeys = [
                 'player',
@@ -495,8 +486,7 @@ class block_crucible extends block_base
                 'steamfitter',
                 'topomojo',
                 'gameboard',
-                'keycloak',
-                'docs'
+                'keycloak'
             ];
 
             // Display name overrides for hardcoded apps whose keys don't title-case correctly.
@@ -511,7 +501,6 @@ class block_crucible extends block_base
                 'gallery'    => 'Gallery',
                 'player'     => 'Player',
                 'alloy'      => 'Alloy',
-                'docs'       => 'Docs',
             ];
             foreach ($appnames as $k => $displayname) {
                 $data->{$k . 'Name'} = $displayname;

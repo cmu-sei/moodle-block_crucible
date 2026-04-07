@@ -176,17 +176,6 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('block_crucible/citeappurl',
         get_string('citeappurl', 'block_crucible'), get_string('configciteappurl', 'block_crucible'), "", PARAM_URL, 60));
 
-    // Docs
-    $settings->add(new admin_setting_heading(
-        'block_crucible/docsectionheading',
-        get_string('docsectionheading', 'block_crucible'),
-        get_string('docsectiondesc', 'block_crucible')
-    ));
-
-    $settings->add(new admin_setting_configtext('block_crucible/docsappurl',
-      get_string('docsappurl', 'block_crucible'), get_string('configdocsappurl', 'block_crucible'), "", PARAM_URL, 60));
-
-
     // Gallery
     $settings->add(new admin_setting_heading(
         'block_crucible/gallerysectionheading',
