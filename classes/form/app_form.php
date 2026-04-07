@@ -169,6 +169,17 @@ class app_form extends \moodleform {
         $key = trim($key, '_');
 
         if ($key !== '') {
+            // Reject names that would collide with built-in app keys.
+            $reservedkeys = [
+                'player', 'alloy', 'blueprint', 'caster', 'cite',
+                'gallery', 'steamfitter', 'topomojo', 'gameboard',
+                'keycloak', 'docs',
+            ];
+            if (in_array($key, $reservedkeys)) {
+                $errors['name'] = get_string('appnamereserved', 'block_crucible');
+            }
+
+            // Check for duplicates among other custom apps.
             $params = ['appkey' => $key];
             $sql = 'SELECT id FROM {block_crucible_apps} WHERE appkey = :appkey';
             // When editing, exclude the current record from the duplicate check.

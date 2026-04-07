@@ -333,6 +333,7 @@ $string['appoverriderole_help']    = 'When checked, the required Keycloak role c
 
 $string['actions']          = 'Actions';
 $string['noapps']           = 'No applications have been added yet.';
+$string['appnamereserved']  = 'This name conflicts with a built-in Crucible application. Please choose a different name, or configure the built-in application under Site Administration > Plugins > Crucible Applications.';
 $string['appnameexists']    = 'An application with this name already exists. Please choose a different name.';
 $string['appadded']         = 'Application added successfully.';
 $string['appupdated']       = 'Application updated successfully.';
