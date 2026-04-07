@@ -164,9 +164,22 @@ class app_form extends \moodleform {
 
         $errors = parent::validation($data, $files);
 
-        // Auto-generate the app key from the name.
+        // Auto-generate the app key from the name and check for duplicates.
         $key = preg_replace('/[^a-z0-9]+/', '_', strtolower(trim($data['name'] ?? '')));
         $key = trim($key, '_');
+
+        if ($key !== '') {
+            $params = ['appkey' => $key];
+            $sql = 'SELECT id FROM {block_crucible_apps} WHERE appkey = :appkey';
+            // When editing, exclude the current record from the duplicate check.
+            if (!empty($data['id'])) {
+                $sql .= ' AND id <> :id';
+                $params['id'] = $data['id'];
+            }
+            if ($DB->record_exists_sql($sql, $params)) {
+                $errors['name'] = get_string('appnameexists', 'block_crucible');
+            }
+        }
 
         return $errors;
     }
