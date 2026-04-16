@@ -7,6 +7,32 @@ use moodle_url;
 
 class competencies {
 
+    /**
+     * Return competencies linked to at least one course (activity mapping not required).
+     */
+    public function list_mapped_courses_only(int $limit = 20): array {
+        $all = \core_competency\competency::get_records([], 'shortname', 'ASC');
+        $out = [];
+        $ctx = \context_system::instance();
+
+        foreach ($all as $cobj) {
+            if (count($out) >= $limit) {
+                break;
+            }
+            $cid       = (int)$cobj->get('id');
+            $idnumber  = (string)$cobj->get('idnumber');
+            $courses   = \core_competency\api::list_courses_using_competency($cid);
+            if (empty($courses)) {
+                continue;
+            }
+            $out[] = (object)[
+                'id'        => $cid,
+                'idnumber'  => $idnumber,
+            ];
+        }
+        return $out;
+    }
+
     public function list_mapped_via_api(int $limit = 20): array {
         $all   = \core_competency\competency::get_records([], 'shortname', 'ASC');
         $out   = [];
@@ -48,10 +74,6 @@ class competencies {
                         }
                     }
                 }
-            }
-
-            if ($activitycount === 0) {
-                continue;
             }
 
             $out[] = (object)[
@@ -121,8 +143,8 @@ class competencies {
                 }
             }
 
-            // Unmapped = 0 courses OR 0 activities
-            if ($coursecount === 0 || $activitycount === 0) {
+            // Unmapped = 0 courses
+            if ($coursecount === 0) {
                 if (!isset($unmappedbuckets[$fwlabel])) {
                     $unmappedbuckets[$fwlabel] = (object)[
                         'framework' => $fwlabel,
