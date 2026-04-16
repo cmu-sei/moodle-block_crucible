@@ -86,8 +86,23 @@ header('Cache-Control: public, max-age=300');
 try {
     $svc = new \block_crucible\competencies();
 
+    // Optional framework filter — scopes results to a single competency framework
+    // to avoid ID collisions across frameworks (e.g., ATT&CK T1005 vs NICE T1005).
+    $framework = optional_param('framework', '', PARAM_RAW);
+    $frameworkid = null;
+    if ($framework !== '') {
+        $fw = \core_competency\competency_framework::get_record(['shortname' => $framework]);
+        if ($fw) {
+            $frameworkid = (int)$fw->get('id');
+        } else {
+            // Unknown framework — return empty results rather than unscoped results.
+            echo json_encode(['techniques' => new stdClass(), 'error' => 'Unknown framework: ' . $framework]);
+            exit;
+        }
+    }
+
     // Fetch all competencies mapped to at least one course (no limit).
-    $mapped = $svc->list_mapped_courses_only(PHP_INT_MAX);
+    $mapped = $svc->list_mapped_courses_only(PHP_INT_MAX, $frameworkid);
     $mapped_idnumbers = [];
     foreach ($mapped as $comp) {
         $mapped_idnumbers[$comp->idnumber] = true;

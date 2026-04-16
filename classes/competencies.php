@@ -9,11 +9,14 @@ class competencies {
 
     /**
      * Return competencies linked to at least one course (activity mapping not required).
+     *
+     * @param int $limit Maximum number of results.
+     * @param int|null $frameworkid If provided, only return competencies from this framework.
      */
-    public function list_mapped_courses_only(int $limit = 20): array {
-        $all = \core_competency\competency::get_records([], 'shortname', 'ASC');
+    public function list_mapped_courses_only(int $limit = 20, ?int $frameworkid = null): array {
+        $filters = $frameworkid !== null ? ['competencyframeworkid' => $frameworkid] : [];
+        $all = \core_competency\competency::get_records($filters, 'shortname', 'ASC');
         $out = [];
-        $ctx = \context_system::instance();
 
         foreach ($all as $cobj) {
             if (count($out) >= $limit) {
@@ -180,14 +183,19 @@ class competencies {
         ];
     }
 
-    public function get_competency_detail_data(string $idnumber): \stdClass {
+    public function get_competency_detail_data(string $idnumber, ?int $frameworkid = null): \stdClass {
         global $CFG;
         require_once($CFG->dirroot.'/course/lib.php');
 
         $ctxsys = \context_system::instance();
 
-        // Load competencies
-        $c = \core_competency\competency::get_record(['idnumber' => $idnumber]);
+        // Load competency, optionally scoped to a specific framework to avoid
+        // ID collisions (e.g., ATT&CK T1005 vs NICE T1005).
+        $filters = ['idnumber' => $idnumber];
+        if ($frameworkid !== null) {
+            $filters['competencyframeworkid'] = $frameworkid;
+        }
+        $c = \core_competency\competency::get_record($filters);
         if (!$c) {
             throw new \moodle_exception('invalidrecord', 'error');
         }
