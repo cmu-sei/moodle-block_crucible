@@ -42,7 +42,8 @@ DM24-1176
  *   GET /blocks/crucible/api/techniques.php?ids=T1059,T1566,T1078
  *       Returns {"techniques":{"T1059":true,"T1566":true,"T1078":false}}
  *
- * No authentication required (read-only, public data).
+ * Accepts an optional Keycloak bearer token for authenticated access.
+ * In production, MISP passes the user's OIDC token directly.
  * CORS enabled for cross-origin requests from MISP.
  *
  * @package    block_crucible
@@ -56,8 +57,15 @@ define('NO_MOODLE_COOKIES', true);
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization');
     http_response_code(204);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(405);
+    echo json_encode(['error' => 'Method not allowed']);
     exit;
 }
 
@@ -68,18 +76,12 @@ require_once(__DIR__ . '/../../../config.php');
 
 require_once($CFG->dirroot . '/blocks/crucible/classes/competencies.php');
 
-// Set headers after config loads (Moodle may output headers too).
+// Set response headers.
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Cache-Control: public, max-age=300');
-
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
-}
 
 try {
     $svc = new \block_crucible\competencies();
