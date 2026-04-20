@@ -4,6 +4,7 @@ require_once(__DIR__.'/../../config.php');
 
 $idnumber  = optional_param('idnumber','', PARAM_RAW_TRIMMED);
 $fwid = optional_param('fwid', 0, PARAM_INT);
+$framework = optional_param('framework', '', PARAM_RAW_TRIMMED);
 
 require_login();
 $context = context_system::instance();
@@ -11,9 +12,24 @@ $PAGE->set_context($context);
 
 $svc = new \block_crucible\competencies();
 
+// Resolve framework shortname to ID if provided.
+$frameworkid = null;
+if ($framework !== '') {
+    $fw = \core_competency\competency_framework::get_record(['shortname' => $framework]);
+    if ($fw) {
+        $frameworkid = (int)$fw->get('id');
+    }
+} else if ($fwid > 0) {
+    $frameworkid = $fwid;
+}
+
 if ($idnumber) {
-    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['idnumber'=>$idnumber]));
-    $data = $svc->get_competency_detail_data($idnumber);
+    $urlparams = ['idnumber' => $idnumber];
+    if ($framework !== '') {
+        $urlparams['framework'] = $framework;
+    }
+    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', $urlparams));
+    $data = $svc->get_competency_detail_data($idnumber, $frameworkid);
 
     $PAGE->set_title($data->name);
     $PAGE->set_heading(format_string($SITE->fullname));
