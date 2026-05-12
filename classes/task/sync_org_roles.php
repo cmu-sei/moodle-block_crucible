@@ -70,6 +70,8 @@ class sync_org_roles extends \core\task\scheduled_task
     ];
 
     /**
+     * Get task name.
+     *
      * @return string
      */
     public function get_name(): string {

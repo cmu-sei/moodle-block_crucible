@@ -14,12 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Competency helper functions.
+ *
+ * @package    block_crucible
+ * @copyright  2025 Carnegie Mellon University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
 
 use moodle_url;
 
+/**
+ * Competency helper class.
+ */
 class competencies {
     /**
      * Return competencies linked to at least one course (activity mapping not required).
@@ -50,6 +61,12 @@ class competencies {
         return $out;
     }
 
+    /**
+     * Return competencies with activity mappings via API.
+     *
+     * @param int $limit Maximum number of results
+     * @return array
+     */
     public function list_mapped_via_api(int $limit = 20): array {
         $all   = \core_competency\competency::get_records([], 'shortname', 'ASC');
         $out   = [];
@@ -107,6 +124,12 @@ class competencies {
         return $out;
     }
 
+    /**
+     * Get view data for competencies display.
+     *
+     * @param int $limit Maximum results
+     * @return \stdClass
+     */
     public function get_view_data(int $limit = 20): \stdClass {
         $rows = $this->list_mapped_via_api($limit);
 
@@ -197,6 +220,13 @@ class competencies {
         ];
     }
 
+    /**
+     * Get detailed data for a specific competency.
+     *
+     * @param string $idnumber Competency ID number
+     * @param int|null $frameworkid Optional framework ID
+     * @return \stdClass
+     */
     public function get_competency_detail_data(string $idnumber, ?int $frameworkid = null): \stdClass {
         global $CFG;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -244,6 +274,8 @@ class competencies {
                             $catname = $cat->get_formatted_name();
                         }
                     } catch (\Throwable $e) {
+                        // Category not found or deleted - use empty string.
+                        debugging('Failed to fetch category: ' . $e->getMessage(), DEBUG_DEVELOPER);
                     }
                 }
 
@@ -298,6 +330,12 @@ class competencies {
         ];
     }
 
+    /**
+     * Get unmapped competencies for a framework.
+     *
+     * @param int $fwid Framework ID
+     * @return \stdClass
+     */
     public function get_unmapped_for_framework(int $fwid): \stdClass {
         $unknown = get_string('framework_unknown', 'block_crucible');
         $ctx     = \context_system::instance();

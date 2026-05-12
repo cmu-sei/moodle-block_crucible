@@ -14,15 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Sync Keycloak users task.
+ *
+ * @package    block_crucible
+ * @copyright  2025 Carnegie Mellon University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace block_crucible\task;
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Scheduled task to sync users from Keycloak.
+ */
 class sync_keycloak_users extends \core\task\scheduled_task {
+    /**
+     * Get task name.
+     *
+     * @return string
+     */
     public function get_name(): string {
         return get_string('task_sync_keycloak_users', 'block_crucible');
     }
 
+    /**
+     * Execute the task.
+     */
     public function execute() {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/user/lib.php');
@@ -218,6 +237,15 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         mtrace("[crucible] sync complete: created={$created} updated={$updated} skipped={$skipped}");
     }
 
+    /**
+     * Fetch OAuth token from Keycloak.
+     *
+     * @param string $tokenurl Token endpoint URL
+     * @param string $clientid Client ID
+     * @param string $clientsecret Client secret
+     * @param bool $insecure Allow insecure SSL
+     * @return string|null Access token or null on failure
+     */
     private function fetch_token(string $tokenurl, string $clientid, string $clientsecret, bool $insecure = false): ?string {
         $data = http_build_query([
             'grant_type'    => 'client_credentials',
@@ -257,6 +285,17 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         return $data['access_token'];
     }
 
+    /**
+     * Fetch users from Keycloak admin API.
+     *
+     * @param string $adminbase Admin API base URL
+     * @param string $token Access token
+     * @param int $first Pagination offset
+     * @param int $max Maximum results
+     * @param int $onlyenabled Only fetch enabled users
+     * @param bool $insecure Allow insecure SSL
+     * @return array User records
+     */
     private function fetch_kc_users(string $adminbase, string $token, int $first, int $max, int $onlyenabled, bool $insecure = false): array {
         $url = rtrim($adminbase, '/') . '/users?first=' . $first . '&max=' . $max . '&briefRepresentation=false';
         if ($onlyenabled) {
@@ -299,6 +338,13 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         return $data;
     }
 
+    /**
+     * Get attribute value from Keycloak user record.
+     *
+     * @param array $kc Keycloak user record
+     * @param string $name Attribute name
+     * @return string|null Attribute value or null
+     */
     private function kc_attr(array $kc, string $name): ?string {
         if (!isset($kc['attributes'][$name])) {
             return null;

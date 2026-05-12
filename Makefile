@@ -15,13 +15,13 @@ install:
 	composer install
 
 lint:
-	vendor/bin/phpcs --standard=moodle .
+	vendor/bin/phpcs --standard=moodle --ignore=vendor/ .
 
 lint-errors:
-	vendor/bin/phpcs --standard=moodle --error-severity=1 --warning-severity=8 .
+	vendor/bin/phpcs --standard=moodle --error-severity=1 --warning-severity=8 --ignore=vendor/ .
 
 fix:
-	vendor/bin/phpcbf --standard=moodle .
+	vendor/bin/phpcbf --standard=moodle --ignore=vendor/ .
 
 syntax:
 	@find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; | grep -v "No syntax errors" || echo "✓ All files have valid PHP syntax"

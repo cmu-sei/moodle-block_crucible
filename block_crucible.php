@@ -43,6 +43,9 @@ DM24-1176
 defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/../../config.php');
 
+/**
+ * Crucible block class.
+ */
 class block_crucible extends block_base
 {
     /**
@@ -72,6 +75,11 @@ class block_crucible extends block_base
         return true;
     }
 
+    /**
+     * Check if block header should be hidden.
+     *
+     * @return bool
+     */
     public function hide_header() {
         if (isset($this->config) && isset($this->config->config_showheader)) {
             $show = (bool)$this->config->config_showheader;
@@ -86,6 +94,11 @@ class block_crucible extends block_base
         return !$show;
     }
 
+    /**
+     * Get instance title text.
+     *
+     * @return string
+     */
     private function instance_title_text(): string {
         $title = trim((string)get_config('block_crucible', 'defaulttitle'));
         if ($title === '') {
@@ -112,6 +125,9 @@ class block_crucible extends block_base
         return format_string($title, true);
     }
 
+    /**
+     * Set instance-specific block title.
+     */
     public function specialization() {
         $this->title = $this->instance_title_text(); // This drives Moodle’s native block header.
     }

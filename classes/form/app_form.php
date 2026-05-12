@@ -51,7 +51,11 @@ require_once($CFG->libdir . '/formslib.php');
  * Moodle form for creating and editing a Crucible application.
  */
 class app_form extends \moodleform {
-    /** @var array File manager options for the logo upload. */
+    /**
+     * Get file manager options for logo upload.
+     *
+     * @return array File manager options
+     */
     public static function logo_options(): array {
         return [
             'subdirs'        => 0,
