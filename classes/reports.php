@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Reporting helper functions.
+ *
+ * @package    block_crucible
+ * @copyright  2025 Carnegie Mellon University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
@@ -21,6 +29,9 @@ defined('MOODLE_INTERNAL') || die();
 use context_system;
 use core_user\fields;
 
+/**
+ * Reporting helper class.
+ */
 class reports
 {
     public function get_cohort_roster_all(int $userid): \stdClass {

@@ -14,15 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Sync Keycloak users task.
+ *
+ * @package    block_crucible
+ * @copyright  2025 Carnegie Mellon University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace block_crucible\task;
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Scheduled task to sync users from Keycloak.
+ */
 class sync_keycloak_users extends \core\task\scheduled_task {
+    /**
+     * Get task name.
+     *
+     * @return string
+     */
     public function get_name(): string {
         return get_string('task_sync_keycloak_users', 'block_crucible');
     }
 
+    /**
+     * Execute the task.
+     */
     public function execute() {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/user/lib.php');

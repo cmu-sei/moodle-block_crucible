@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Learning plans helper functions.
+ *
+ * @package    block_crucible
+ * @copyright  2025 Carnegie Mellon University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
@@ -21,6 +29,9 @@ defined('MOODLE_INTERNAL') || die();
 use core_text;
 use moodle_url;
 
+/**
+ * Learning plans helper class.
+ */
 class learningplans {
     public function get_user_workrole_string(int $userid): ?string {
         global $CFG;

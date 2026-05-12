@@ -14,10 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Block edit form.
+ *
+ * @package    block_crucible
+ * @copyright  2025 Carnegie Mellon University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/blocks/edit_form.php');
 
+/**
+ * Block edit form class.
+ */
 class block_crucible_edit_form extends block_edit_form {
     protected function specific_definition($mform) {
         $mform->addElement(
