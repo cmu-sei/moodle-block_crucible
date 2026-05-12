@@ -1,4 +1,18 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace block_crucible;
 
@@ -9,9 +23,7 @@ use core_user\fields;
 
 class reports
 {
-
-    public function get_cohort_roster_all(int $userid): \stdClass
-    {
+    public function get_cohort_roster_all(int $userid): \stdClass {
         global $DB;
 
         $info = (object)[
@@ -26,7 +38,7 @@ class reports
             return $info;
         }
 
-        list($cInSql, $cInParams) = $DB->get_in_or_equal($usercohortids, SQL_PARAMS_NAMED);
+        [$cInSql, $cInParams] = $DB->get_in_or_equal($usercohortids, SQL_PARAMS_NAMED);
         $cohortRows = $DB->get_records_sql(
             "SELECT id, name FROM {cohort} WHERE id {$cInSql} ORDER BY name ASC",
             $cInParams
@@ -111,11 +123,11 @@ class reports
             // User IDs
             $userids = array_map('intval', array_keys($allUserIds));
 
-            if ($cohortids && $userids) {
-                list($cInSql2, $cParams2) = $DB->get_in_or_equal($cohortids, SQL_PARAMS_NAMED, 'c');
-                list($uInSql2, $uParams2) = $DB->get_in_or_equal($userids,   SQL_PARAMS_NAMED, 'u');
+        if ($cohortids && $userids) {
+            [$cInSql2, $cParams2] = $DB->get_in_or_equal($cohortids, SQL_PARAMS_NAMED, 'c');
+            [$uInSql2, $uParams2] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'u');
 
-                $sql2 = "
+            $sql2 = "
                     SELECT
                         tcr.cohortid,
                         tcr.userid,
@@ -125,13 +137,13 @@ class reports
                     WHERE tcr.cohortid {$cInSql2}
                     AND tcr.userid  {$uInSql2}
                 ";
-                $rows2 = $DB->get_records_sql($sql2, $cParams2 + $uParams2);
+            $rows2 = $DB->get_records_sql($sql2, $cParams2 + $uParams2);
 
-                $cohortrolesByCU = [];
-                foreach ($rows2 as $row) {
-                    $cohortrolesByCU[(int)$row->cohortid][(int)$row->userid][] = trim($row->roledisplay);
-                }
+            $cohortrolesByCU = [];
+            foreach ($rows2 as $row) {
+                $cohortrolesByCU[(int)$row->cohortid][(int)$row->userid][] = trim($row->roledisplay);
             }
+        }
         }
 
         // Fetch category-level roles assigned by block_crucible org role sync
@@ -139,10 +151,10 @@ class reports
         {
             $userids = array_map('intval', array_keys($allUserIds));
 
-            if ($userids) {
-                list($uInSql3, $uParams3) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
+        if ($userids) {
+            [$uInSql3, $uParams3] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
 
-                $sql3 = "
+            $sql3 = "
                     SELECT DISTINCT
                         ra.userid,
                         COALESCE(NULLIF(r.name, ''), r.shortname) AS roledisplay
@@ -153,12 +165,12 @@ class reports
                     AND ctx.contextlevel = 40
                     AND ra.userid {$uInSql3}
                 ";
-                $rows3 = $DB->get_records_sql($sql3, $uParams3);
+            $rows3 = $DB->get_records_sql($sql3, $uParams3);
 
-                foreach ($rows3 as $row) {
-                    $categoryRolesByUser[(int)$row->userid][] = trim($row->roledisplay);
-                }
+            foreach ($rows3 as $row) {
+                $categoryRolesByUser[(int)$row->userid][] = trim($row->roledisplay);
             }
+        }
         }
 
         foreach ($byCohort as &$c) {
@@ -179,8 +191,6 @@ class reports
         }
         unset($c);
 
-
-
         // Build final information
         foreach ($byCohort as $cid => $c) {
             $info->cohorts[] = (object)[
@@ -196,8 +206,7 @@ class reports
         return $info;
     }
 
-    private function get_user_cohort_ids(int $userid): array
-    {
+    private function get_user_cohort_ids(int $userid): array {
         global $CFG;
         require_once($CFG->dirroot . '/cohort/lib.php');
         $cohorts = \cohort_get_user_cohorts($userid);

@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
@@ -7,14 +22,15 @@ use core_text;
 use moodle_url;
 
 class learningplans {
-
     public function get_user_workrole_string(int $userid): ?string {
         global $CFG;
         require_once($CFG->dirroot . '/user/profile/lib.php');
         $custom = profile_user_record($userid, false);
 
         // Try your intended field first, then the WRL you showed in session dump.
-        if (!empty($custom->ssoworkrole)) { return (string)$custom->ssoworkrole; }
+        if (!empty($custom->ssoworkrole)) {
+            return (string)$custom->ssoworkrole;
+        }
         return null;
     }
 
@@ -27,7 +43,8 @@ class learningplans {
 
         // If a framework is specified, pull only templates that have at least one comp in it.
         if (!empty($frameworkid)) {
-            $rows = $DB->get_records_sql("
+            $rows = $DB->get_records_sql(
+                "
                 SELECT DISTINCT t.id, t.shortname, t.description, t.visible, t.contextid
                 FROM {competency_template} t
                 JOIN {competency_templatecomp} tc ON tc.templateid = t.id
@@ -37,7 +54,7 @@ class learningplans {
                 ['fwid' => $frameworkid]
             );
 
-            return array_map(function($t) {
+            return array_map(function ($t) {
                 return (object)[
                     'id'        => (int)$t->id,
                     'shortname' => (string)$t->shortname,
@@ -51,7 +68,7 @@ class learningplans {
         // No framework selected
         if (class_exists('\core_competency\template')) {
             $records = \core_competency\template::get_records([], 'shortname', 'ASC');
-            return array_map(function($t) {
+            return array_map(function ($t) {
                 return (object)[
                     'id'        => (int)$t->get('id'),
                     'shortname' => (string)$t->get('shortname'),
@@ -72,10 +89,14 @@ class learningplans {
         global $DB;
 
         $role = $this->get_user_workrole_string($userid);
-        if (!$role) { return []; }
+        if (!$role) {
+            return [];
+        }
 
         $tokens = preg_split('/[^\p{L}\p{N}\+]+/u', core_text::strtolower($role), -1, PREG_SPLIT_NO_EMPTY);
-        if (!$tokens) { return []; }
+        if (!$tokens) {
+            return [];
+        }
 
         $fwshort = '';
         if (!empty($frameworkid)) {
@@ -84,18 +105,24 @@ class learningplans {
 
         // Filtered templates
         $templates = $this->list_templates($frameworkid);
-        if (!$templates) { return []; }
+        if (!$templates) {
+            return [];
+        }
 
         $matches = [];
         foreach ($templates as $t) {
             $display = $t->shortname ?? 'Template';
             $desc    = isset($t->description) ? core_text::strtolower(strip_tags($t->description)) : '';
-            $hay     = core_text::strtolower($display.' '.$desc);
+            $hay     = core_text::strtolower($display . ' ' . $desc);
 
             $score = 0;
             foreach ($tokens as $tok) {
-                if (core_text::strlen($tok) < 3) { continue; }
-                if (mb_stripos($hay, $tok) !== false) { $score++; }
+                if (core_text::strlen($tok) < 3) {
+                    continue;
+                }
+                if (mb_stripos($hay, $tok) !== false) {
+                    $score++;
+                }
             }
 
             if ($score > 0) {
@@ -113,31 +140,31 @@ class learningplans {
             }
         }
 
-        usort($matches, fn($a,$b) => $b->score <=> $a->score);
+        usort($matches, fn($a, $b) => $b->score <=> $a->score);
         $matches = array_slice($matches, 0, $limit);
 
         $counts = $this->counts_for_templates(array_map(fn($m) => (int)$m->id, $matches));
         foreach ($matches as $m) {
-            $m->coursecount   = $counts[$m->id]['courses']    ?? 0;
+            $m->coursecount   = $counts[$m->id]['courses'] ?? 0;
             $m->activitycount = $counts[$m->id]['activities'] ?? 0;
         }
         return $matches;
     }
 
-     public function self_enrol_user_to_template(int $templateid, int $userid): string {
+    public function self_enrol_user_to_template(int $templateid, int $userid): string {
         global $DB;
 
         // Already has a plan?
         $exists = $DB->record_exists('competency_plan', [
-            'userid' => $userid, 'templateid' => $templateid
+           'userid' => $userid, 'templateid' => $templateid,
         ]);
         if ($exists) {
             return 'already';
         }
 
         $apiclass = class_exists('\tool_lp\api')
-            ? '\tool_lp\api'
-            : (class_exists('\core_competency\api') ? '\core_competency\api' : null);
+           ? '\tool_lp\api'
+           : (class_exists('\core_competency\api') ? '\core_competency\api' : null);
 
         if (!$apiclass) {
             throw new \moodle_exception('competencyapimissing', 'error');
@@ -207,7 +234,7 @@ class learningplans {
                 'compgroups'   => [],
                 'canselfenrol' => !$alreadyhas,
                 'selfenrolurl' => (new \moodle_url('/blocks/crucible/template.php', [
-                    'id' => $templateid, 'action' => 'selfenrol', 'sesskey' => sesskey()
+                    'id' => $templateid, 'action' => 'selfenrol', 'sesskey' => sesskey(),
                 ]))->out(false),
             ];
         }
@@ -296,17 +323,19 @@ class learningplans {
         }
 
         // Sort groups by label; sort items by idnumber then shortname (natural, case-insensitive).
-        uasort($byparent, function($a, $b) {
+        uasort($byparent, function ($a, $b) {
             return strnatcasecmp($a['groupname'], $b['groupname']);
         });
 
         $compgroups = [];
         foreach ($byparent as $g) {
-            usort($g['items'], function($a, $b) {
+            usort($g['items'], function ($a, $b) {
                 $ka = $a->idnumber ?? $a->shortname ?? '';
                 $kb = $b->idnumber ?? $b->shortname ?? '';
                 $cmp = strnatcasecmp($ka, $kb);
-                if ($cmp !== 0) return $cmp;
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
                 return strnatcasecmp($a->shortname ?? '', $b->shortname ?? '');
             });
             $compgroups[] = (object)[
@@ -333,7 +362,7 @@ class learningplans {
             'competencies' => $items,
             'canselfenrol' => !$alreadyhas,
             'selfenrolurl' => (new \moodle_url('/blocks/crucible/template.php', [
-                'id' => $templateid, 'action' => 'selfenrol', 'sesskey' => sesskey()
+                'id' => $templateid, 'action' => 'selfenrol', 'sesskey' => sesskey(),
             ]))->out(false),
         ];
     }
@@ -343,7 +372,7 @@ class learningplans {
         if (empty($templateids)) {
             return [];
         }
-        list($insql, $inparams) = $DB->get_in_or_equal($templateids, SQL_PARAMS_NAMED);
+        [$insql, $inparams] = $DB->get_in_or_equal($templateids, SQL_PARAMS_NAMED);
 
         // Distinct counts across all competencies in each template.
         $sql = "
@@ -369,7 +398,7 @@ class learningplans {
         return $out;
     }
 
-    public function get_user_plan_from_template(int $templateid, int $userid) : ?\stdClass {
+    public function get_user_plan_from_template(int $templateid, int $userid): ?\stdClass {
         global $DB;
         // Get the most recent matching plan (if duplicates exist).
         $plans = $DB->get_records(
@@ -377,7 +406,8 @@ class learningplans {
             ['templateid' => $templateid, 'userid' => $userid],
             'timecreated DESC', // newest first
             '*',
-            0, 1
+            0,
+            1
         );
         return $plans ? reset($plans) : null;
     }

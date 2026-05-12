@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
@@ -6,7 +21,6 @@ defined('MOODLE_INTERNAL') || die();
 use moodle_url;
 
 class competencies {
-
     /**
      * Return competencies linked to at least one course (activity mapping not required).
      *
@@ -173,9 +187,9 @@ class competencies {
 
         return (object)[
             'hascomps'     => !empty($rows),
-            'competencies' => $rows,    // kept for compatibility
+            'competencies' => $rows, // kept for compatibility
             'hasgroups'    => !empty($groups),
-            'groups'       => $groups,  // mapped per framework
+            'groups'       => $groups, // mapped per framework
 
             // New summary rows at the bottom:
             'hasunmapped'  => !empty($unmapped),
@@ -185,7 +199,7 @@ class competencies {
 
     public function get_competency_detail_data(string $idnumber, ?int $frameworkid = null): \stdClass {
         global $CFG;
-        require_once($CFG->dirroot.'/course/lib.php');
+        require_once($CFG->dirroot . '/course/lib.php');
 
         $ctxsys = \context_system::instance();
 
@@ -226,8 +240,11 @@ class competencies {
                 if (!empty($course->category)) {
                     try {
                         $cat = \core_course_category::get($course->category, IGNORE_MISSING);
-                        if ($cat) $catname = $cat->get_formatted_name();
-                    } catch (\Throwable $e) {}
+                        if ($cat) {
+                            $catname = $cat->get_formatted_name();
+                        }
+                    } catch (\Throwable $e) {
+                    }
                 }
 
                 // Activities mapped to this competency in this course.
@@ -238,7 +255,9 @@ class competencies {
                 if (!empty($cmids)) {
                     foreach ($cmids as $cmid) {
                         $cm = $modinfo->get_cm($cmid, IGNORE_MISSING);
-                        if (!$cm) continue;
+                        if (!$cm) {
+                            continue;
+                        }
                         $acts[] = (object)[
                             'name'    => $cm->get_formatted_name(),
                             'url'     => $cm->url ? $cm->url->out(false)
@@ -274,7 +293,7 @@ class competencies {
             'framework'    => $fwshort,
             'hascourses'   => !empty($coursecards),
             'courses'      => $coursecards,
-            'hasactivities'=> !empty($activitysets),
+            'hasactivities' => !empty($activitysets),
             'bycourse'     => $activitysets,
         ];
     }

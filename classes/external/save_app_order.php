@@ -47,7 +47,6 @@ use core_external\external_single_structure;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class save_app_order extends external_api {
-
     /**
      * Returns description of method parameters.
      *

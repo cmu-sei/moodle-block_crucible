@@ -45,7 +45,6 @@ namespace block_crucible;
 defined('MOODLE_INTERNAL') || die();
 class crucible
 {
-
     /**
      * The client used for interacting with external services or APIs.
      *
@@ -65,8 +64,7 @@ class crucible
      *
      * @return bool True if the setup is successful, false otherwise.
      */
-    public function setup_system()
-    {
+    public function setup_system() {
         // Retrieve the issuer ID from the configuration
         $issuerid = get_config('block_crucible', 'issuerid');
         if (!$issuerid) {
@@ -146,8 +144,7 @@ class crucible
      * @global \stdClass $USER The current Moodle user object.
      * @return string|int The matching role or group name if found; otherwise 0.
      */
-    public function get_user_permissions()
-    {
+    public function get_user_permissions() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -172,7 +169,7 @@ class crucible
         return 0;
     }
 
-    //////////////////////PLAYER//////////////////////
+    // PLAYER//////////////////////
     /**
      * Retrieves the number of views for a specific user from the player API.
      *
@@ -185,8 +182,7 @@ class crucible
      *
      * @return mixed The number of views as an integer if successful, or 0 in case of failure.
      */
-    public function get_player_views()
-    {
+    public function get_player_views() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -237,7 +233,7 @@ class crucible
         return $r;
     }
 
-   //////////////////////BLUEPRINT//////////////////////
+    // BLUEPRINT//////////////////////
     /**
      * Retrieves the MSELs (Modeling and Simulation Events List) for a specific user from the blueprint API.
      *
@@ -250,8 +246,7 @@ class crucible
      *
      * @return mixed The MSEL data as an object if successful, or 0 in case of failure.
      */
-    public function get_blueprint_msels()
-    {
+    public function get_blueprint_msels() {
 
         global $USER;
         $userid = $USER->idnumber;
@@ -301,7 +296,7 @@ class crucible
         return $r;
     }
 
-    //////////////////////CITE//////////////////////
+    // CITE//////////////////////
     /**
      * Retrieves the permissions for a specific user from the CITE API.
      *
@@ -314,8 +309,7 @@ class crucible
      *
      * @return mixed The permissions data if available as an object, or 0 in case of failure or if no data is found.
      */
-    public function get_cite_permissions()
-    {
+    public function get_cite_permissions() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -383,8 +377,7 @@ class crucible
      *
      * @return mixed The evaluations data if available as an object, or 0 in case of failure or if no data is found.
      */
-    public function get_cite_evaluations()
-    {
+    public function get_cite_evaluations() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -448,8 +441,7 @@ class crucible
      *
      * @return mixed The exhibits data if available as an object, or 0 in case of failure or if no data is found.
      */
-    public function get_gallery_exhibits()
-    {
+    public function get_gallery_exhibits() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -497,7 +489,7 @@ class crucible
         return $r;
     }
 
-    //////////////////////TopoMojo//////////////////////
+    // TopoMojo//////////////////////
     /**
      * Retrieves user permissions from the Topomojo service based on the current user's ID number.
      *
@@ -513,8 +505,7 @@ class crucible
      * @return mixed The user's permissions if the request is successful and valid,
      *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
      */
-    public function get_topomojo_permissions()
-    {
+    public function get_topomojo_permissions() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -568,7 +559,7 @@ class crucible
         }
         return 0;
     }
-    //////////////////////Gameboard//////////////////////
+    // Gameboard//////////////////////
     /**
      * Retrieves user permissions from the Gameboard service based on the current user's ID number.
      *
@@ -584,8 +575,7 @@ class crucible
      * @return mixed The user's permissions if the request is successful and valid,
      *               `0` if the request fails due to network issues, HTTP errors, or if no permissions are found.
      */
-    public function get_gameboard_permissions()
-    {
+    public function get_gameboard_permissions() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -622,7 +612,6 @@ class crucible
             return false;
         }
 
-
         if (!$response) {
             debugging("No response received from Gamebaord endpoint. Check network connectivity.", DEBUG_DEVELOPER);
             return false;
@@ -639,7 +628,7 @@ class crucible
             isset($r->role) && in_array($r->role, [
                 'admin',
                 'director',
-                'support'
+                'support',
             ])
         ) {
             return $r;
@@ -663,8 +652,7 @@ class crucible
      *               is valid, `0` if the request fails due to network issues, HTTP errors, or if no
      *               challenges are found or the response is invalid.
      */
-    public function get_active_challenges()
-    {
+    public function get_active_challenges() {
         global $USER;
         $userid = $USER->idnumber;
 
@@ -718,8 +706,7 @@ class crucible
         return $r;
     }
 
-    public function get_keycloak_groups()
-    {
+    public function get_keycloak_groups() {
         global $USER;
 
         if ($this->client == null) {
@@ -727,7 +714,7 @@ class crucible
             return null;
         }
 
-        //Web request
+        // Web request
         $url = get_config('block_crucible', 'keycloakadminurl');
         if (empty($url)) {
             return null;
@@ -858,8 +845,7 @@ class crucible
         return 0;
     }
 
-    public function get_keycloak_roles()
-    {
+    public function get_keycloak_roles() {
         global $USER;
 
         if ($this->client == null) {
@@ -867,7 +853,7 @@ class crucible
             return null;
         }
 
-        //Web request
+        // Web request
         $url = get_config('block_crucible', 'keycloakadminurl');
         if (empty($url)) {
             return null;

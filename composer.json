@@ -1,0 +1,14 @@
+{
+  "name": "cmu-sei/moodle-block_crucible",
+  "description": "Crucible block for Moodle",
+  "type": "moodle-block",
+  "license": "GPL-3.0-or-later",
+  "require-dev": {
+    "moodlehq/moodle-cs": "^3.6"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}
