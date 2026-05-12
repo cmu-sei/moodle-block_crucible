@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 namespace block_crucible\task;
 
 defined('MOODLE_INTERNAL') || die();
@@ -10,9 +25,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
 
     public function execute() {
         global $CFG, $DB;
-        require_once($CFG->dirroot.'/user/lib.php');
-        require_once($CFG->libdir.'/filelib.php');
-        require_once($CFG->dirroot.'/user/profile/lib.php');
+        require_once($CFG->dirroot . '/user/lib.php');
+        require_once($CFG->libdir . '/filelib.php');
+        require_once($CFG->dirroot . '/user/profile/lib.php');
         $pagesize    = 200;
         $onlyenabled = 1;
 
@@ -27,7 +42,10 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                 }
             }
         }
-        if (!$issuerid) { mtrace('[crucible] no issuer found'); return; }
+        if (!$issuerid) {
+            mtrace('[crucible] no issuer found');
+            return;
+        }
 
         $issuer       = \core\oauth2\api::get_issuer($issuerid);
         $clientid     = $issuer->get('clientid');
@@ -48,20 +66,34 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             }
         }
 
-        if (!$tokenurl) { mtrace('[crucible] token_endpoint not found on issuer'); return; }
+        if (!$tokenurl) {
+            mtrace('[crucible] token_endpoint not found on issuer');
+            return;
+        }
 
         // Derive realm URL and admin base from token endpoint.
         $realmurl = preg_replace('#/protocol/openid-connect/token/?$#', '', rtrim($tokenurl, '/'));
-        if ($realmurl === $tokenurl) { mtrace('[crucible] token endpoint did not match expected KC pattern'); return; }
-        if (!preg_match('#/realms/[^/]+$#', $realmurl)) { mtrace('[crucible] realmurl does not end with /realms/{realm}'); return; }
+        if ($realmurl === $tokenurl) {
+            mtrace('[crucible] token endpoint did not match expected KC pattern');
+            return;
+        }
+        if (!preg_match('#/realms/[^/]+$#', $realmurl)) {
+            mtrace('[crucible] realmurl does not end with /realms/{realm}');
+            return;
+        }
         $adminbase = preg_replace('#/realms/#', '/admin/realms/', $realmurl, 1);
 
         // Fetch token
         $insecure = (bool)preg_match('#\.dev/#', $tokenurl);
         $token = $this->fetch_token($tokenurl, $clientid, $clientsecret, $insecure);
-        if (!$token) { mtrace('[crucible] could not obtain Keycloak token.'); return; }
+        if (!$token) {
+            mtrace('[crucible] could not obtain Keycloak token.');
+            return;
+        }
 
-        $created = 0; $updated = 0; $skipped = 0;
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
         $first   = 0;
 
         do {
@@ -92,8 +124,14 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     continue;
                 }
 
-                if (!$kcid) { $skipped++; continue; }
-                if ($onlyenabled && !$enabled) { $skipped++; continue; }
+                if (!$kcid) {
+                    $skipped++;
+                    continue;
+                }
+                if ($onlyenabled && !$enabled) {
+                    $skipped++;
+                    continue;
+                }
 
                 $existing = $DB->get_record('user', ['idnumber' => $kcid, 'deleted' => 0], '*', IGNORE_MISSING);
 
@@ -101,8 +139,14 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     $needs = false;
                     $u = (object)['id' => $existing->id];
 
-                    if ($firstname && $existing->firstname !== $firstname) { $u->firstname = $firstname; $needs = true;}
-                    if ($lastname  && $existing->lastname  !== $lastname)  { $u->lastname  = $lastname;  $needs = true;}
+                    if ($firstname && $existing->firstname !== $firstname) {
+                        $u->firstname = $firstname;
+                        $needs = true;
+                    }
+                    if ($lastname  && $existing->lastname !== $lastname) {
+                        $u->lastname  = $lastname;
+                        $needs = true;
+                    }
 
                     // Custom profile fields
                     $pf = profile_user_record($existing->id, false) ?: new \stdClass();
@@ -115,7 +159,10 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     foreach ($map as $field => $val) {
                         $short   = substr($field, strlen('profile_field_'));
                         $current = isset($pf->$short) ? (string)$pf->$short : null;
-                        if ($val !== null && $val !== $current) { $u->$field = $val; $needs = true; }
+                        if ($val !== null && $val !== $current) {
+                            $u->$field = $val;
+                            $needs = true;
+                        }
                     }
 
                     if ($needs) {
@@ -130,13 +177,13 @@ class sync_keycloak_users extends \core\task\scheduled_task {
 
                 // ---- No idnumber match, create a brand-new user ----
                 if ($username && $DB->record_exists('user', ['username' => $username, 'mnethostid' => $CFG->mnet_localhost_id])) {
-                    $username = $username.'.'.substr($kcid, 0, 8);
+                    $username = $username . '.' . substr($kcid, 0, 8);
                 }
 
                 $new = (object)[
                     'auth'        => 'oauth2',
-                    'username'    => $username ?: ($email ?: ('kc-'.$kcid)),
-                    'email'       => $email ?: ('noemail+'.$kcid.'@invalid.local'),
+                    'username'    => $username ?: ($email ?: ('kc-' . $kcid)),
+                    'email'       => $email ?: ('noemail+' . $kcid . '@invalid.local'),
                     'firstname'   => $firstname ?: '-',
                     'lastname'    => $lastname ?: '-',
                     'idnumber'    => $kcid,
@@ -159,10 +206,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     $nameafter = trim(($new->firstname ?? '') . ' ' . ($new->lastname ?? ''));
                     mtrace('[crucible] created user'
                         . ' username=' . $new->username
-                        . ' name="'    . ($nameafter !== '' ? $nameafter : '-')
-                    );
+                        . ' name="'    . ($nameafter !== '' ? $nameafter : '-'));
                 } catch (\Throwable $e) {
-                    mtrace('[crucible] create failed for KC id '.$kcid.' : '.$e->getMessage());
+                    mtrace('[crucible] create failed for KC id ' . $kcid . ' : ' . $e->getMessage());
                 }
             }
 
@@ -191,7 +237,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
 
         $resp = curl_exec($ch);
         if ($resp === false) {
-            mtrace('[crucible] token curl error: '.curl_error($ch));
+            mtrace('[crucible] token curl error: ' . curl_error($ch));
             curl_close($ch);
             return null;
         }
@@ -199,7 +245,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         curl_close($ch);
 
         if ($http >= 400) {
-            mtrace('[crucible] token HTTP '.$http.' from '.$tokenurl.' body: '.$resp);
+            mtrace('[crucible] token HTTP ' . $http . ' from ' . $tokenurl . ' body: ' . $resp);
             return null;
         }
 
@@ -212,12 +258,14 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     }
 
     private function fetch_kc_users(string $adminbase, string $token, int $first, int $max, int $onlyenabled, bool $insecure = false): array {
-        $url = rtrim($adminbase, '/').'/users?first='.$first.'&max='.$max.'&briefRepresentation=false';
-        if ($onlyenabled) { $url .= '&enabled=true'; }
+        $url = rtrim($adminbase, '/') . '/users?first=' . $first . '&max=' . $max . '&briefRepresentation=false';
+        if ($onlyenabled) {
+            $url .= '&enabled=true';
+        }
 
         $opts = $insecure ? ['ignore_ssl_errors' => true] : [];
         $curl = new \curl($opts);
-        $curl->setHeader('Authorization: Bearer '.$token);
+        $curl->setHeader('Authorization: Bearer ' . $token);
         $curl->setHeader('Accept: application/json');
 
         $resp = $curl->get($url);
@@ -252,9 +300,13 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     }
 
     private function kc_attr(array $kc, string $name): ?string {
-        if (!isset($kc['attributes'][$name])) { return null; }
+        if (!isset($kc['attributes'][$name])) {
+            return null;
+        }
         $v = $kc['attributes'][$name];
-        if (is_array($v)) { $v = reset($v); }
+        if (is_array($v)) {
+            $v = reset($v);
+        }
         $v = trim((string)$v);
         return ($v === '') ? null : $v;
     }

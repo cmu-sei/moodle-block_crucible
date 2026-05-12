@@ -71,7 +71,7 @@ if ($formdata = $mform->get_data()) {
     $key = trim($key, '_');
 
     // Only persist API URL / key when the corresponding checkbox was checked.
-    $apiurl = !empty($formdata->useapi)    ? trim($formdata->apiurl ?? '') : '';
+    $apiurl = !empty($formdata->useapi) ? trim($formdata->apiurl ?? '') : '';
     $apikeyplain = !empty($formdata->useapikey) ? trim($formdata->apikey ?? '') : '';
     $apikey = ($apikeyplain !== '') ? \core\encryption::encrypt($apikeyplain) : '';
 

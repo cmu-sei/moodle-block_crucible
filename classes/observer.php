@@ -44,7 +44,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class observer {
-
     /**
      * Triggered when a user logs in.
      * Syncs the user's organization roles if they have ssoorg and ssogroups data,
@@ -145,12 +144,14 @@ class observer {
             $catctx = \context_coursecat::instance($categoryid);
 
             // Check if user already has this role.
-            if (!$DB->record_exists('role_assignments', [
+            if (
+                !$DB->record_exists('role_assignments', [
                 'roleid'    => $role->id,
                 'contextid' => $catctx->id,
                 'userid'    => $user->id,
                 'component' => 'block_crucible',
-            ])) {
+                ])
+            ) {
                 // Assign the role.
                 role_assign($role->id, $user->id, $catctx->id, 'block_crucible', 0);
             }

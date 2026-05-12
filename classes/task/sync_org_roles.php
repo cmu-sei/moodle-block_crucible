@@ -59,7 +59,6 @@ defined('MOODLE_INTERNAL') || die();
  */
 class sync_org_roles extends \core\task\scheduled_task
 {
-
     /**
      * Maps Keycloak group name => Moodle role shortname.
      * The roles must already exist (created by the moodle-install.sh setup script).
@@ -73,16 +72,14 @@ class sync_org_roles extends \core\task\scheduled_task
     /**
      * @return string
      */
-    public function get_name(): string
-    {
+    public function get_name(): string {
         return get_string('task_sync_org_roles', 'block_crucible');
     }
 
     /**
      * Execute the scheduled task.
      */
-    public function execute(): void
-    {
+    public function execute(): void {
         global $CFG, $DB;
 
         // Check if org role sync is enabled.
@@ -154,8 +151,7 @@ class sync_org_roles extends \core\task\scheduled_task
      *
      * @return array
      */
-    private function get_distinct_orgs(): array
-    {
+    private function get_distinct_orgs(): array {
         global $DB;
 
         $field = $DB->get_record('user_info_field', ['shortname' => 'ssoorg'], 'id', IGNORE_MISSING);
@@ -183,8 +179,7 @@ class sync_org_roles extends \core\task\scheduled_task
      * @param string $org
      * @return int
      */
-    private function get_org_category(string $org): int
-    {
+    private function get_org_category(string $org): int {
         global $DB;
 
         // Look for exact match by name (case-sensitive)
@@ -396,8 +391,7 @@ class sync_org_roles extends \core\task\scheduled_task
      * @param int $adminid
      * @param int $now
      */
-    private function upsert_condition(int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void
-    {
+    private function upsert_condition(int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void {
         global $DB;
 
         $json     = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -432,8 +426,7 @@ class sync_org_roles extends \core\task\scheduled_task
      * @param int $adminid
      * @param int $now
      */
-    private function upsert_profile_condition(?object $existing, int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void
-    {
+    private function upsert_profile_condition(?object $existing, int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void {
         global $DB;
 
         $json = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -462,8 +455,7 @@ class sync_org_roles extends \core\task\scheduled_task
      * @param string $value
      * @return string
      */
-    private function slugify(string $value): string
-    {
+    private function slugify(string $value): string {
         return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($value)));
     }
 
@@ -472,8 +464,7 @@ class sync_org_roles extends \core\task\scheduled_task
      *
      * @param int $ruleid
      */
-    private function process_cohort_rule_now(int $ruleid): void
-    {
+    private function process_cohort_rule_now(int $ruleid): void {
         if (!class_exists('\\tool_dynamic_cohorts\\rule')) {
             mtrace("  WARNING: tool_dynamic_cohorts rule class not found - cannot process rule synchronously.");
             return;

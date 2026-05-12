@@ -45,7 +45,6 @@ require_once(__DIR__ . '/../../config.php');
 
 class block_crucible extends block_base
 {
-
     /**
      * The root URL of the Moodle site.
      *
@@ -58,8 +57,7 @@ class block_crucible extends block_base
      *
      * @return void
      */
-    public function init()
-    {
+    public function init() {
         $this->title = get_string('pluginname', 'block_crucible');
     }
 
@@ -70,13 +68,11 @@ class block_crucible extends block_base
      *
      * @return bool False to indicate that multiple instances are not allowed.
      */
-    public function instance_allow_multiple()
-    {
+    public function instance_allow_multiple() {
         return true;
     }
 
-    public function hide_header()
-    {
+    public function hide_header() {
         if (isset($this->config) && isset($this->config->config_showheader)) {
             $show = (bool)$this->config->config_showheader;
         } else {
@@ -90,8 +86,7 @@ class block_crucible extends block_base
         return !$show;
     }
 
-    private function instance_title_text(): string
-    {
+    private function instance_title_text(): string {
         $title = trim((string)get_config('block_crucible', 'defaulttitle'));
         if ($title === '') {
             $title = get_string('pluginname', 'block_crucible');
@@ -109,7 +104,6 @@ class block_crucible extends block_base
             }
         }
 
-
         // Per-instance override from the block config:
         if (!empty($this->config) && isset($this->config->title) && trim($this->config->title) !== '') {
             $title = trim($this->config->title);
@@ -118,8 +112,7 @@ class block_crucible extends block_base
         return format_string($title, true);
     }
 
-    public function specialization()
-    {
+    public function specialization() {
         $this->title = $this->instance_title_text(); // This drives Moodle’s native block header.
     }
 
@@ -132,8 +125,7 @@ class block_crucible extends block_base
      *
      * @return bool True to indicate that the block has a configuration page.
      */
-    public function has_config()
-    {
+    public function has_config() {
         return true;
     }
 
@@ -142,8 +134,7 @@ class block_crucible extends block_base
      *
      * @return array of the pages where the block can be added.
      */
-    public function applicable_formats()
-    {
+    public function applicable_formats() {
         return [
             'admin' => false,
             'site-index' => true,
@@ -161,8 +152,7 @@ class block_crucible extends block_base
      *
      * @return string The block HTML.
      */
-    public function get_content()
-    {
+    public function get_content() {
         global $OUTPUT;
         global $USER;
         global $SITE;
@@ -195,7 +185,6 @@ class block_crucible extends block_base
         $view = $this->config->viewtype;
 
         if ($view === 'apps') {
-
             /* data for template */
             $data = new stdClass();
             $nodata = new stdClass();
@@ -220,7 +209,7 @@ class block_crucible extends block_base
             $showcomms = get_config('block_crucible', 'enablecommapps');
             $userperms = $crucible->get_user_permissions();
 
-            ////////////////////PLAYER/////////////////////////////
+            // PLAYER/////////////////////////////
             $playerurl = get_config('block_crucible', 'playerappurl');
             $showplayer = null;
             $views = $crucible->get_player_views();
@@ -241,7 +230,7 @@ class block_crucible extends block_base
                 debugging("Player not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////ALLOY/////////////////////////////
+            // ALLOY/////////////////////////////
             $alloyurl = get_config('block_crucible', 'playerappurl');
 
             $showalloy = null;
@@ -260,7 +249,7 @@ class block_crucible extends block_base
                 debugging("Unable to verify user permissions. Check Keycloak connectivity and configuration.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////BLUEPRINT/////////////////////////////
+            // BLUEPRINT/////////////////////////////
             $blueprinturl = get_config('block_crucible', 'blueprintappurl');
             $msels = null;
             $showblueprint = null;
@@ -274,15 +263,15 @@ class block_crucible extends block_base
                 $data->blueprint = $blueprinturl;
                 $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
                 $data->blueprintLogo = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
-            } else if ($userperms  === 0 || $msels === 0) {
+            } else if ($userperms === 0 || $msels === 0) {
                 debugging("No user data found on Blueprint for User: " . $userid, DEBUG_DEVELOPER);
-            } else if ($userperms  === false || $msels === false) {
+            } else if ($userperms === false || $msels === false) {
                 debugging("Unable to connect to Blueprint API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($userperms  === null && $msels === null) {
+            } else if ($userperms === null && $msels === null) {
                 debugging("Blueprint not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////CASTER/////////////////////////////
+            // CASTER/////////////////////////////
             $casterurl = get_config('block_crucible', 'casterappurl');
             $showcaster = null;
 
@@ -302,7 +291,7 @@ class block_crucible extends block_base
                 debugging("User permissions not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////CITE/////////////////////////////
+            // CITE/////////////////////////////
             $citeurl = get_config('block_crucible', 'citeappurl');
             $evalscite = null;
             $showcite = null;
@@ -316,15 +305,15 @@ class block_crucible extends block_base
                 $data->cite = $citeurl;
                 $data->citeDescription = get_string('citedescription', 'block_crucible');
                 $data->citeLogo  = $OUTPUT->image_url('crucible-icon-cite', 'block_crucible');
-            } else if ($userperms  === 0 || $evalscite === 0) {
+            } else if ($userperms === 0 || $evalscite === 0) {
                 debugging("No user data found on CITE for User: " . $userid, DEBUG_DEVELOPER);
-            } else if ($userperms  === false || $evalscite === false) {
+            } else if ($userperms === false || $evalscite === false) {
                 debugging("Unable to connect to CITE API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
             } else if ($evalscite === null && $userperms === null) {
                 debugging("CITE not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////GALLERY/////////////////////////////
+            // GALLERY/////////////////////////////
             $galleryurl = get_config('block_crucible', 'galleryappurl');
             $exhibitsgallery = null;
             $showgallery = null;
@@ -338,15 +327,15 @@ class block_crucible extends block_base
                 $data->gallery = $galleryurl;
                 $data->galleryDescription = get_string('gallerydescription', 'block_crucible');
                 $data->galleryLogo  = $OUTPUT->image_url('crucible-icon-gallery', 'block_crucible');
-            } else if ($userperms  === 0 || $exhibitsgallery === 0) {
+            } else if ($userperms === 0 || $exhibitsgallery === 0) {
                 debugging("No user data found on Gallery for User: " . $userid, DEBUG_DEVELOPER);
-            } else if ($userperms  === false || $exhibitsgallery === false) {
+            } else if ($userperms === false || $exhibitsgallery === false) {
                 debugging("Unable to connect to Gallery API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($userperms  === null && $exhibitsgallery === null) {
+            } else if ($userperms === null && $exhibitsgallery === null) {
                 debugging("Gallery not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////STEAMFITTER/////////////////////////////
+            // STEAMFITTER/////////////////////////////
             $steamfitterurl = get_config('block_crucible', 'steamfitterappurl');
             $showsteamfitter = null;
 
@@ -366,7 +355,7 @@ class block_crucible extends block_base
                 debugging("User permissions not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////TOPOMOJO////////////////////////////
+            // TOPOMOJO////////////////////////////
             $topomojourl = get_config('block_crucible', 'topomojoappurl');
             $permstopomojo = null;
             $showtopomojo = null;
@@ -388,7 +377,7 @@ class block_crucible extends block_base
                 debugging("Topomojo not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////GAMEBOARD/////////////////////////////
+            // GAMEBOARD/////////////////////////////
             $gameboardurl = get_config('block_crucible', 'gameboardappurl');
             $permsgameboard = null;
             $activechallenges = null;
@@ -412,13 +401,13 @@ class block_crucible extends block_base
                 debugging("Gameboard not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
-            ////////////////////Welcome Message/////////////////////////////
+            // Welcome Message/////////////////////////////
             $optionalmessagecb = get_config('block_crucible', 'customwelcomemessagecb');
             if ($optionalmessagecb) {
                 $data->welcomemessage = get_config('block_crucible', 'customwelcomemessage');
             }
 
-            ///////////////////Keycloak/////////////////////////////
+            // Keycloak/////////////////////////////
             $allowedGroups = get_config('block_crucible', 'keycloakgroups');
             $groupsArray = explode('|', $allowedGroups);
             $groupsArray = array_map('trim', $groupsArray);
@@ -486,14 +475,14 @@ class block_crucible extends block_base
                 'steamfitter',
                 'topomojo',
                 'gameboard',
-                'keycloak'
+                'keycloak',
             ];
 
             // Display name overrides for hardcoded apps whose keys don't title-case correctly.
             $appnames = [
                 'cite'       => 'CITE',
                 'topomojo'   => 'TopoMojo',
-                'steamfitter'=> 'Steamfitter',
+                'steamfitter' => 'Steamfitter',
                 'gameboard'  => 'Gameboard',
                 'keycloak'   => 'Keycloak',
                 'blueprint'  => 'Blueprint',

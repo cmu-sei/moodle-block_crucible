@@ -1,8 +1,8 @@
 // blocks/crucible/competency.php
 <?php
-require_once(__DIR__.'/../../config.php');
+require_once(__DIR__ . '/../../config.php');
 
-$idnumber  = optional_param('idnumber','', PARAM_RAW_TRIMMED);
+$idnumber  = optional_param('idnumber', '', PARAM_RAW_TRIMMED);
 $fwid = optional_param('fwid', 0, PARAM_INT);
 $framework = optional_param('framework', '', PARAM_RAW_TRIMMED);
 
@@ -53,7 +53,7 @@ if ($idnumber) {
 }
 
 if ($fwid) {
-    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['fwid'=>$fwid]));
+    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['fwid' => $fwid]));
     $data = $svc->get_unmapped_for_framework($fwid);
 
     $PAGE->set_title(get_string('unmapped_for_framework_title', 'block_crucible', $data->framework));
