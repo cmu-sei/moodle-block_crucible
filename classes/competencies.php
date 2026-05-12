@@ -275,6 +275,7 @@ class competencies {
                         }
                     } catch (\Throwable $e) {
                         // Category not found or deleted - use empty string.
+                        debugging('Failed to fetch category: ' . $e->getMessage(), DEBUG_DEVELOPER);
                     }
                 }
 

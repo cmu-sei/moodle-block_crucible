@@ -52,6 +52,7 @@ DM24-1176
  */
 
 define('NO_MOODLE_COOKIES', true);
+require_once(__DIR__ . '/../../../config.php');
 
 // CORS preflight.
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -68,8 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     echo json_encode(['error' => 'Method not allowed']);
     exit;
 }
-
-require_once(__DIR__ . '/../../../config.php');
 
 // Competency API requires an authenticated user context.
 \core\session\manager::set_user(get_admin());
