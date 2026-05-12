@@ -97,6 +97,11 @@ class block_crucible_edit_form extends block_edit_form {
         $mform->addHelpButton('config_frameworkid', 'config_frameworkid', 'block_crucible');
     }
 
+    /**
+     * Display edit form when adding block.
+     *
+     * @return bool
+     */
     public static function display_form_when_adding(): bool {
         return true;
     }

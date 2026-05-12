@@ -33,6 +33,12 @@ use moodle_url;
  * Learning plans helper class.
  */
 class learningplans {
+    /**
+     * Get user work role as string from profile.
+     *
+     * @param int $userid User ID
+     * @return string|null Work role or null
+     */
     public function get_user_workrole_string(int $userid): ?string {
         global $CFG;
         require_once($CFG->dirroot . '/user/profile/lib.php');
@@ -162,6 +168,13 @@ class learningplans {
         return $matches;
     }
 
+    /**
+     * Self-enrol user to learning plan template.
+     *
+     * @param int $templateid Template ID
+     * @param int $userid User ID
+     * @return string Result message
+     */
     public function self_enrol_user_to_template(int $templateid, int $userid): string {
         global $DB;
 
@@ -194,6 +207,15 @@ class learningplans {
         return 'created';
     }
 
+    /**
+     * Get template view data for rendering.
+     *
+     * @param int $templateid Template ID
+     * @param int $userid User ID
+     * @param \context $context Context
+     * @param int $frameworkid Framework ID
+     * @return \stdClass View data
+     */
     public function get_template_view_data(int $templateid, int $userid, \context $context, int $frameworkid = 0): \stdClass {
         global $DB, $CFG, $SITE, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -378,6 +400,12 @@ class learningplans {
         ];
     }
 
+    /**
+     * Get counts for templates.
+     *
+     * @param array $templateids Array of template IDs
+     * @return array Counts by template ID
+     */
     protected function counts_for_templates(array $templateids): array {
         global $DB;
         if (empty($templateids)) {
@@ -409,6 +437,13 @@ class learningplans {
         return $out;
     }
 
+    /**
+     * Get user's plan from template.
+     *
+     * @param int $templateid Template ID
+     * @param int $userid User ID
+     * @return \stdClass|null Plan record or null
+     */
     public function get_user_plan_from_template(int $templateid, int $userid): ?\stdClass {
         global $DB;
         // Get the most recent matching plan (if duplicates exist).

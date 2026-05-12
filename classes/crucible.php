@@ -710,6 +710,11 @@ class crucible
         return $r;
     }
 
+    /**
+     * Get Keycloak groups for current user.
+     *
+     * @return array|null Group names or null on error
+     */
     public function get_keycloak_groups() {
         global $USER;
 
@@ -849,6 +854,11 @@ class crucible
         return 0;
     }
 
+    /**
+     * Get Keycloak roles for current user.
+     *
+     * @return array|null Role names or null on error
+     */
     public function get_keycloak_roles() {
         global $USER;
 
