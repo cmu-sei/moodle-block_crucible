@@ -1,81 +1,91 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
+  pull_request:
+    branches: [main]
   push:
-    branches: [ main ]
-    
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    branches: [main]
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+permissions:
+  contents: write
+
+jobs:
+  version-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
-          path: './crucible'
-     
-      - id: crucible
-        uses: pozetroninc/github-action-get-latest-release@v0.5.0
+          ref: ${{ github.head_ref }}
+
+      - id: get_latest
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
         with:
           owner: cmu-sei
           repo: moodle-block_crucible
           excludes: prerelease, draft
-      
-      - name: package
+
+      - name: Auto-increment version if needed
         run: |
-          OLDRELEASE=${{ steps.crucible.outputs.release }}
-          PREVIOUSVERSION=$(grep "plugin->version" crucible/version.php | sed -e "s/.*= \(.*\);.*/\1/")
+          OLDRELEASE=${{ steps.get_latest.outputs.release }}
+          PREVIOUSVERSION=$(grep "plugin->version" version.php | sed -e "s/.*= \(.*\);.*/\1/")
           if [ $OLDRELEASE -ne $PREVIOUSVERSION ]; then
-              NEWVERSION=$PREVIOUSVERSION
-          else
-              OLDDATE=`echo $PREVIOUSVERSION | cut -b 1-8`
-              NEWDATE=`date +%Y%m%d`
-              if [ $OLDDATE -ne $NEWDATE ]; then
-                  NEWVERSION=$NEWDATE\00
-              else
-                  OLDVERS=`echo $PREVIOUSVERSION | cut -b 9-10`
-                  OLDVERS=${OLDVERS#0}
-                  let NEWVERS=(OLDVERS + 1)
-                  NEWVERSION=$OLDDATE`printf %02d $NEWVERS`
-              fi
-              sed -i "s#\(plugin->version.*\)$PREVIOUSVERSION#\1$NEWVERSION#" crucible/version.php
-              cd ./crucible
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-              git add version.php
-              git commit -m "Updating version to $NEWVERSION"
-              git push
-              cd ..
+              echo "Version already updated in PR"
+              exit 0
           fi
-          zip -r block_crucible_$NEWVERSION.zip crucible/ -x  "crucible/*.git*"
-          echo "artifact_version=$NEWVERSION" >> $GITHUB_ENV
-          echo "artifact_name=block_crucible_$NEWVERSION" >> $GITHUB_ENV
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          OLDDATE=\`echo $PREVIOUSVERSION | cut -b 1-8\`
+          NEWDATE=\`date +%Y%m%d\`
+          if [ $OLDDATE -ne $NEWDATE ]; then
+              NEWVERSION=$NEWDATE\00
+          else
+              OLDVERS=\`echo $PREVIOUSVERSION | cut -b 9-10\`
+              OLDVERS=${OLDVERS#0}
+              let NEWVERS=(OLDVERS + 1)
+              NEWVERSION=$OLDDATE\`printf %02d $NEWVERS\`
+          fi
+          sed -i "s#\(plugin->version.*\)$PREVIOUSVERSION#\1$NEWVERSION#" version.php
+          echo "FILESCHANGED=TRUE" >> $GITHUB_ENV
+          echo "Version bumped to $NEWVERSION"
+
+      - name: Commit version bump
+        if: env.FILESCHANGED == 'TRUE'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.php
+          git commit -m "Auto-increment version"
+
+      - name: Push version bump to PR
+        if: env.FILESCHANGED == 'TRUE'
+        uses: ad-m/github-push-action@master
         with:
-          tag_name: ${{ env.artifact_version }}
-          release_name: ${{ env.artifact_name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from version.php
+        id: get_version
+        run: |
+          VERSION=$(grep "plugin->version" version.php | sed -e "s/.*= \(.*\);.*/\1/")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Package plugin
+        run: |
+          zip -r block_crucible_${{ steps.get_version.outputs.version }}.zip . -x "*.git*"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: block_crucible_${{ steps.get_version.outputs.version }}
+          files: block_crucible_${{ steps.get_version.outputs.version }}.zip
           draft: false
           prerelease: false
-          
-      - name: Upload Release Asset
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}  
-          asset_path: ./${{env.artifact_name}}.zip
-          asset_name: ${{env.artifact_name}}.zip
-          asset_content_type: application/zip
