@@ -30,6 +30,11 @@ require_once($CFG->dirroot . '/blocks/edit_form.php');
  * Block edit form class.
  */
 class block_crucible_edit_form extends block_edit_form {
+    /**
+     * Block-specific form definition.
+     *
+     * @param MoodleQuickForm $mform
+     */
     protected function specific_definition($mform) {
         $mform->addElement(
             'header',

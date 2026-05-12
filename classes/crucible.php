@@ -43,6 +43,10 @@ DM24-1176
 namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Main Crucible API client class.
+ */
 class crucible
 {
     /**
