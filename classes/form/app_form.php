@@ -176,7 +176,7 @@ class app_form extends \moodleform {
             $reservedkeys = [
                 'player', 'alloy', 'blueprint', 'caster', 'cite',
                 'gallery', 'steamfitter', 'topomojo', 'gameboard',
-                'keycloak', 'docs',
+                'keycloak',
             ];
             if (in_array($key, $reservedkeys)) {
                 $errors['name'] = get_string('appnamereserved', 'block_crucible');
