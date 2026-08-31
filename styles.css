@@ -518,3 +518,21 @@
 [data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#92400e"] {
   color: #f3d88c !important;
 }
+
+/* The learning-plan confirmation is a prominent success notice, not a badge. */
+[data-bs-theme="dark"] .crucible-success-notice {
+  border-color: #2f7e42 !important;
+  background: #102b17 !important;
+  color: #d7f9dc !important;
+}
+
+[data-bs-theme="dark"] .crucible-success-notice a {
+  border-color: #23713a !important;
+  background: #1a6f37 !important;
+  color: #fff !important;
+}
+
+[data-bs-theme="dark"] .crucible-success-notice a:hover,
+[data-bs-theme="dark"] .crucible-success-notice a:focus {
+  background: #218948 !important;
+}
