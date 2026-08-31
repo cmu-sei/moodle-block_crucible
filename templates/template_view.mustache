@@ -1,5 +1,5 @@
 <!-- Search toolbar-->
-<div class="lp-toolbar"
+<div class="lp-toolbar crucible-template-view"
       style="display:flex;justify-content:flex-end;gap:8px;align-items:center;padding:12px 16px;background:#fff;">
   <label style="position:relative;display:block;flex:0 0 350px;max-width:350px;min-width:220px;">
     <input type="text" class="lp-search"
@@ -15,7 +15,7 @@
 </div>
 
 {{#hasplan}}
-  <div style="margin:12px 0;border:1px solid #bbf7d0;background:#dcfce7;color:#166534;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center;">
+  <div class="crucible-template-view" style="margin:12px 0;border:1px solid #bbf7d0;background:#dcfce7;color:#166534;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center;">
     <div style="font-weight:700;">{{#str}} youalreadyhavethisplan, block_crucible {{/str}}</div>
     <a href="{{planurl}}" style="padding:8px 12px;border:1px solid #166534;background:#166534;color:#fff;border-radius:10px;font-weight:700;text-decoration:none;">
       {{#str}} openmyplan, block_crucible {{/str}}
@@ -163,4 +163,3 @@ require(['block_crucible/search'], function(search) {
   search.init({ root: '.lp-template', toolbar: '.lp-toolbar' });
 });
 {{/js}}
-

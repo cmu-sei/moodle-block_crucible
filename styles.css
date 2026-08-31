@@ -300,3 +300,221 @@
 .crucible-drop-line::after {
   right: -4px;
 }
+
+/*
+ * Boost Dark provides a palette but not all Bootstrap semantic variables.
+ * Keep these values scoped to Crucible block components so they do not alter
+ * the rest of Moodle's page.
+ */
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) {
+  --crucible-surface: var(--bs-gray-1000, #1e1e25);
+  --crucible-surface-muted: var(--bs-gray-900, #2e3134);
+  --crucible-surface-subtle: var(--bs-gray-800, #393e4f);
+  --crucible-border: var(--bs-gray-700, #495057);
+  --crucible-text: var(--bs-text-color, #cbd0d4);
+  --crucible-text-strong: var(--bs-gray-200, #e9ecef);
+  --crucible-text-muted: var(--bs-gray-400, #ced4da);
+  --crucible-link: var(--bs-link-color, #8fc4ff);
+  --crucible-link-hover: var(--bs-link-hover-color, #b5daff);
+}
+
+[data-bs-theme="dark"] .crucible-card {
+  border-color: var(--crucible-border) !important;
+  background: var(--crucible-surface) !important;
+  color: var(--crucible-text);
+  box-shadow: 0 6px 16px rgb(0 0 0 / .25);
+}
+
+[data-bs-theme="dark"] .crucible-template-view .lp-search {
+  border-color: var(--crucible-border) !important;
+  background: var(--crucible-surface) !important;
+  color: var(--crucible-text-strong) !important;
+}
+
+[data-bs-theme="dark"] .crucible-template-view .lp-search::placeholder {
+  color: var(--crucible-text-muted);
+  opacity: 1;
+}
+
+[data-bs-theme="dark"] .crucible-template-view .lp-clear {
+  color: var(--crucible-text-muted);
+}
+
+[data-bs-theme="dark"] .crucible-card__header {
+  border-color: var(--crucible-border);
+  background: linear-gradient(
+    135deg,
+    var(--crucible-surface-subtle),
+    var(--crucible-surface-muted)
+  );
+}
+
+[data-bs-theme="dark"] .crucible-card__title,
+[data-bs-theme="dark"] .app-card__title,
+[data-bs-theme="dark"] .lp-cell--num {
+  color: var(--crucible-text-strong);
+}
+
+[data-bs-theme="dark"] :is(
+  .crucible-card__subtitle,
+  .comp-meta,
+  .notice--empty,
+  .role-line--ok,
+  .app-card__desc
+) {
+  color: var(--crucible-text-muted);
+}
+
+[data-bs-theme="dark"] :is(
+  .crucible-card__body,
+  .comp-table__header,
+  .lp-table thead th,
+  .crucible-lp .crucible-lp-row:hover,
+  .crucible-lp .lp-row:hover,
+  .crucible-template a:hover,
+  .crucible-comp a:hover .comp-table__row
+) {
+  background: var(--crucible-surface-muted);
+}
+
+[data-bs-theme="dark"] :is(
+  .comp-table,
+  .lp-table-wrap,
+  .notice--empty,
+  .app-card
+) {
+  border-color: var(--crucible-border);
+  background: var(--crucible-surface);
+  color: var(--crucible-text);
+}
+
+[data-bs-theme="dark"] :is(
+  .comp-table__header,
+  .comp-table__row,
+  .framework-band[role="rowgroup"] > .framework-band__inner,
+  .divider,
+  .lp-row
+) {
+  border-color: var(--crucible-border);
+  color: var(--crucible-text);
+}
+
+[data-bs-theme="dark"] .framework-band[role="rowgroup"] > .framework-band__inner {
+  background: var(--crucible-surface-subtle);
+}
+
+[data-bs-theme="dark"] :is(.framework-chip, .lp-chip) {
+  border-color: var(--crucible-border);
+  background: var(--crucible-surface-subtle);
+  color: var(--crucible-text-strong);
+}
+
+[data-bs-theme="dark"] :is(.comp-name, .lp-name a) {
+  color: var(--crucible-link);
+}
+
+[data-bs-theme="dark"] :is(.comp-name, .lp-name a):hover {
+  color: var(--crucible-link-hover);
+}
+
+[data-bs-theme="dark"] .unmapped-link {
+  border-color: #6f5207;
+  background: #241b06;
+  color: #f3d88c;
+}
+
+[data-bs-theme="dark"] .unmapped-link:focus,
+[data-bs-theme="dark"] .unmapped-link:hover {
+  background: #352809;
+}
+
+[data-bs-theme="dark"] .role-line--empty {
+  color: #ffb4ab;
+}
+
+[data-bs-theme="dark"] .app-card.drag-over {
+  background: var(--crucible-surface-subtle);
+}
+
+/*
+ * Several legacy views carry their light palette inline. These overrides are
+ * deliberately limited to Crucible block cards and their template toolbar.
+ */
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view)[style*="background:#fff"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#fff"] {
+  background: var(--crucible-surface) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view)[style*="background:#f8fafc"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#f8fafc"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#f1f5f9"] {
+  background: var(--crucible-surface-muted) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#eef2ff"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#e0e7ff"] {
+  background: var(--crucible-surface-subtle) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view)[style*="background:#dcfce7"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#dcfce7"] {
+  border-color: #20491e !important;
+  background: #0b180a !important;
+  color: #8abf84 !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view)[style*="background:#fffbeb"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#fffbeb"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="background:#fff3d6"] {
+  border-color: #6f5207 !important;
+  background: #241b06 !important;
+  color: #f3d88c !important;
+}
+
+[data-bs-theme="dark"] .crucible-card > div[style*="linear-gradient"][style*="#e0f2fe"] {
+  border-color: var(--crucible-border) !important;
+  background: linear-gradient(
+    135deg,
+    var(--crucible-surface-subtle),
+    var(--crucible-surface-muted)
+  ) !important;
+}
+
+[data-bs-theme="dark"] .crucible-card > div[style*="linear-gradient"][style*="#fef3c7"] {
+  border-color: #6f5207 !important;
+  background: linear-gradient(135deg, #352809, var(--crucible-surface-muted)) !important;
+}
+
+[data-bs-theme="dark"] .crucible-card [style*="linear-gradient"][style*="#60a5fa"],
+[data-bs-theme="dark"] .crucible-card [style*="background:#2563eb"] {
+  background: var(--bs-primary, #2f6db2) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view)[style*="#e5e7eb"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="#e5e7eb"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="#cbd5e1"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="#dbeafe"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="#f1f5f9"] {
+  border-color: var(--crucible-border) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view)[style*="color:#0f172a"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#0f172a"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#1e3a8a"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#334155"] {
+  color: var(--crucible-text-strong) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#475569"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#64748b"],
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#6b7280"] {
+  color: var(--crucible-text-muted) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#1d4ed8"] {
+  color: var(--crucible-link) !important;
+}
+
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) [style*="color:#92400e"] {
+  color: #f3d88c !important;
+}
