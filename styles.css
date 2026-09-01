@@ -300,3 +300,268 @@
 .crucible-drop-line::after {
   right: -4px;
 }
+
+/*
+ * Boost Dark provides a palette but not all Bootstrap semantic variables.
+ * Keep these values scoped to Crucible block components so they do not alter
+ * the rest of Moodle's page.
+ */
+[data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) {
+  --crucible-surface: var(--bs-gray-900, #2e3134);
+  --crucible-surface-muted: var(--bs-secondary-bg, #343a40);
+  --crucible-surface-subtle: var(--bs-tertiary-bg, #393e4f);
+  --crucible-border: var(--bs-gray-700, #495057);
+  --crucible-text: var(--bs-body-color, #cbd0d4);
+  --crucible-text-strong: var(--bs-gray-200, #e9ecef);
+  --crucible-text-muted: var(--bs-gray-400, #ced4da);
+  --crucible-link: var(--bs-link-color, #8fc4ff);
+  --crucible-link-hover: var(--bs-link-hover-color, #b5daff);
+}
+
+[data-bs-theme="dark"] .crucible-card {
+  border-color: var(--crucible-border) !important;
+  background: var(--crucible-surface) !important;
+  color: var(--crucible-text);
+  box-shadow: 0 6px 16px rgb(0 0 0 / .25);
+}
+
+[data-bs-theme="dark"] .crucible-template-view .lp-search {
+  border-color: var(--crucible-border) !important;
+  background: var(--crucible-surface) !important;
+  color: var(--crucible-text-strong) !important;
+}
+
+[data-bs-theme="dark"] .crucible-template-view .lp-search::placeholder {
+  color: var(--crucible-text-muted);
+  opacity: 1;
+}
+
+[data-bs-theme="dark"] .crucible-template-view .lp-clear {
+  color: var(--crucible-text-muted);
+}
+
+[data-bs-theme="dark"] .crucible-card__header {
+  border-color: var(--crucible-border);
+  background: linear-gradient(
+    135deg,
+    var(--crucible-surface-subtle),
+    var(--crucible-surface-muted)
+  );
+}
+
+[data-bs-theme="dark"] .crucible-card__title,
+[data-bs-theme="dark"] .app-card__title,
+[data-bs-theme="dark"] .lp-cell--num {
+  color: var(--crucible-text-strong);
+}
+
+[data-bs-theme="dark"] :is(
+  .crucible-card__subtitle,
+  .comp-meta,
+  .notice--empty,
+  .role-line--ok,
+  .app-card__desc
+) {
+  color: var(--crucible-text-muted);
+}
+
+[data-bs-theme="dark"] :is(
+  .crucible-card__body,
+  .comp-table__header,
+  .lp-table thead th,
+  .crucible-lp .crucible-lp-row:hover,
+  .crucible-lp .lp-row:hover,
+  .crucible-template a:hover,
+  .crucible-comp a:hover .comp-table__row
+) {
+  background: var(--crucible-surface-muted);
+}
+
+[data-bs-theme="dark"] :is(
+  .comp-table,
+  .lp-table-wrap,
+  .notice--empty,
+  .app-card
+) {
+  border-color: var(--crucible-border);
+  background: var(--crucible-surface);
+  color: var(--crucible-text);
+}
+
+[data-bs-theme="dark"] :is(
+  .comp-table__header,
+  .comp-table__row,
+  .framework-band[role="rowgroup"] > .framework-band__inner,
+  .divider,
+  .lp-row
+) {
+  border-color: var(--crucible-border);
+  color: var(--crucible-text);
+}
+
+[data-bs-theme="dark"] .framework-band[role="rowgroup"] > .framework-band__inner {
+  background: var(--crucible-surface-subtle);
+}
+
+[data-bs-theme="dark"] :is(.framework-chip, .lp-chip) {
+  border-color: var(--crucible-border);
+  background: var(--crucible-surface-subtle);
+  color: var(--crucible-text-strong);
+}
+
+[data-bs-theme="dark"] :is(.comp-name, .lp-name a) {
+  color: var(--crucible-link);
+}
+
+[data-bs-theme="dark"] :is(.comp-name, .lp-name a):hover {
+  color: var(--crucible-link-hover);
+}
+
+[data-bs-theme="dark"] .unmapped-link {
+  border-color: #6f5207;
+  background: #241b06;
+  color: #f3d88c;
+}
+
+[data-bs-theme="dark"] .unmapped-link:focus,
+[data-bs-theme="dark"] .unmapped-link:hover {
+  background: #352809;
+}
+
+[data-bs-theme="dark"] .role-line--empty {
+  color: #ffb4ab;
+}
+
+[data-bs-theme="dark"] .app-card.drag-over {
+  background: var(--crucible-surface-subtle);
+}
+
+/*
+ * The learning-plan template changes visibility through JavaScript. Use its
+ * semantic classes rather than matching serialized inline style attributes;
+ * setting element.style.display can otherwise make those selectors stop
+ * matching and leave a light surface behind.
+ */
+[data-bs-theme="dark"] .lp-toolbar,
+[data-bs-theme="dark"] .lp-template__body,
+[data-bs-theme="dark"] .cru-group__content,
+[data-bs-theme="dark"] .cru-course,
+[data-bs-theme="dark"] .crucible-message-card__panel {
+  background: var(--crucible-surface) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .lp-template__header,
+  .crucible-message-card__header
+) {
+  border-color: var(--crucible-border) !important;
+  background: linear-gradient(
+    135deg,
+    var(--crucible-surface-subtle),
+    var(--crucible-surface-muted)
+  ) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .lp-empty,
+  .cru-group > summary,
+  .cru-comp,
+  .cru-activities,
+  .lp-no-competencies,
+  .crucible-message-card__body
+) {
+  background: var(--crucible-surface-muted) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .cru-group-count,
+  .cru-comp-id,
+  .crucible-message-card__logo
+) {
+  background: var(--crucible-surface-subtle) !important;
+  border-color: var(--crucible-border) !important;
+  color: var(--crucible-text-strong) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .lp-empty,
+  .cru-group,
+  .cru-comp,
+  .cru-course,
+  .cru-activities,
+  .lp-no-competencies,
+  .crucible-message-card__panel,
+  .crucible-message-card__logo
+) {
+  border-color: var(--crucible-border) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .lp-template__title,
+  .lp-template__description,
+  .lp-template__section-title,
+  .cru-group__name,
+  .cru-comp-title,
+  .cru-comp-desc,
+  .cru-courses__title,
+  .crucible-message-card__title
+) {
+  color: var(--crucible-text-strong) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .cru-comp-framework,
+  .cru-course-short,
+  .cru-activities__title,
+  .crucible-message-card__subtitle,
+  .crucible-message-card__copy,
+  .lp-empty,
+  .lp-no-competencies
+) {
+  color: var(--crucible-text-muted) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .cru-course-link,
+  .cru-activity a
+) {
+  color: var(--crucible-link) !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .cru-course-link,
+  .cru-activity a
+):hover {
+  color: var(--crucible-link-hover) !important;
+}
+
+[data-bs-theme="dark"] .cru-course-plan-status {
+  border-color: #20491e !important;
+  background: #0b180a !important;
+  color: #8abf84 !important;
+}
+
+[data-bs-theme="dark"] :is(
+  .lp-template__enrol-button,
+  .crucible-message-card__icon
+) {
+  background: var(--bs-primary, #2f6db2) !important;
+}
+
+/* The learning-plan confirmation is a prominent success notice, not a badge. */
+[data-bs-theme="dark"] .crucible-template-view.crucible-success-notice {
+  border-color: #2f7e42 !important;
+  background: #102b17 !important;
+  color: #d7f9dc !important;
+}
+
+[data-bs-theme="dark"] .crucible-success-notice a {
+  border-color: #23713a !important;
+  background: #1a6f37 !important;
+  color: #fff !important;
+}
+
+[data-bs-theme="dark"] .crucible-success-notice a:hover,
+[data-bs-theme="dark"] .crucible-success-notice a:focus {
+  background: #218948 !important;
+}
