@@ -81,8 +81,8 @@ class block_crucible extends block_base
      * @return bool
      */
     public function hide_header() {
-        if (isset($this->config) && isset($this->config->config_showheader)) {
-            $show = (bool)$this->config->config_showheader;
+        if (isset($this->config) && isset($this->config->showheader)) {
+            $show = (bool)$this->config->showheader;
         } else {
             // Fallback to site default, or show if no setting yet.
             $show = (bool)get_config('block_crucible', 'showheader_default');
