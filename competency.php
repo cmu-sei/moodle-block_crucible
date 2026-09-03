@@ -94,3 +94,5 @@ if ($fwid) {
     echo $OUTPUT->footer();
     exit;
 }
+
+throw new moodle_exception('missingcompetencyparams', 'block_crucible');

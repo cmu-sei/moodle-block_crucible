@@ -260,6 +260,7 @@ $string['enableorgrolesync'] = 'Enable Organization Role Sync';
 $string['configenableorgrolesync'] = 'When enabled, automatically assigns organization-scoped roles to users based on their Keycloak group membership. This runs as a scheduled task hourly and also on user login.';
 $string['learning_plan'] = 'Learning Plan';
 $string['framework'] = 'Framework';
+$string['missingcompetencyparams'] = 'Choose a competency by providing an ID number or framework ID.';
 
 // Reports
 $string['reportnotsetmessage'] = 'No report is available for you right now.';
