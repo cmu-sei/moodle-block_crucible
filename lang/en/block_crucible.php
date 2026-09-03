@@ -190,8 +190,6 @@ $string['learningplantitle'] = 'Learning plan';
 $string['blockheading'] = 'Suggested Learning Plans';
 $string['competencies'] = 'Competencies';
 $string['nocompetenciesintemplate'] = 'This learning plan has no competencies yet.';
-$string['courses'] = 'Courses';
-$string['activities'] = 'activities';
 $string['addtomylearningplans'] = 'Enroll in this learning plan';
 $string['planselfenrolled'] = 'Learning plan added to your plans.';
 $string['plandalreadyexists'] = 'You already have this learning plan.';
@@ -244,6 +242,7 @@ $string['col_activities']        = 'Activities';
 $string['nocompsmapped']         = 'No competencies are currently mapped to courses or activities.';
 $string['activitiesandresources'] = 'Activities and resources';
 $string['activities']             = 'Activities';
+$string['activitiescount']        = 'activities';
 $string['courses']                = 'Courses';
 $string['category']               = 'Category';
 $string['nocoursesmapped']        = 'No courses are mapped to this competency.';
@@ -260,6 +259,8 @@ $string['enableorgrolesync'] = 'Enable Organization Role Sync';
 $string['configenableorgrolesync'] = 'When enabled, automatically assigns organization-scoped roles to users based on their Keycloak group membership. This runs as a scheduled task hourly and also on user login.';
 $string['learning_plan'] = 'Learning Plan';
 $string['framework'] = 'Framework';
+$string['missingcompetencyparams'] = 'Choose a competency by providing an ID number or framework ID.';
+$string['invalidcompetencyframework'] = 'The requested competency framework could not be found.';
 
 // Reports
 $string['reportnotsetmessage'] = 'No report is available for you right now.';

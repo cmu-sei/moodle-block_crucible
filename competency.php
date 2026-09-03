@@ -31,6 +31,7 @@ $framework = optional_param('framework', '', PARAM_RAW_TRIMMED);
 require_login();
 $context = context_system::instance();
 $PAGE->set_context($context);
+$PAGE->set_url(new moodle_url('/blocks/crucible/competency.php'));
 
 $svc = new \block_crucible\competencies();
 
@@ -38,11 +39,16 @@ $svc = new \block_crucible\competencies();
 $frameworkid = null;
 if ($framework !== '') {
     $fw = \core_competency\competency_framework::get_record(['shortname' => $framework]);
-    if ($fw) {
-        $frameworkid = (int)$fw->get('id');
+    if (!$fw) {
+        throw new moodle_exception('invalidcompetencyframework', 'block_crucible');
     }
+    $frameworkid = (int)$fw->get('id');
 } else if ($fwid > 0) {
-    $frameworkid = $fwid;
+    $fw = \core_competency\competency_framework::get_record(['id' => $fwid]);
+    if (!$fw) {
+        throw new moodle_exception('invalidcompetencyframework', 'block_crucible');
+    }
+    $frameworkid = (int)$fw->get('id');
 }
 
 if ($idnumber) {
@@ -74,9 +80,9 @@ if ($idnumber) {
     exit;
 }
 
-if ($fwid) {
-    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['fwid' => $fwid]));
-    $data = $svc->get_unmapped_for_framework($fwid);
+if ($frameworkid !== null) {
+    $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['fwid' => $frameworkid]));
+    $data = $svc->get_unmapped_for_framework($frameworkid);
 
     $PAGE->set_title(get_string('unmapped_for_framework_title', 'block_crucible', $data->framework));
     $PAGE->set_heading(format_string($SITE->fullname));
@@ -94,3 +100,5 @@ if ($fwid) {
     echo $OUTPUT->footer();
     exit;
 }
+
+throw new moodle_exception('missingcompetencyparams', 'block_crucible');

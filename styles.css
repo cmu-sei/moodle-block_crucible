@@ -41,6 +41,96 @@
 
 .crucible-card__body { padding: 12px; background:#f8fafc; }
 
+.crucible-competency-detail__idnumber {
+  margin-left: 8px;
+  color: #64748b;
+}
+
+.crucible-competency-panel {
+  margin-bottom: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.crucible-competency-panel:last-child {
+  margin-bottom: 0;
+}
+
+.crucible-competency-panel__heading {
+  margin: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.crucible-competency-panel__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crucible-competency-panel__item {
+  padding: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.crucible-competency-panel__heading + .crucible-competency-panel__item,
+.crucible-competency-panel__heading + .crucible-competency-panel__list .crucible-competency-panel__item:first-child {
+  border-top: 0;
+}
+
+.crucible-competency-panel__link {
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.crucible-competency-panel__link:hover {
+  text-decoration: underline;
+}
+
+.crucible-competency-panel__meta,
+.crucible-competency-panel__empty {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.crucible-competency-panel__meta--spaced {
+  margin-top: 2px;
+}
+
+.crucible-competency-panel__empty {
+  margin: 0;
+  padding: 12px;
+}
+
+.crucible-competency-panel__course {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.crucible-competency-panel__course a {
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.crucible-competency-panel__activities {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.crucible-competency-panel__activity {
+  margin: 6px 0;
+}
+
+.crucible-competency-panel__activity a {
+  text-decoration: none;
+}
+
 .comp-table {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -357,12 +447,48 @@
 
 [data-bs-theme="dark"] :is(
   .crucible-card__subtitle,
+  .crucible-competency-detail__idnumber,
+  .crucible-competency-panel__meta,
+  .crucible-competency-panel__empty,
   .comp-meta,
   .notice--empty,
   .role-line--ok,
   .app-card__desc
 ) {
   color: var(--crucible-text-muted);
+}
+
+[data-bs-theme="dark"] .crucible-competency-panel {
+  border-color: var(--crucible-border);
+  background: var(--crucible-surface);
+  color: var(--crucible-text);
+}
+
+[data-bs-theme="dark"] .crucible-competency-panel__heading {
+  border-color: var(--crucible-border);
+  color: var(--crucible-text-strong);
+}
+
+[data-bs-theme="dark"] .crucible-competency-panel__item {
+  border-color: var(--crucible-border);
+}
+
+[data-bs-theme="dark"] :is(
+  .crucible-competency-panel__link,
+  .crucible-competency-panel__activity a
+) {
+  color: var(--crucible-link);
+}
+
+[data-bs-theme="dark"] :is(
+  .crucible-competency-panel__link,
+  .crucible-competency-panel__activity a
+):hover {
+  color: var(--crucible-link-hover);
+}
+
+[data-bs-theme="dark"] .crucible-competency-panel__course a {
+  color: var(--crucible-text-strong);
 }
 
 [data-bs-theme="dark"] :is(
