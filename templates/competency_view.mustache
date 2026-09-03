@@ -2,7 +2,7 @@
   <div class="crucible-card__header">
     <div class="crucible-card__icon">🏷️</div>
     <div class="crucible-card__titlewrap">
-      <div class="crucible-card__title">{{cardtitle}}</div>
+      <div class="crucible-card__title">{{{cardtitle}}}</div>
       <div class="crucible-card__subtitle">
         {{#framework}}<strong>{{framework}}</strong>{{/framework}}
         {{#idnumber}}<span class="crucible-competency-detail__idnumber">{{idnumber}}</span>{{/idnumber}}
@@ -17,9 +17,9 @@
         <ul class="crucible-competency-panel__list">
           {{#courses}}
             <li class="crucible-competency-panel__item">
-              <a class="crucible-competency-panel__link" href="{{url}}">{{fullname}}</a>
-              {{#category}}<div class="crucible-competency-panel__meta">{{#str}} category, block_crucible {{/str}}: {{.}}</div>{{/category}}
-              {{#actcount}}<div class="crucible-competency-panel__meta crucible-competency-panel__meta--spaced">{{actcount}} {{#str}} activities, block_crucible {{/str}}</div>{{/actcount}}
+              <a class="crucible-competency-panel__link" href="{{url}}">{{{fullname}}}</a>
+              {{#category}}<div class="crucible-competency-panel__meta">{{#str}} category, block_crucible {{/str}}: {{{.}}}</div>{{/category}}
+              {{#actcount}}<div class="crucible-competency-panel__meta crucible-competency-panel__meta--spaced">{{actcount}} {{#str}} activitiescount, block_crucible {{/str}}</div>{{/actcount}}
             </li>
           {{/courses}}
         </ul>
@@ -32,10 +32,10 @@
       {{#hasactivities}}
         {{#bycourse}}
           <div class="crucible-competency-panel__item">
-            <div class="crucible-competency-panel__course"><a href="{{courseurl}}">{{coursename}}</a></div>
+            <div class="crucible-competency-panel__course"><a href="{{courseurl}}">{{{coursename}}}</a></div>
             <ul class="crucible-competency-panel__activities">
               {{#activities}}
-                <li class="crucible-competency-panel__activity"><a href="{{url}}">{{name}}</a></li>
+                <li class="crucible-competency-panel__activity"><a href="{{url}}">{{{name}}}</a></li>
               {{/activities}}
             </ul>
           </div>
