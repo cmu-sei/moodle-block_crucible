@@ -85,7 +85,16 @@ $data->frameworkshortname = $fwname;
 
 if ($plan = $svc->get_user_plan_from_template($tid, $USER->id)) {
     $data->hasplan = true;
-    $data->planurl = (new moodle_url('/admin/tool/lp/plan.php', ['id' => $plan->id]))->out(false);
+    // When a framework filter is active, keep "Open my plan" inside the block's
+    // framework-scoped view. The core plan page (/admin/tool/lp/plan.php) mirrors
+    // the whole template and shows every framework's competencies, which ignores
+    // the framework chosen in the block settings. Only link to the core plan when
+    // no framework filter is applied.
+    if ($fwid > 0) {
+        $data->planurl = (new moodle_url('/blocks/crucible/template.php', ['id' => $tid, 'fw' => $fwshort]))->out(false);
+    } else {
+        $data->planurl = (new moodle_url('/admin/tool/lp/plan.php', ['id' => $plan->id]))->out(false);
+    }
     $data->canselfenrol = false;
 } else {
     $data->hasplan = false;
