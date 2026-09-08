@@ -63,9 +63,10 @@ if ($idnumber) {
                 $detail = $svc->get_competency_detail_data($idnumber, $m->fwid);
                 $groups[] = (object)[
                     'framework'     => $detail->framework,
-                    'name'          => $detail->name,
+                    // competency_view.mustache is rendered per group, so it needs the
+                    // competency name as its card title.
+                    'cardtitle'     => $detail->name,
                     'idnumber'      => $detail->idnumber,
-                    'url'           => $m->url,
                     'hascourses'    => $detail->hascourses,
                     'courses'       => $detail->courses,
                     'hasactivities' => $detail->hasactivities,

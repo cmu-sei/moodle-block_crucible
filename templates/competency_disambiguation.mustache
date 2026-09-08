@@ -1,20 +1,8 @@
-<div class="crucible-card crucible-competency-detail">
-  <div class="crucible-card__header">
-    <div class="crucible-card__icon">🏷️</div>
-    <div class="crucible-card__titlewrap">
-      <div class="crucible-card__title">{{{cardtitle}}}</div>
+<div class="crucible-competency-disambiguation">
+  {{#groups}}
+    <div class="crucible-competency-framework-group">
+      <h2 class="crucible-competency-framework-group__heading">{{framework}}</h2>
+      {{> block_crucible/competency_view }}
     </div>
-  </div>
-
-  <div class="crucible-card__body">
-    {{#groups}}
-      <div class="crucible-competency-framework-group">
-        <h2 class="crucible-competency-framework-group__heading">
-          <a href="{{url}}">{{framework}}</a>
-        </h2>
-        {{#name}}<div class="crucible-competency-framework-group__meta">{{{name}}}</div>{{/name}}
-        {{> block_crucible/competency_panels }}
-      </div>
-    {{/groups}}
-  </div>
+  {{/groups}}
 </div>
