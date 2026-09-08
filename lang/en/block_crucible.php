@@ -261,6 +261,8 @@ $string['learning_plan'] = 'Learning Plan';
 $string['framework'] = 'Framework';
 $string['missingcompetencyparams'] = 'Choose a competency by providing an ID number or framework ID.';
 $string['invalidcompetencyframework'] = 'The requested competency framework could not be found.';
+$string['competency_ambiguous_title'] = 'Competency "{$a}" exists in more than one framework';
+$string['competency_ambiguous_intro'] = 'Select the framework for the competency you want to view.';
 
 // Reports
 $string['reportnotsetmessage'] = 'No report is available for you right now.';

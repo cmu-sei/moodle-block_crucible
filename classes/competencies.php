@@ -394,4 +394,36 @@ class competencies {
             'items'      => $items,
         ];
     }
+
+    /**
+     * Return every competency that shares the given idnumber, each labelled with its
+     * framework. Used to disambiguate when an idnumber is not unique across frameworks
+     * (e.g. ATT&CK T1005 vs NICE T1005) and no framework was supplied.
+     *
+     * @param string $idnumber Competency ID number
+     * @return array List of matches (id, name, idnumber, framework, fwid, url)
+     */
+    public function get_idnumber_matches(string $idnumber): array {
+        $ctx = \context_system::instance();
+        $comps = \core_competency\competency::get_records(['idnumber' => $idnumber], 'shortname', 'ASC');
+
+        $out = [];
+        foreach ($comps as $cobj) {
+            $fwid = (int)$cobj->get('competencyframeworkid');
+            $fwshort = '';
+            if ($fwid && ($fw = \core_competency\competency_framework::get_record(['id' => $fwid]))) {
+                $fwshort = (string)$fw->get('shortname');
+            }
+            $linkparams = ['idnumber' => $idnumber, 'fwid' => $fwid];
+            $out[] = (object)[
+                'id'        => (int)$cobj->get('id'),
+                'name'      => format_string($cobj->get('shortname'), true, ['context' => $ctx]),
+                'idnumber'  => (string)$cobj->get('idnumber'),
+                'framework' => $fwshort,
+                'fwid'      => $fwid,
+                'url'       => (new \moodle_url('/blocks/crucible/competency.php', $linkparams))->out(false),
+            ];
+        }
+        return $out;
+    }
 }
