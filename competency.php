@@ -61,10 +61,9 @@ if ($idnumber) {
             $groups = [];
             foreach ($matches as $m) {
                 $detail = $svc->get_competency_detail_data($idnumber, $m->fwid);
-                $frameworkurl = (new moodle_url('/blocks/crucible/competency.php', ['fwid' => $m->fwid]))->out(false);
                 $groups[] = (object)[
                     'framework'     => $detail->framework,
-                    'frameworkurl'  => $frameworkurl,
+                    'frameworkurl'  => $m->frameworkurl,
                     // competency_view.mustache is rendered per group, so it needs the
                     // competency name as its card title.
                     'cardtitle'     => $detail->name,

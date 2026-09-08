@@ -411,17 +411,27 @@ class competencies {
         foreach ($comps as $cobj) {
             $fwid = (int)$cobj->get('competencyframeworkid');
             $fwshort = '';
+            $frameworkurl = '';
             if ($fwid && ($fw = \core_competency\competency_framework::get_record(['id' => $fwid]))) {
                 $fwshort = (string)$fw->get('shortname');
+                // Link the framework name to its framework page (the full competency
+                // tree), but only when the user may view it. Same capability check the
+                // core page (/admin/tool/lp/competencies.php) enforces.
+                $fwcontext = $fw->get_context();
+                if (\core_competency\competency_framework::can_read_context($fwcontext)) {
+                    $fwparams = ['competencyframeworkid' => $fwid, 'pagecontextid' => $fwcontext->id];
+                    $frameworkurl = (new \moodle_url('/admin/tool/lp/competencies.php', $fwparams))->out(false);
+                }
             }
             $linkparams = ['idnumber' => $idnumber, 'fwid' => $fwid];
             $out[] = (object)[
-                'id'        => (int)$cobj->get('id'),
-                'name'      => format_string($cobj->get('shortname'), true, ['context' => $ctx]),
-                'idnumber'  => (string)$cobj->get('idnumber'),
-                'framework' => $fwshort,
-                'fwid'      => $fwid,
-                'url'       => (new \moodle_url('/blocks/crucible/competency.php', $linkparams))->out(false),
+                'id'           => (int)$cobj->get('id'),
+                'name'         => format_string($cobj->get('shortname'), true, ['context' => $ctx]),
+                'idnumber'     => (string)$cobj->get('idnumber'),
+                'framework'    => $fwshort,
+                'fwid'         => $fwid,
+                'url'          => (new \moodle_url('/blocks/crucible/competency.php', $linkparams))->out(false),
+                'frameworkurl' => $frameworkurl,
             ];
         }
         return $out;
