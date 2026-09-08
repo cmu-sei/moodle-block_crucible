@@ -141,27 +141,25 @@
 }
 
 .crucible-competency-framework-group__heading {
-  font-size: 18px;
-  font-weight: 800;
-  color: #1e3a8a;
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   padding: 0 0 6px;
   border-bottom: 2px solid #dbeafe;
 }
 
-.crucible-competency-framework-group__heading a {
-  color: inherit;
-  text-decoration: none;
+.crucible-competency-framework-group__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
-.crucible-competency-framework-group__heading a:hover {
-  text-decoration: underline;
-}
-
-.crucible-competency-framework-group__meta {
-  font-size: 13px;
-  color: #475569;
-  margin: 0 0 8px;
+.crucible-competency-framework-group__name {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1e3a8a;
 }
 
 .comp-table {
@@ -525,16 +523,15 @@
 }
 
 [data-bs-theme="dark"] .crucible-competency-framework-group__heading {
-  color: var(--crucible-text-strong);
   border-bottom-color: var(--crucible-border);
 }
 
-[data-bs-theme="dark"] .crucible-competency-framework-group__heading a {
-  color: var(--crucible-text-strong);
+[data-bs-theme="dark"] .crucible-competency-framework-group__label {
+  color: var(--crucible-text-muted);
 }
 
-[data-bs-theme="dark"] .crucible-competency-framework-group__meta {
-  color: var(--crucible-text-muted);
+[data-bs-theme="dark"] .crucible-competency-framework-group__name {
+  color: var(--crucible-text-strong);
 }
 
 [data-bs-theme="dark"] :is(
