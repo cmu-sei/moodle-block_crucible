@@ -1,11 +1,7 @@
 <div class="crucible-competency-disambiguation">
   {{#groups}}
     <div class="crucible-competency-framework-group">
-      <div class="crucible-competency-framework-group__heading">
-        <span class="crucible-competency-framework-group__label">{{#str}} framework, block_crucible {{/str}}:</span>
-        {{#frameworkurl}}<a class="crucible-competency-framework-group__name" href="{{frameworkurl}}">{{framework}}</a>{{/frameworkurl}}
-        {{^frameworkurl}}<span class="crucible-competency-framework-group__name">{{framework}}</span>{{/frameworkurl}}
-      </div>
+      {{> block_crucible/framework_heading }}
       {{> block_crucible/competency_view }}
     </div>
   {{/groups}}

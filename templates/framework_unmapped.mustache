@@ -1,27 +1,31 @@
-<div class="crucible-card crucible-competency-detail">
-  <div class="crucible-card__header">
-    <div class="crucible-card__icon">🧩</div>
-    <div class="crucible-card__titlewrap">
-      <div class="crucible-card__title">{{#str}} unmapped_for_framework_title, block_crucible, {{framework}} {{/str}}</div>
-      <div class="crucible-card__subtitle">{{count}} {{#str}} competencies, block_crucible {{/str}}</div>
-    </div>
-  </div>
+<div class="crucible-competency-framework-group">
+  {{> block_crucible/framework_heading }}
 
-  <div class="crucible-card__body">
-    <section class="crucible-competency-panel">
-      {{#hasitems}}
-        <ul class="crucible-competency-panel__list">
-          {{#items}}
-            <li class="crucible-competency-panel__item">
-              <a class="crucible-competency-panel__link" href="{{url}}">{{{name}}}</a>
-              {{#idnumber}}<div class="crucible-competency-panel__meta">{{idnumber}}</div>{{/idnumber}}
-            </li>
-          {{/items}}
-        </ul>
-      {{/hasitems}}
-      {{^hasitems}}
-        <p class="crucible-competency-panel__empty">{{#str}} unmapped_list_empty, block_crucible {{/str}}</p>
-      {{/hasitems}}
-    </section>
+  <div class="crucible-card crucible-competency-detail">
+    <div class="crucible-card__header">
+      <div class="crucible-card__icon">🧩</div>
+      <div class="crucible-card__titlewrap">
+        <div class="crucible-card__title">{{#str}} unmapped_competencies, block_crucible {{/str}}</div>
+        <div class="crucible-card__subtitle">{{count}} {{#str}} competencies, block_crucible {{/str}}</div>
+      </div>
+    </div>
+
+    <div class="crucible-card__body">
+      <section class="crucible-competency-panel">
+        {{#hasitems}}
+          <ul class="crucible-competency-panel__list">
+            {{#items}}
+              <li class="crucible-competency-panel__item">
+                <a class="crucible-competency-panel__link" href="{{url}}">{{{name}}}</a>
+                {{#idnumber}}<div class="crucible-competency-panel__meta">{{idnumber}}</div>{{/idnumber}}
+              </li>
+            {{/items}}
+          </ul>
+        {{/hasitems}}
+        {{^hasitems}}
+          <p class="crucible-competency-panel__empty">{{#str}} unmapped_list_empty, block_crucible {{/str}}</p>
+        {{/hasitems}}
+      </section>
+    </div>
   </div>
 </div>

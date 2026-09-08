@@ -75,9 +75,10 @@ if ($idnumber) {
                 ];
             }
 
+            $mappingtitle = get_string('competency_mapping_title', 'block_crucible', $idnumber);
             $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]));
-            $PAGE->set_title($idnumber);
-            $PAGE->set_heading(format_string($idnumber));
+            $PAGE->set_title($mappingtitle);
+            $PAGE->set_heading($mappingtitle);
             $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
             $PAGE->navbar->add(get_string('col_competency', 'block_crucible'), $PAGE->url);
 
@@ -125,17 +126,18 @@ if ($frameworkid !== null) {
     $data = $svc->get_unmapped_for_framework($frameworkid);
 
     $PAGE->set_title(get_string('unmapped_for_framework_title', 'block_crucible', $data->framework));
-    $PAGE->set_heading(get_string('unmapped_for_framework_title', 'block_crucible', $data->framework));
+    $PAGE->set_heading(get_string('unmapped_competencies', 'block_crucible'));
     // Breadcrumbs
     $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
     $PAGE->navbar->add(get_string('framework', 'block_crucible'), $PAGE->url);
 
     echo $OUTPUT->header();
     echo $OUTPUT->render_from_template('block_crucible/framework_unmapped', (object)[
-        'framework' => $data->framework,
-        'count'     => $data->count,
-        'hasitems'  => $data->hasitems,
-        'items'     => $data->items,
+        'framework'    => $data->framework,
+        'frameworkurl' => $data->frameworkurl,
+        'count'        => $data->count,
+        'hasitems'     => $data->hasitems,
+        'items'        => $data->items,
     ]);
     echo $OUTPUT->footer();
     exit;

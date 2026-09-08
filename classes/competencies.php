@@ -350,6 +350,17 @@ class competencies {
         $fwrec = \core_competency\competency_framework::get_record(['id' => $fwid]);
         $fwname = $fwrec ? (string)$fwrec->get('shortname') : $unknown;
 
+        // Link the framework name to its framework page, gated on the same capability
+        // the core page enforces (matches the multi-framework disambiguation view).
+        $frameworkurl = '';
+        if ($fwrec) {
+            $fwcontext = $fwrec->get_context();
+            if (\core_competency\competency_framework::can_read_context($fwcontext)) {
+                $fwparams = ['competencyframeworkid' => $fwid, 'pagecontextid' => $fwcontext->id];
+                $frameworkurl = (new \moodle_url('/admin/tool/lp/competencies.php', $fwparams))->out(false);
+            }
+        }
+
         // All comps in this framework
         $comps = \core_competency\competency::get_records(['competencyframeworkid' => $fwid], 'shortname', 'ASC');
 
@@ -388,10 +399,11 @@ class competencies {
         }
 
         return (object)[
-            'framework'  => $fwname,
-            'count'      => count($items),
-            'hasitems'   => !empty($items),
-            'items'      => $items,
+            'framework'    => $fwname,
+            'frameworkurl' => $frameworkurl,
+            'count'        => count($items),
+            'hasitems'     => !empty($items),
+            'items'        => $items,
         ];
     }
 
