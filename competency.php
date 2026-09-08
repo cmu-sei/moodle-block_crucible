@@ -53,23 +53,37 @@ if ($framework !== '') {
 
 if ($idnumber) {
     // When no framework was supplied and the idnumber is shared across frameworks
-    // (e.g. ATT&CK T1005 vs NICE T1005), offer a picker instead of silently
-    // resolving to an arbitrary one.
+    // (e.g. ATT&CK T1005 vs NICE T1005), show each framework's competency in full
+    // under its own header instead of silently resolving to an arbitrary one.
     if ($frameworkid === null) {
         $matches = $svc->get_idnumber_matches($idnumber);
         if (count($matches) > 1) {
-            $title = get_string('competency_ambiguous_title', 'block_crucible', $idnumber);
+            $groups = [];
+            foreach ($matches as $m) {
+                $detail = $svc->get_competency_detail_data($idnumber, $m->fwid);
+                $groups[] = (object)[
+                    'framework'     => $detail->framework,
+                    'name'          => $detail->name,
+                    'idnumber'      => $detail->idnumber,
+                    'url'           => $m->url,
+                    'hascourses'    => $detail->hascourses,
+                    'courses'       => $detail->courses,
+                    'hasactivities' => $detail->hasactivities,
+                    'bycourse'      => $detail->bycourse,
+                ];
+            }
+
             $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]));
-            $PAGE->set_title($title);
+            $PAGE->set_title($idnumber);
             $PAGE->set_heading(format_string($SITE->fullname));
             $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
             $PAGE->navbar->add(get_string('col_competency', 'block_crucible'), $PAGE->url);
 
             echo $OUTPUT->header();
             echo $OUTPUT->render_from_template('block_crucible/competency_disambiguation', (object)[
-                'cardtitle' => $title,
+                'cardtitle' => $idnumber,
                 'idnumber'  => $idnumber,
-                'matches'   => $matches,
+                'groups'    => $groups,
             ]);
             echo $OUTPUT->footer();
             exit;

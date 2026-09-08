@@ -11,37 +11,6 @@
   </div>
 
   <div class="crucible-card__body">
-    <section class="crucible-competency-panel">
-      <h2 class="crucible-competency-panel__heading">{{#str}} courses, block_crucible {{/str}}</h2>
-      {{#hascourses}}
-        <ul class="crucible-competency-panel__list">
-          {{#courses}}
-            <li class="crucible-competency-panel__item">
-              <a class="crucible-competency-panel__link" href="{{url}}">{{{fullname}}}</a>
-              {{#category}}<div class="crucible-competency-panel__meta">{{#str}} category, block_crucible {{/str}}: {{{.}}}</div>{{/category}}
-              {{#actcount}}<div class="crucible-competency-panel__meta crucible-competency-panel__meta--spaced">{{actcount}} {{#str}} activitiescount, block_crucible {{/str}}</div>{{/actcount}}
-            </li>
-          {{/courses}}
-        </ul>
-      {{/hascourses}}
-      {{^hascourses}}<p class="crucible-competency-panel__empty">{{#str}} nocoursesmapped, block_crucible {{/str}}</p>{{/hascourses}}
-    </section>
-
-    <section class="crucible-competency-panel">
-      <h2 class="crucible-competency-panel__heading">{{#str}} activitiesandresources, block_crucible {{/str}}</h2>
-      {{#hasactivities}}
-        {{#bycourse}}
-          <div class="crucible-competency-panel__item">
-            <div class="crucible-competency-panel__course"><a href="{{courseurl}}">{{{coursename}}}</a></div>
-            <ul class="crucible-competency-panel__activities">
-              {{#activities}}
-                <li class="crucible-competency-panel__activity"><a href="{{url}}">{{{name}}}</a></li>
-              {{/activities}}
-            </ul>
-          </div>
-        {{/bycourse}}
-      {{/hasactivities}}
-      {{^hasactivities}}<p class="crucible-competency-panel__empty">{{#str}} noactivitiesmapped, block_crucible {{/str}}</p>{{/hasactivities}}
-    </section>
+    {{> block_crucible/competency_panels }}
   </div>
 </div>

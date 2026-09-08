@@ -3,22 +3,18 @@
     <div class="crucible-card__icon">🏷️</div>
     <div class="crucible-card__titlewrap">
       <div class="crucible-card__title">{{{cardtitle}}}</div>
-      <div class="crucible-card__subtitle">{{#str}} competency_ambiguous_intro, block_crucible {{/str}}</div>
     </div>
   </div>
 
   <div class="crucible-card__body">
-    <section class="crucible-competency-panel">
-      <ul class="crucible-competency-panel__list">
-        {{#matches}}
-          <li class="crucible-competency-panel__item">
-            <a class="crucible-competency-panel__link" href="{{url}}">{{{name}}}</a>
-            <div class="crucible-competency-panel__meta">
-              <strong>{{framework}}</strong>{{#idnumber}} &middot; {{idnumber}}{{/idnumber}}
-            </div>
-          </li>
-        {{/matches}}
-      </ul>
-    </section>
+    {{#groups}}
+      <div class="crucible-competency-framework-group">
+        <h2 class="crucible-competency-framework-group__heading">
+          <a href="{{url}}">{{framework}}</a>
+        </h2>
+        {{#name}}<div class="crucible-competency-framework-group__meta">{{{name}}}</div>{{/name}}
+        {{> block_crucible/competency_panels }}
+      </div>
+    {{/groups}}
   </div>
 </div>
