@@ -61,8 +61,10 @@ if ($idnumber) {
             $groups = [];
             foreach ($matches as $m) {
                 $detail = $svc->get_competency_detail_data($idnumber, $m->fwid);
+                $frameworkurl = (new moodle_url('/blocks/crucible/competency.php', ['fwid' => $m->fwid]))->out(false);
                 $groups[] = (object)[
                     'framework'     => $detail->framework,
+                    'frameworkurl'  => $frameworkurl,
                     // competency_view.mustache is rendered per group, so it needs the
                     // competency name as its card title.
                     'cardtitle'     => $detail->name,
@@ -76,7 +78,7 @@ if ($idnumber) {
 
             $PAGE->set_url(new moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]));
             $PAGE->set_title($idnumber);
-            $PAGE->set_heading(format_string($SITE->fullname));
+            $PAGE->set_heading(format_string($idnumber));
             $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
             $PAGE->navbar->add(get_string('col_competency', 'block_crucible'), $PAGE->url);
 
@@ -99,7 +101,7 @@ if ($idnumber) {
     $data = $svc->get_competency_detail_data($idnumber, $frameworkid);
 
     $PAGE->set_title($data->name);
-    $PAGE->set_heading(format_string($SITE->fullname));
+    $PAGE->set_heading($data->name);
 
     // Breadcrumbs
     $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
@@ -124,7 +126,7 @@ if ($frameworkid !== null) {
     $data = $svc->get_unmapped_for_framework($frameworkid);
 
     $PAGE->set_title(get_string('unmapped_for_framework_title', 'block_crucible', $data->framework));
-    $PAGE->set_heading(format_string($SITE->fullname));
+    $PAGE->set_heading(get_string('unmapped_for_framework_title', 'block_crucible', $data->framework));
     // Breadcrumbs
     $PAGE->navbar->add(get_string('home'), new moodle_url('/'));
     $PAGE->navbar->add(get_string('framework', 'block_crucible'), $PAGE->url);

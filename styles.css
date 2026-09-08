@@ -144,22 +144,23 @@
   margin: 0 0 8px;
   padding: 0 0 6px;
   border-bottom: 2px solid #dbeafe;
+  font-size: 22px;
+  line-height: 1.2;
 }
 
 .crucible-competency-framework-group__label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
   color: #64748b;
 }
 
 .crucible-competency-framework-group__name {
-  display: block;
-  font-size: 22px;
   font-weight: 800;
   color: #1e3a8a;
+  text-decoration: none;
+}
+
+.crucible-competency-framework-group__name:hover {
+  text-decoration: underline;
 }
 
 .comp-table {
