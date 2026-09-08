@@ -1,0 +1,12 @@
+{{!
+    Shared framework heading: "Framework: <name>", where the name links to the
+    framework page when the viewer may see it (frameworkurl set), else plain text.
+    Rendered with a context providing: framework, frameworkurl.
+    Used by competency_disambiguation.mustache and framework_unmapped.mustache so
+    the framework name is presented identically on both pages.
+}}
+<div class="crucible-competency-framework-group__heading">
+  <span class="crucible-competency-framework-group__label">{{#str}} framework, block_crucible {{/str}}:</span>
+  {{#frameworkurl}}<a class="crucible-competency-framework-group__name" href="{{frameworkurl}}">{{framework}}</a>{{/frameworkurl}}
+  {{^frameworkurl}}<span class="crucible-competency-framework-group__name">{{framework}}</span>{{/frameworkurl}}
+</div>

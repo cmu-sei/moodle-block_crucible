@@ -131,6 +131,38 @@
   text-decoration: none;
 }
 
+/* Framework grouping used when an idnumber spans multiple frameworks. */
+.crucible-competency-framework-group {
+  margin-bottom: 18px;
+}
+
+.crucible-competency-framework-group:last-child {
+  margin-bottom: 0;
+}
+
+.crucible-competency-framework-group__heading {
+  margin: 0 0 8px;
+  padding: 0 0 6px;
+  border-bottom: 2px solid #dbeafe;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.crucible-competency-framework-group__label {
+  font-weight: 600;
+  color: #64748b;
+}
+
+.crucible-competency-framework-group__name {
+  font-weight: 800;
+  color: #1e3a8a;
+  text-decoration: none;
+}
+
+.crucible-competency-framework-group__name:hover {
+  text-decoration: underline;
+}
+
 .comp-table {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -488,6 +520,18 @@
 }
 
 [data-bs-theme="dark"] .crucible-competency-panel__course a {
+  color: var(--crucible-text-strong);
+}
+
+[data-bs-theme="dark"] .crucible-competency-framework-group__heading {
+  border-bottom-color: var(--crucible-border);
+}
+
+[data-bs-theme="dark"] .crucible-competency-framework-group__label {
+  color: var(--crucible-text-muted);
+}
+
+[data-bs-theme="dark"] .crucible-competency-framework-group__name {
   color: var(--crucible-text-strong);
 }
 

@@ -110,6 +110,13 @@ class competencies {
                 }
             }
 
+            // Scope the detail link to this competency's framework so a shared
+            // idnumber (e.g. ATT&CK T1005 vs NICE T1005) resolves to the correct one.
+            $detailparams = ['idnumber' => $idnumber];
+            if ($fwid) {
+                $detailparams['fwid'] = (int)$fwid;
+            }
+
             $out[] = (object)[
                 'id'            => $cid,
                 'name'          => format_string($shortname, true, ['context' => $ctx]),
@@ -117,7 +124,7 @@ class competencies {
                 'idnumber'      => $idnumber,
                 'coursecount'   => $coursecount,
                 'activitycount' => $activitycount,
-                'url'           => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
+                'url'           => (new \moodle_url('/blocks/crucible/competency.php', $detailparams))->out(false),
             ];
         }
 
@@ -343,6 +350,17 @@ class competencies {
         $fwrec = \core_competency\competency_framework::get_record(['id' => $fwid]);
         $fwname = $fwrec ? (string)$fwrec->get('shortname') : $unknown;
 
+        // Link the framework name to its framework page, gated on the same capability
+        // the core page enforces (matches the multi-framework disambiguation view).
+        $frameworkurl = '';
+        if ($fwrec) {
+            $fwcontext = $fwrec->get_context();
+            if (\core_competency\competency_framework::can_read_context($fwcontext)) {
+                $fwparams = ['competencyframeworkid' => $fwid, 'pagecontextid' => $fwcontext->id];
+                $frameworkurl = (new \moodle_url('/admin/tool/lp/competencies.php', $fwparams))->out(false);
+            }
+        }
+
         // All comps in this framework
         $comps = \core_competency\competency::get_records(['competencyframeworkid' => $fwid], 'shortname', 'ASC');
 
@@ -368,20 +386,66 @@ class competencies {
 
             // unmapped = zero courses OR zero activities
             if ($coursecount === 0 || $activitycount === 0) {
+                // Scope the detail link to this framework so a shared idnumber
+                // (e.g. ATT&CK T1005 vs NICE T1005) resolves to the correct competency.
+                $detailparams = ['idnumber' => $idnumber, 'fwid' => $fwid];
                 $items[] = (object)[
                     'id'       => $cid,
                     'name'     => format_string($shortname, true, ['context' => $ctx]),
                     'idnumber' => $idnumber,
-                    'url'      => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
+                    'url'      => (new \moodle_url('/blocks/crucible/competency.php', $detailparams))->out(false),
                 ];
             }
         }
 
         return (object)[
-            'framework'  => $fwname,
-            'count'      => count($items),
-            'hasitems'   => !empty($items),
-            'items'      => $items,
+            'framework'    => $fwname,
+            'frameworkurl' => $frameworkurl,
+            'count'        => count($items),
+            'hasitems'     => !empty($items),
+            'items'        => $items,
         ];
+    }
+
+    /**
+     * Return every competency that shares the given idnumber, each labelled with its
+     * framework. Used to disambiguate when an idnumber is not unique across frameworks
+     * (e.g. ATT&CK T1005 vs NICE T1005) and no framework was supplied.
+     *
+     * @param string $idnumber Competency ID number
+     * @return array List of matches (id, name, idnumber, framework, fwid, url)
+     */
+    public function get_idnumber_matches(string $idnumber): array {
+        $ctx = \context_system::instance();
+        $comps = \core_competency\competency::get_records(['idnumber' => $idnumber], 'shortname', 'ASC');
+
+        $out = [];
+        foreach ($comps as $cobj) {
+            $fwid = (int)$cobj->get('competencyframeworkid');
+            $fwshort = '';
+            $frameworkurl = '';
+            if ($fwid && ($fw = \core_competency\competency_framework::get_record(['id' => $fwid]))) {
+                $fwshort = (string)$fw->get('shortname');
+                // Link the framework name to its framework page (the full competency
+                // tree), but only when the user may view it. Same capability check the
+                // core page (/admin/tool/lp/competencies.php) enforces.
+                $fwcontext = $fw->get_context();
+                if (\core_competency\competency_framework::can_read_context($fwcontext)) {
+                    $fwparams = ['competencyframeworkid' => $fwid, 'pagecontextid' => $fwcontext->id];
+                    $frameworkurl = (new \moodle_url('/admin/tool/lp/competencies.php', $fwparams))->out(false);
+                }
+            }
+            $linkparams = ['idnumber' => $idnumber, 'fwid' => $fwid];
+            $out[] = (object)[
+                'id'           => (int)$cobj->get('id'),
+                'name'         => format_string($cobj->get('shortname'), true, ['context' => $ctx]),
+                'idnumber'     => (string)$cobj->get('idnumber'),
+                'framework'    => $fwshort,
+                'fwid'         => $fwid,
+                'url'          => (new \moodle_url('/blocks/crucible/competency.php', $linkparams))->out(false),
+                'frameworkurl' => $frameworkurl,
+            ];
+        }
+        return $out;
     }
 }
