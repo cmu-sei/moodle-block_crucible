@@ -110,6 +110,13 @@ class competencies {
                 }
             }
 
+            // Scope the detail link to this competency's framework so a shared
+            // idnumber (e.g. ATT&CK T1005 vs NICE T1005) resolves to the correct one.
+            $detailparams = ['idnumber' => $idnumber];
+            if ($fwid) {
+                $detailparams['fwid'] = (int)$fwid;
+            }
+
             $out[] = (object)[
                 'id'            => $cid,
                 'name'          => format_string($shortname, true, ['context' => $ctx]),
@@ -117,7 +124,7 @@ class competencies {
                 'idnumber'      => $idnumber,
                 'coursecount'   => $coursecount,
                 'activitycount' => $activitycount,
-                'url'           => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
+                'url'           => (new \moodle_url('/blocks/crucible/competency.php', $detailparams))->out(false),
             ];
         }
 
@@ -368,11 +375,14 @@ class competencies {
 
             // unmapped = zero courses OR zero activities
             if ($coursecount === 0 || $activitycount === 0) {
+                // Scope the detail link to this framework so a shared idnumber
+                // (e.g. ATT&CK T1005 vs NICE T1005) resolves to the correct competency.
+                $detailparams = ['idnumber' => $idnumber, 'fwid' => $fwid];
                 $items[] = (object)[
                     'id'       => $cid,
                     'name'     => format_string($shortname, true, ['context' => $ctx]),
                     'idnumber' => $idnumber,
-                    'url'      => (new \moodle_url('/blocks/crucible/competency.php', ['idnumber' => $idnumber]))->out(false),
+                    'url'      => (new \moodle_url('/blocks/crucible/competency.php', $detailparams))->out(false),
                 ];
             }
         }
