@@ -59,6 +59,12 @@ class crucible
     /** @var int Maximum total duration of a Keycloak request. */
     const KEYCLOAK_TIMEOUT_SECONDS = 10;
 
+    /** @var int Maximum time to establish a connection to a Crucible API. */
+    const API_CONNECT_TIMEOUT_SECONDS = 5;
+
+    /** @var int Maximum total duration of a Crucible API request. */
+    const API_TIMEOUT_SECONDS = 15;
+
     /**
      * The client used for interacting with external services or APIs.
      *
@@ -120,6 +126,8 @@ class crucible
             debugging('Cannot connect as system account', DEBUG_NORMAL);
             return false; // Exit if the client is not valid
         }
+
+        $this->configure_api_client($client);
 
         $url = $client->get_issuer()->get_endpoint_url('userinfo');
         $response = $client->get($url);
@@ -903,5 +911,26 @@ class crucible
             // Report an error status through the same path as every other failure here.
             RequestOptions::HTTP_ERRORS => false,
         ]);
+    }
+
+    /**
+     * Apply certificate verification and bounded request times to a Crucible API client.
+     *
+     * \core\oauth2\client inherits from \curl, which sets CURLOPT_SSL_VERIFYPEER to 0 and follows
+     * up to ten redirects with the request headers intact. The system account's bearer token would
+     * otherwise go out over a connection nobody had authenticated, and a redirect could carry it to
+     * a host the response chose. The calls also run while a block renders, so they are bounded.
+     *
+     * @param \core\oauth2\client $client Client to configure.
+     * @return \core\oauth2\client The same client.
+     */
+    protected function configure_api_client($client) {
+        $client->setopt([
+            'CURLOPT_SSL_VERIFYPEER' => 1,
+            'CURLOPT_SSL_VERIFYHOST' => 2,
+            'CURLOPT_CONNECTTIMEOUT' => self::API_CONNECT_TIMEOUT_SECONDS,
+            'CURLOPT_TIMEOUT' => self::API_TIMEOUT_SECONDS,
+        ]);
+        return $client;
     }
 }
