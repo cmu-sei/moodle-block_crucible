@@ -42,6 +42,10 @@ DM24-1176
 
 namespace block_crucible;
 
+use core\http_client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\RequestOptions;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -49,6 +53,12 @@ defined('MOODLE_INTERNAL') || die();
  */
 class crucible
 {
+    /** @var int Maximum time to establish a connection to Keycloak. */
+    const KEYCLOAK_CONNECT_TIMEOUT_SECONDS = 5;
+
+    /** @var int Maximum total duration of a Keycloak request. */
+    const KEYCLOAK_TIMEOUT_SECONDS = 10;
+
     /**
      * The client used for interacting with external services or APIs.
      *
@@ -716,142 +726,15 @@ class crucible
      * @return array|null Group names or null on error
      */
     public function get_keycloak_groups() {
-        global $USER;
-
-        if ($this->client == null) {
-            debugging("Session not set up", DEBUG_DEVELOPER);
-            return null;
+        $names = $this->get_keycloak_user_collection('groups');
+        if (!is_array($names)) {
+            return $names;
         }
-
-        // Web request
-        $url = get_config('block_crucible', 'keycloakadminurl');
-        if (empty($url)) {
-            return null;
-        }
-
-        // Convert /admin/{realm}/console → /admin/realms/{realm}
-        $url = preg_replace('#/admin/([^/]+)/console$#', '/realms/$1', rtrim($url, '/'));
-
-        $url .= "/protocol/openid-connect/token";
-
-        $issuerid = get_config('block_crucible', 'issuerid');
-        if (!$issuerid) {
-            debugging("Crucible does not have issuerid set", DEBUG_DEVELOPER);
-            return false; // Exit if issuer ID is not set
-        }
-
-        $issuer = \core\oauth2\api::get_issuer($issuerid);
-        $clientid = $issuer->get('clientid');
-        $clientsecret = $issuer->get('clientsecret');
-
-        // Prepare the POST data as a URL-encoded string.
-        $data = "client_id=" . urlencode($clientid) . "&client_secret=" . urlencode($clientsecret) . "&grant_type=client_credentials";
-        // Set headers.
-        $headers = ['Content-Type: application/x-www-form-urlencoded'];
-
-        // Initialize cURL.
-        $ch = curl_init();
-
-        // Set cURL options to replicate the exact `curl` command structure.
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        $response = curl_exec($ch);
-
-        // Close the cURL session.
-        curl_close($ch);
-
-        $tokenData = json_decode($response, true);
-
-        if (isset($tokenData['access_token'])) {
-            $accessToken = $tokenData['access_token'];
-        } else {
-            debugging("Failed to obtain access token from Keycloak. Check Keycloak configuration.", DEBUG_DEVELOPER);
-            return false; // Exit early if token not set
-        }
-
-        // Initialize cURL.
-        $ch = curl_init();
-
-        // Set the headers with the Authorization token.
-        $headers = [
-            "Authorization: Bearer $accessToken",
-        ];
-
-        $realmUrl = get_config('block_crucible', 'keycloakadminurl');
-        if (empty($realmUrl)) {
+        if (empty($names)) {
+            debugging("No groups found or invalid response format.", DEBUG_DEVELOPER);
             return 0;
         }
-
-        $realmUrl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', rtrim($realmUrl, '/'));
-
-        $email = $USER->email;
-
-        // Build user search URL
-        $userSearchUrl = $realmUrl . '/users?email=' . urlencode($email);
-
-        // Prepare request
-        curl_setopt($ch, CURLOPT_URL, $userSearchUrl);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-        $userlist = json_decode($response, true);
-
-        // Defensive check
-        if (!is_array($userlist) || empty($userlist)) {
-            debugging("No users found in Keycloak matching email: $email", DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        // Get the Keycloak UUID
-        $keycloakUserid = $userlist[0]['id'];
-
-        $groupUrl = $realmUrl . '/users/' . urlencode($keycloakUserid) . '/groups';
-
-        // Set cURL options for a GET request.
-        curl_setopt($ch, CURLOPT_URL, $groupUrl);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-
-        // Execute the request and capture the response.
-        $response = curl_exec($ch);
-
-        curl_close($ch);
-
-        // Check for errors and close the session.
-        if (curl_errno($ch)) {
-            echo 'cURL error: ' . curl_error($ch);
-        } else {
-            // Decode the JSON response to an associative array.
-            $groups = json_decode($response, true);
-
-            // Check if decoding was successful and if there are groups in the response.
-            if (is_array($groups) && !empty($groups)) {
-                // Initialize an array to store group names.
-                $groupNames = [];
-
-                // Loop through each group and collect the 'name' value.
-                foreach ($groups as $group) {
-                    if (isset($group['name'])) {
-                        $groupNames[] = $group['name'];
-                    }
-                }
-
-                // Output or return the array of group names.
-                return $groupNames;
-            } else {
-                debugging("No groups found or invalid response format.", DEBUG_DEVELOPER);
-            }
-        }
-
-        return 0;
+        return $names;
     }
 
     /**
@@ -860,6 +743,25 @@ class crucible
      * @return array|null Role names or null on error
      */
     public function get_keycloak_roles() {
+        $names = $this->get_keycloak_user_collection('role-mappings/realm');
+        if (!is_array($names)) {
+            return $names;
+        }
+        if (empty($names)) {
+            debugging("No roles found or invalid response format.", DEBUG_DEVELOPER);
+            return 0;
+        }
+        return $names;
+    }
+
+    /**
+     * Get the 'name' of every record under a Keycloak user sub-resource.
+     *
+     * @param string $subresource Path below the user, such as 'groups' or 'role-mappings/realm'.
+     * @return array|int|bool|null Names found, 0 when none resolved, false on misconfiguration,
+     *                             null when the session or admin URL is unavailable.
+     */
+    private function get_keycloak_user_collection(string $subresource) {
         global $USER;
 
         if ($this->client == null) {
@@ -867,15 +769,11 @@ class crucible
             return null;
         }
 
-        // Web request
-        $url = get_config('block_crucible', 'keycloakadminurl');
-        if (empty($url)) {
+        $adminurl = get_config('block_crucible', 'keycloakadminurl');
+        if (empty($adminurl)) {
             return null;
         }
-
-        $url = preg_replace('#/admin/([^/]+)/console$#', '/realms/$1', rtrim($url, '/'));
-
-        $url .= "/protocol/openid-connect/token";
+        $adminurl = rtrim($adminurl, '/');
 
         $issuerid = get_config('block_crucible', 'issuerid');
         if (!$issuerid) {
@@ -883,116 +781,127 @@ class crucible
             return false; // Exit if issuer ID is not set
         }
 
-        $issuer = \core\oauth2\api::get_issuer($issuerid);
-        $clientid = $issuer->get('clientid');
-        $clientsecret = $issuer->get('clientsecret');
+        // Convert /admin/{realm}/console to the realm and admin-realm bases.
+        $realmurl = preg_replace('#/admin/([^/]+)/console$#', '/realms/$1', $adminurl);
+        $adminrealmurl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', $adminurl);
 
-        // Prepare the POST data as a URL-encoded string.
-        $data = "client_id=" . urlencode($clientid) . "&client_secret=" . urlencode($clientsecret) . "&grant_type=client_credentials";
-
-        // Set headers.
-        $headers = ['Content-Type: application/x-www-form-urlencoded'];
-
-        // Initialize cURL.
-        $ch = curl_init();
-
-        // Set cURL options to replicate the exact `curl` command structure.
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        // Execute the request and capture the response.
-        $response = curl_exec($ch);
-
-        // Close the cURL session.
-        curl_close($ch);
-
-        $tokenData = json_decode($response, true);
-
-        if (isset($tokenData['access_token'])) {
-            $accessToken = $tokenData['access_token'];
+        $token = $this->get_keycloak_token($realmurl . '/protocol/openid-connect/token', $issuerid);
+        if ($token === null) {
+            return false;
         }
 
-        // Initialize cURL.
-        $ch = curl_init();
-
-        $realmUrl = get_config('block_crucible', 'keycloakadminurl');
-        if (empty($realmUrl)) {
+        // A single Keycloak account, so the email has to match exactly rather than be contained in
+        // the account's address: Keycloak searches by substring unless told otherwise, and the
+        // first of several matches decides which groups and roles this block reports.
+        $userlist = $this->get_keycloak_json(
+            $adminrealmurl . '/users?exact=true&email=' . urlencode($USER->email),
+            $token
+        );
+        if (!is_array($userlist) || empty($userlist) || empty($userlist[0]['id'])) {
+            debugging("No users found in Keycloak matching email: {$USER->email}", DEBUG_DEVELOPER);
             return 0;
         }
 
-        $realmUrl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', rtrim($realmUrl, '/'));
-
-        // Set the headers with the Authorization token.
-        $headers = [
-            "Authorization: Bearer $accessToken",
-        ];
-
-        $email = $USER->email;
-
-        // Build user search URL
-        $userSearchUrl = $realmUrl . '/users?email=' . urlencode($email);
-
-        // Prepare request
-        curl_setopt($ch, CURLOPT_URL, $userSearchUrl);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        $userlist = json_decode($response, true);
-
-        // Defensive check
-        if (!is_array($userlist) || empty($userlist)) {
-            debugging("No users found in Keycloak matching email: $email", DEBUG_DEVELOPER);
+        $records = $this->get_keycloak_json(
+            $adminrealmurl . '/users/' . urlencode($userlist[0]['id']) . '/' . $subresource,
+            $token
+        );
+        if (!is_array($records)) {
             return 0;
         }
 
-        // Get the Keycloak UUID
-        $keycloakUserid = $userlist[0]['id'];
-
-        $roleUrl = $realmUrl . '/users/' . urlencode($keycloakUserid) . '/role-mappings/realm';
-
-        // Set cURL options for a GET request.
-        curl_setopt($ch, CURLOPT_URL, $roleUrl);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-
-        // Execute the request and capture the response.
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        // Check for errors and close the session.
-        if (curl_errno($ch)) {
-            echo 'cURL error: ' . curl_error($ch);
-        } else {
-            // Decode the JSON response to an associative array.
-            $roles = json_decode($response, true);
-
-            // Check if decoding was successful and if there are roles in the response.
-            if (is_array($roles) && !empty($roles)) {
-                // Initialize an array to store role names.
-                $roleNames = [];
-
-                // Loop through each role and collect the 'name' value.
-                foreach ($roles as $role) {
-                    if (isset($role['name'])) {
-                        $roleNames[] = $role['name'];
-                    }
-                }
-
-                // Output or return the array of role names.
-                return $roleNames;
-            } else {
-                debugging("No roles found or invalid response format.", DEBUG_DEVELOPER);
+        $names = [];
+        foreach ($records as $record) {
+            if (isset($record['name'])) {
+                $names[] = $record['name'];
             }
         }
+        return $names;
+    }
 
-        return 0;
+    /**
+     * Get a client credentials access token from Keycloak.
+     *
+     * @param string $tokenurl Token endpoint.
+     * @param string $issuerid OAuth 2 issuer holding the client credentials.
+     * @return string|null Access token, or null when one could not be obtained.
+     */
+    private function get_keycloak_token(string $tokenurl, string $issuerid): ?string {
+        $issuer = \core\oauth2\api::get_issuer($issuerid);
+
+        try {
+            $response = $this->create_http_client()->post($tokenurl, [
+                RequestOptions::FORM_PARAMS => [
+                    'client_id' => $issuer->get('clientid'),
+                    'client_secret' => $issuer->get('clientsecret'),
+                    'grant_type' => 'client_credentials',
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            debugging("Keycloak token request failed: " . $e->getMessage(), DEBUG_DEVELOPER);
+            return null;
+        }
+
+        if ($response->getStatusCode() !== 200) {
+            debugging("Keycloak token request returned HTTP " . $response->getStatusCode(), DEBUG_DEVELOPER);
+            return null;
+        }
+
+        $tokendata = json_decode((string) $response->getBody(), true);
+        if (!isset($tokendata['access_token']) || !is_string($tokendata['access_token'])) {
+            debugging("Failed to obtain access token from Keycloak. Check Keycloak configuration.", DEBUG_DEVELOPER);
+            return null;
+        }
+        return $tokendata['access_token'];
+    }
+
+    /**
+     * Get and decode JSON from the Keycloak admin API.
+     *
+     * @param string $url Admin API URL.
+     * @param string $token Bearer token.
+     * @return array|null Decoded array, or null on any failure.
+     */
+    private function get_keycloak_json(string $url, string $token): ?array {
+        try {
+            $response = $this->create_http_client()->get($url, [
+                RequestOptions::HEADERS => [
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            debugging("Keycloak request failed: " . $e->getMessage(), DEBUG_DEVELOPER);
+            return null;
+        }
+
+        if ($response->getStatusCode() !== 200) {
+            debugging("Keycloak request to {$url} returned HTTP " . $response->getStatusCode(), DEBUG_DEVELOPER);
+            return null;
+        }
+
+        $decoded = json_decode((string) $response->getBody(), true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * Create the HTTP client used for Keycloak requests.
+     *
+     * Core's Guzzle client rather than raw PHP cURL or the older \curl wrapper: these requests
+     * carry a realm admin bearer token, and this client verifies the peer certificate by default,
+     * drops the Authorization header on a cross-origin redirect, and honours the site's proxy and
+     * blocked-host settings. Raw cURL honours none of those, and \curl does not verify.
+     *
+     * @param array $extraconfig Client configuration to apply over the defaults below.
+     * @return http_client
+     */
+    protected function create_http_client(array $extraconfig = []): http_client {
+        return new http_client($extraconfig + [
+            // These run while a block renders, so an unreachable Keycloak must not hang the page.
+            RequestOptions::CONNECT_TIMEOUT => self::KEYCLOAK_CONNECT_TIMEOUT_SECONDS,
+            RequestOptions::TIMEOUT => self::KEYCLOAK_TIMEOUT_SECONDS,
+            // Report an error status through the same path as every other failure here.
+            RequestOptions::HTTP_ERRORS => false,
+        ]);
     }
 }

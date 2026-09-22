@@ -24,12 +24,22 @@
 
 namespace block_crucible\task;
 
+use core\http_client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\RequestOptions;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
  * Scheduled task to sync users from Keycloak.
  */
 class sync_keycloak_users extends \core\task\scheduled_task {
+    /** @var int Maximum time to establish a connection to Keycloak. */
+    const CONNECT_TIMEOUT_SECONDS = 5;
+
+    /** @var int Maximum total duration of a Keycloak request. */
+    const TIMEOUT_SECONDS = 30;
+
     /**
      * Get task name.
      *
@@ -45,7 +55,6 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     public function execute() {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/user/lib.php');
-        require_once($CFG->libdir . '/filelib.php');
         require_once($CFG->dirroot . '/user/profile/lib.php');
         $pagesize    = 200;
         $onlyenabled = 1;
@@ -247,30 +256,21 @@ class sync_keycloak_users extends \core\task\scheduled_task {
      * @return string|null Access token or null on failure
      */
     private function fetch_token(string $tokenurl, string $clientid, string $clientsecret, bool $insecure = false): ?string {
-        $data = http_build_query([
-            'grant_type'    => 'client_credentials',
-            'client_id'     => $clientid,
-            'client_secret' => $clientsecret,
-        ], '', '&');
-
-        $ch = curl_init($tokenurl);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        if ($insecure) {
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        }
-
-        $resp = curl_exec($ch);
-        if ($resp === false) {
-            mtrace('[crucible] token curl error: ' . curl_error($ch));
-            curl_close($ch);
+        try {
+            $response = $this->create_http_client($insecure)->post($tokenurl, [
+                RequestOptions::FORM_PARAMS => [
+                    'grant_type'    => 'client_credentials',
+                    'client_id'     => $clientid,
+                    'client_secret' => $clientsecret,
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            mtrace('[crucible] token request error: ' . $e->getMessage());
             return null;
         }
-        $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+
+        $http = $response->getStatusCode();
+        $resp = (string) $response->getBody();
 
         if ($http >= 400) {
             mtrace('[crucible] token HTTP ' . $http . ' from ' . $tokenurl . ' body: ' . $resp);
@@ -302,14 +302,21 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $url .= '&enabled=true';
         }
 
-        $opts = $insecure ? ['ignore_ssl_errors' => true] : [];
-        $curl = new \curl($opts);
-        $curl->setHeader('Authorization: Bearer ' . $token);
-        $curl->setHeader('Accept: application/json');
+        try {
+            $response = $this->create_http_client($insecure)->get($url, [
+                RequestOptions::HEADERS => [
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            mtrace('[crucible] KC /users request error: ' . $e->getMessage());
+            return [];
+        }
 
-        $resp = $curl->get($url);
-        if ($resp === false) {
-            mtrace('[crucible] KC /users curl error');
+        $resp = (string) $response->getBody();
+        if ($response->getStatusCode() >= 400) {
+            mtrace('[crucible] KC /users HTTP ' . $response->getStatusCode());
             return [];
         }
 
@@ -336,6 +343,30 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         }
 
         return $data;
+    }
+
+    /**
+     * Create the HTTP client used for Keycloak requests.
+     *
+     * Core's Guzzle client rather than raw PHP cURL or the older \curl wrapper: these requests
+     * carry a realm admin bearer token, and this client verifies the peer certificate by default,
+     * drops the Authorization header on a cross-origin redirect, and honours the site's proxy and
+     * blocked-host settings. Raw cURL honours none of those, and \curl does not verify.
+     *
+     * @param bool $insecure Skip certificate verification.
+     * @param array $extraconfig Client configuration to apply over the defaults below.
+     * @return http_client
+     */
+    protected function create_http_client(bool $insecure = false, array $extraconfig = []): http_client {
+        return new http_client($extraconfig + [
+            // A scheduled task shares Moodle's cron worker with unrelated work. Do not allow an
+            // unavailable Keycloak to hold it indefinitely.
+            RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT_SECONDS,
+            RequestOptions::TIMEOUT => self::TIMEOUT_SECONDS,
+            // Statuses are reported by the callers rather than raised.
+            RequestOptions::HTTP_ERRORS => false,
+            RequestOptions::VERIFY => !$insecure,
+        ]);
     }
 
     /**
