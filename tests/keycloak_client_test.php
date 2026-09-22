@@ -83,12 +83,8 @@ final class keycloak_client_test extends \advanced_testcase {
      * @return testable_crucible
      */
     private function create_crucible(array $responses = []): testable_crucible {
-        $requests = &$this->requests;
-        $handler = static function (RequestInterface $request, array $options) use (
-            $responses,
-            &$requests
-        ): PromiseInterface {
-            $requests[] = ['request' => $request, 'options' => $options];
+        $handler = function (RequestInterface $request, array $options) use ($responses): PromiseInterface {
+            $this->requests[] = ['request' => $request, 'options' => $options];
             $uri = (string) $request->getUri();
 
             if (str_contains($uri, '/protocol/openid-connect/token')) {

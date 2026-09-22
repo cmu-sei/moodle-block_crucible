@@ -112,8 +112,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         $adminbase = preg_replace('#/realms/#', '/admin/realms/', $realmurl, 1);
 
         // Fetch token
-        $insecure = (bool)preg_match('#\.dev/#', $tokenurl);
-        $token = $this->fetch_token($tokenurl, $clientid, $clientsecret, $insecure);
+        $token = $this->fetch_token($tokenurl, $clientid, $clientsecret);
         if (!$token) {
             mtrace('[crucible] could not obtain Keycloak token.');
             return;
@@ -125,7 +124,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         $first   = 0;
 
         do {
-            $users = $this->fetch_kc_users($adminbase, $token, $first, $pagesize, $onlyenabled, $insecure);
+            $users = $this->fetch_kc_users($adminbase, $token, $first, $pagesize, $onlyenabled);
             $count = count($users);
 
             foreach ($users as $kc) {
@@ -252,12 +251,11 @@ class sync_keycloak_users extends \core\task\scheduled_task {
      * @param string $tokenurl Token endpoint URL
      * @param string $clientid Client ID
      * @param string $clientsecret Client secret
-     * @param bool $insecure Allow insecure SSL
      * @return string|null Access token or null on failure
      */
-    private function fetch_token(string $tokenurl, string $clientid, string $clientsecret, bool $insecure = false): ?string {
+    private function fetch_token(string $tokenurl, string $clientid, string $clientsecret): ?string {
         try {
-            $response = $this->create_http_client($insecure)->post($tokenurl, [
+            $response = $this->create_http_client()->post($tokenurl, [
                 RequestOptions::FORM_PARAMS => [
                     'grant_type'    => 'client_credentials',
                     'client_id'     => $clientid,
@@ -293,17 +291,16 @@ class sync_keycloak_users extends \core\task\scheduled_task {
      * @param int $first Pagination offset
      * @param int $max Maximum results
      * @param int $onlyenabled Only fetch enabled users
-     * @param bool $insecure Allow insecure SSL
      * @return array User records
      */
-    private function fetch_kc_users(string $adminbase, string $token, int $first, int $max, int $onlyenabled, bool $insecure = false): array {
+    private function fetch_kc_users(string $adminbase, string $token, int $first, int $max, int $onlyenabled): array {
         $url = rtrim($adminbase, '/') . '/users?first=' . $first . '&max=' . $max . '&briefRepresentation=false';
         if ($onlyenabled) {
             $url .= '&enabled=true';
         }
 
         try {
-            $response = $this->create_http_client($insecure)->get($url, [
+            $response = $this->create_http_client()->get($url, [
                 RequestOptions::HEADERS => [
                     'Authorization' => 'Bearer ' . $token,
                     'Accept' => 'application/json',
@@ -353,11 +350,10 @@ class sync_keycloak_users extends \core\task\scheduled_task {
      * drops the Authorization header on a cross-origin redirect, and honours the site's proxy and
      * blocked-host settings. Raw cURL honours none of those, and \curl does not verify.
      *
-     * @param bool $insecure Skip certificate verification.
      * @param array $extraconfig Client configuration to apply over the defaults below.
      * @return http_client
      */
-    protected function create_http_client(bool $insecure = false, array $extraconfig = []): http_client {
+    protected function create_http_client(array $extraconfig = []): http_client {
         return new http_client($extraconfig + [
             // A scheduled task shares Moodle's cron worker with unrelated work. Do not allow an
             // unavailable Keycloak to hold it indefinitely.
@@ -365,7 +361,6 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             RequestOptions::TIMEOUT => self::TIMEOUT_SECONDS,
             // Statuses are reported by the callers rather than raised.
             RequestOptions::HTTP_ERRORS => false,
-            RequestOptions::VERIFY => !$insecure,
         ]);
     }
 
