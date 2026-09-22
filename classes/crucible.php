@@ -73,6 +73,21 @@ class crucible
     private $client;
 
     /**
+     * Keycloak answers already resolved during this request, keyed by what was asked for.
+     *
+     * One block render asks for the user's roles three times and their groups once, and each of
+     * those asks needed a client credentials token and a lookup of the user's Keycloak ID first:
+     * twelve round trips for three distinct answers. Every one of them is for the same user
+     * against the same realm within a single request, so each is resolved at most once here.
+     *
+     * A failure is memoised too. A Keycloak that is refusing connections would otherwise be
+     * waited on twelve times over, each wait bounded separately.
+     *
+     * @var array<string, mixed>
+     */
+    private array $keycloakcache = [];
+
+    /**
      * Sets up the system by configuring the OAuth client.
      *
      * This method retrieves the issuer ID from the configuration, attempts to obtain the issuer
@@ -770,8 +785,6 @@ class crucible
      *                             null when the session or admin URL is unavailable.
      */
     private function get_keycloak_user_collection(string $subresource) {
-        global $USER;
-
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return null;
@@ -793,38 +806,67 @@ class crucible
         $realmurl = preg_replace('#/admin/([^/]+)/console$#', '/realms/$1', $adminurl);
         $adminrealmurl = preg_replace('#/admin/([^/]+)/console$#', '/admin/realms/$1', $adminurl);
 
-        $token = $this->get_keycloak_token($realmurl . '/protocol/openid-connect/token', $issuerid);
-        if ($token === null) {
-            return false;
-        }
-
-        // A single Keycloak account, so the email has to match exactly rather than be contained in
-        // the account's address: Keycloak searches by substring unless told otherwise, and the
-        // first of several matches decides which groups and roles this block reports.
-        $userlist = $this->get_keycloak_json(
-            $adminrealmurl . '/users?exact=true&email=' . urlencode($USER->email),
-            $token
-        );
-        if (!is_array($userlist) || empty($userlist) || empty($userlist[0]['id'])) {
-            debugging("No users found in Keycloak matching email: {$USER->email}", DEBUG_DEVELOPER);
-            return 0;
-        }
-
-        $records = $this->get_keycloak_json(
-            $adminrealmurl . '/users/' . urlencode($userlist[0]['id']) . '/' . $subresource,
-            $token
-        );
-        if (!is_array($records)) {
-            return 0;
-        }
-
-        $names = [];
-        foreach ($records as $record) {
-            if (isset($record['name'])) {
-                $names[] = $record['name'];
+        $resolve = function () use ($subresource, $realmurl, $adminrealmurl, $issuerid) {
+            $token = $this->resolve_once('token', function () use ($realmurl, $issuerid): ?string {
+                return $this->get_keycloak_token($realmurl . '/protocol/openid-connect/token', $issuerid);
+            });
+            if ($token === null) {
+                return false;
             }
+
+            $userid = $this->resolve_once('userid', function () use ($adminrealmurl, $token) {
+                global $USER;
+
+                // A single Keycloak account, so the email has to match exactly rather than be
+                // contained in the account's address: Keycloak searches by substring unless told
+                // otherwise, and the first of several matches would decide which groups and roles
+                // this block reports.
+                $userlist = $this->get_keycloak_json(
+                    $adminrealmurl . '/users?exact=true&email=' . urlencode($USER->email),
+                    $token
+                );
+                if (!is_array($userlist) || empty($userlist) || empty($userlist[0]['id'])) {
+                    debugging("No users found in Keycloak matching email: {$USER->email}", DEBUG_DEVELOPER);
+                    return null;
+                }
+                return $userlist[0]['id'];
+            });
+            if ($userid === null) {
+                return 0;
+            }
+
+            $records = $this->get_keycloak_json(
+                $adminrealmurl . '/users/' . urlencode($userid) . '/' . $subresource,
+                $token
+            );
+            if (!is_array($records)) {
+                return 0;
+            }
+
+            $names = [];
+            foreach ($records as $record) {
+                if (isset($record['name'])) {
+                    $names[] = $record['name'];
+                }
+            }
+            return $names;
+        };
+
+        return $this->resolve_once('collection:' . $subresource, $resolve);
+    }
+
+    /**
+     * Resolve a Keycloak answer, reusing one already resolved during this request.
+     *
+     * @param string $key What is being asked for.
+     * @param callable $resolve Produces the answer when it is not already known.
+     * @return mixed The answer, resolved at most once per request.
+     */
+    private function resolve_once(string $key, callable $resolve) {
+        if (!array_key_exists($key, $this->keycloakcache)) {
+            $this->keycloakcache[$key] = $resolve();
         }
-        return $names;
+        return $this->keycloakcache[$key];
     }
 
     /**

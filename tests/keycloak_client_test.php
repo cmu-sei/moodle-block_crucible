@@ -111,6 +111,39 @@ final class keycloak_client_test extends \advanced_testcase {
         $this->assertSame(['operators', 'analysts'], $crucible->get_keycloak_groups());
     }
 
+    public function test_a_render_resolves_each_keycloak_answer_once(): void {
+        $crucible = $this->create_crucible();
+
+        // What one block render asks for: roles at three points and groups at one.
+        $crucible->get_keycloak_roles();
+        $crucible->get_keycloak_groups();
+        $crucible->get_keycloak_roles();
+        $crucible->get_keycloak_roles();
+
+        // Four requests, not twelve: the token and the user's Keycloak ID are shared, and the
+        // repeated role lookups reuse the first answer.
+        $this->assertCount(4, $this->requests);
+        $uris = array_map(static fn($made) => (string) $made['request']->getUri(), $this->requests);
+        $this->assertStringContainsString('/protocol/openid-connect/token', $uris[0]);
+        $this->assertStringContainsString('exact=true', $uris[1]);
+        $this->assertStringContainsString('/role-mappings/realm', $uris[2]);
+        $this->assertStringContainsString('/groups', $uris[3]);
+    }
+
+    public function test_an_unreachable_keycloak_is_waited_on_once(): void {
+        $crucible = $this->create_crucible(['token' => [503, 'Service Unavailable']]);
+
+        // Each request is bounded separately, so retrying a dead Keycloak once per ask would put
+        // twelve timeouts in series in front of the page.
+        $this->assertFalse($crucible->get_keycloak_roles());
+        $this->assertFalse($crucible->get_keycloak_groups());
+        $this->assertFalse($crucible->get_keycloak_roles());
+
+        $this->assertCount(1, $this->requests);
+        // One report of the failure, not one per ask.
+        $this->assertDebuggingCalledCount(1);
+    }
+
     public function test_no_groups_are_reported_when_keycloak_returns_none(): void {
         $crucible = $this->create_crucible(['records' => [200, '[]']]);
 
