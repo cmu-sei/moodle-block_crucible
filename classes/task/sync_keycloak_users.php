@@ -24,6 +24,8 @@
 
 namespace block_crucible\task;
 
+use block_crucible\local\org_roles;
+use block_crucible\local\profile_fields;
 use core\http_client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
@@ -39,6 +41,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
 
     /** @var int Maximum total duration of a Keycloak request. */
     const TIMEOUT_SECONDS = 30;
+
+    /** @var int Results per page for every paged admin API call. */
+    const PAGE_SIZE = 200;
 
     /**
      * Get task name.
@@ -56,7 +61,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/user/lib.php');
         require_once($CFG->dirroot . '/user/profile/lib.php');
-        $pagesize    = 200;
+        $pagesize    = self::PAGE_SIZE;
         $onlyenabled = 1;
 
         // Find issuer
@@ -118,13 +123,31 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             return;
         }
 
+        // /users carries attributes but not group membership, so ask the groups
+        // endpoint instead: a few paged calls for the whole realm, rather than the one
+        // call per user that /users/{id}/groups would cost.
+        $groupmembers = $this->fetch_group_membership($adminbase, $token);
+        if ($groupmembers === null) {
+            mtrace('[crucible] group membership fetch failed - leaving ssogroups untouched this run '
+                . 'so a transient error cannot revoke every role.');
+        }
+
         $created = 0;
         $updated = 0;
         $skipped = 0;
         $first   = 0;
+        $seen    = [];
+        $touched = [];
+        $fetchfailed = false;
 
         do {
             $users = $this->fetch_kc_users($adminbase, $token, $first, $pagesize, $onlyenabled);
+            if ($users === null) {
+                // Distinct from an empty page: a failed page must not be read as
+                // "these users are gone from Keycloak".
+                $fetchfailed = true;
+                break;
+            }
             $count = count($users);
 
             foreach ($users as $kc) {
@@ -134,12 +157,6 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                 $firstname  = $kc['firstName'] ?? '';
                 $lastname   = $kc['lastName'] ?? '';
                 $kcid       = $kc['id'] ?? null;
-
-                // Keycloak attributes -> Moodle custom profile fields
-                $kcrole     = $this->kc_attr($kc, 'moodle_roles'); // -> profile_field_ssorole
-                $kcorg      = $this->kc_attr($kc, 'organization'); // -> profile_field_ssoorg
-                $kcteam     = $this->kc_attr($kc, 'team');         // -> profile_field_ssoteam
-                $kcworkrole = $this->kc_attr($kc, 'work_role');    // -> profile_field_ssoworkrole
 
                 // --- Skip service/system accounts ---
                 if (
@@ -160,6 +177,21 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     continue;
                 }
 
+                $seen[$kcid] = true;
+
+                // Keycloak attributes and group membership -> custom profile fields.
+                // Multi-valued attributes are kept whole; taking only the first value
+                // made a user's org silently switch when the first one was removed.
+                $fields = [
+                    profile_fields::ROLE => $this->kc_attr_text($kc, 'moodle_roles'),
+                    profile_fields::ORG => org_roles::join_list($this->kc_attr_values($kc, 'organization')),
+                    profile_fields::TEAM => $this->kc_attr_text($kc, 'team'),
+                    profile_fields::WORKROLE => $this->kc_attr_text($kc, 'work_role'),
+                ];
+                if ($groupmembers !== null) {
+                    $fields[profile_fields::GROUPS] = org_roles::join_list($groupmembers[$kcid] ?? []);
+                }
+
                 $existing = $DB->get_record('user', ['idnumber' => $kcid, 'deleted' => 0], '*', IGNORE_MISSING);
 
                 if ($existing) {
@@ -175,20 +207,17 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                         $needs = true;
                     }
 
-                    // Custom profile fields
+                    // Custom profile fields. Writing '' for an attribute Keycloak no
+                    // longer has is the point: skipping the write left a deleted
+                    // organization in place forever, and the role with it.
                     $pf = profile_user_record($existing->id, false) ?: new \stdClass();
-                    $map = [
-                        'profile_field_ssorole'     => $kcrole,
-                        'profile_field_ssoorg'      => $kcorg,
-                        'profile_field_ssoteam'     => $kcteam,
-                        'profile_field_ssoworkrole' => $kcworkrole,
-                    ];
-                    foreach ($map as $field => $val) {
-                        $short   = substr($field, strlen('profile_field_'));
-                        $current = isset($pf->$short) ? (string)$pf->$short : null;
-                        if ($val !== null && $val !== $current) {
-                            $u->$field = $val;
+                    $profilechanged = false;
+                    foreach ($fields as $short => $val) {
+                        $current = isset($pf->$short) ? (string)$pf->$short : '';
+                        if ($val !== $current) {
+                            $u->{'profile_field_' . $short} = $val;
                             $needs = true;
+                            $profilechanged = true;
                         }
                     }
 
@@ -196,6 +225,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                         user_update_user($u, false, false);
                         profile_save_data($u);
                         $updated++;
+                        if ($profilechanged) {
+                            $touched[] = (int)$existing->id;
+                        }
                     } else {
                         $skipped++;
                     }
@@ -218,18 +250,17 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     'suspended'   => 0,
                     'mnethostid'  => $CFG->mnet_localhost_id,
                     'password'    => \core\uuid::generate(),
-                    // custom profile fields
-                    'profile_field_ssorole'      => $kcrole,
-                    'profile_field_ssoorg'       => $kcorg,
-                    'profile_field_ssoteam'      => $kcteam,
-                    'profile_field_ssoworkrole'  => $kcworkrole,
                 ];
+                foreach ($fields as $short => $val) {
+                    $new->{'profile_field_' . $short} = $val;
+                }
 
                 try {
                     $newid = user_create_user($new, false, false);
                     $new->id = $newid;
                     profile_save_data($new);
                     $created++;
+                    $touched[] = (int)$newid;
                     $nameafter = trim(($new->firstname ?? '') . ' ' . ($new->lastname ?? ''));
                     mtrace('[crucible] created user'
                         . ' username=' . $new->username
@@ -242,7 +273,82 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $first += $count;
         } while ($count === $pagesize);
 
-        mtrace("[crucible] sync complete: created={$created} updated={$updated} skipped={$skipped}");
+        $deprovisioned = 0;
+        if ($fetchfailed) {
+            mtrace('[crucible] a /users page failed - skipping the deprovision pass this run.');
+        } else {
+            $deprovisioned = $this->deprovision_missing_users(array_keys($seen), $touched);
+        }
+
+        mtrace("[crucible] sync complete: created={$created} updated={$updated} skipped={$skipped} "
+            . "deprovisioned={$deprovisioned}");
+
+        // Reconcile the users whose org data actually moved, rather than leaving every
+        // change to wait for the hourly role sync.
+        if ($touched && org_roles::is_enabled()) {
+            $counts = org_roles::reconcile_users($touched);
+            mtrace("[crucible] org roles: +{$counts['assigned']} assigned, -{$counts['unassigned']} removed.");
+        }
+    }
+
+    /**
+     * Strip the Keycloak-derived state of users Keycloak no longer lists.
+     *
+     * A user who has been deleted or disabled in Keycloak keeps working in Moodle
+     * otherwise: clearing the sso* fields is what makes the role reconcile take their
+     * category roles back. Suspending the account as well is a separate, off-by-default
+     * choice, because some deployments keep the account for its grades and logs.
+     *
+     * @param string[] $seenkcids Keycloak ids present in this run's responses
+     * @param int[] $touched collects the ids of users changed here, by reference
+     * @return int number of users deprovisioned
+     */
+    private function deprovision_missing_users(array $seenkcids, array &$touched): int {
+        global $DB;
+
+        $seen = array_fill_keys($seenkcids, true);
+        $suspend = (bool)get_config('block_crucible', 'suspendmissingusers');
+        $shortnames = array_keys(profile_fields::all());
+
+        $candidates = $DB->get_records_select(
+            'user',
+            "auth = :auth AND deleted = 0 AND idnumber <> :empty",
+            ['auth' => 'oauth2', 'empty' => ''],
+            '',
+            'id, idnumber, suspended'
+        );
+
+        $count = 0;
+        foreach ($candidates as $candidate) {
+            if (isset($seen[$candidate->idnumber])) {
+                continue;
+            }
+
+            $current = profile_user_record((int)$candidate->id, false) ?: new \stdClass();
+            $u = (object)['id' => (int)$candidate->id];
+            $changed = false;
+            foreach ($shortnames as $short) {
+                if (isset($current->$short) && (string)$current->$short !== '') {
+                    $u->{'profile_field_' . $short} = '';
+                    $changed = true;
+                }
+            }
+
+            $suspending = $suspend && !$candidate->suspended;
+            if (!$changed && !$suspending) {
+                continue;
+            }
+
+            if ($suspending) {
+                $u->suspended = 1;
+                user_update_user($u, false, false);
+            }
+            profile_save_data($u);
+            $touched[] = (int)$candidate->id;
+            $count++;
+        }
+
+        return $count;
     }
 
     /**
@@ -291,14 +397,94 @@ class sync_keycloak_users extends \core\task\scheduled_task {
      * @param int $first Pagination offset
      * @param int $max Maximum results
      * @param int $onlyenabled Only fetch enabled users
-     * @return array User records
+     * @return array|null User records, or null when the request failed
      */
-    private function fetch_kc_users(string $adminbase, string $token, int $first, int $max, int $onlyenabled): array {
+    private function fetch_kc_users(string $adminbase, string $token, int $first, int $max, int $onlyenabled): ?array {
         $url = rtrim($adminbase, '/') . '/users?first=' . $first . '&max=' . $max . '&briefRepresentation=false';
         if ($onlyenabled) {
             $url .= '&enabled=true';
         }
 
+        return $this->fetch_list($url, $token, '/users');
+    }
+
+    /**
+     * Build Keycloak id => mapped group names for every group in the role mapping.
+     *
+     * Group membership is not part of the /users representation, and asking
+     * /users/{id}/groups would be one request per user. Asking each mapped group for its
+     * members is a handful of paged requests for the whole realm instead.
+     *
+     * @param string $adminbase Admin API base URL
+     * @param string $token Access token
+     * @return array|null keycloak user id => group names, or null when any request failed
+     */
+    private function fetch_group_membership(string $adminbase, string $token): ?array {
+        $wanted = array_keys(org_roles::group_role_map());
+        $adminbase = rtrim($adminbase, '/');
+
+        $tree = $this->fetch_list(
+            $adminbase . '/groups?briefRepresentation=true&max=' . self::PAGE_SIZE,
+            $token,
+            '/groups'
+        );
+        if ($tree === null) {
+            return null;
+        }
+
+        // Mapped groups may be nested under a parent, so walk the whole tree.
+        $groupids = [];
+        $walk = function (array $nodes) use (&$walk, &$groupids, $wanted): void {
+            foreach ($nodes as $node) {
+                if (isset($node['name'], $node['id']) && in_array($node['name'], $wanted, true)) {
+                    $groupids[$node['name']] = $node['id'];
+                }
+                if (!empty($node['subGroups']) && is_array($node['subGroups'])) {
+                    $walk($node['subGroups']);
+                }
+            }
+        };
+        $walk($tree);
+
+        foreach (array_diff($wanted, array_keys($groupids)) as $missing) {
+            mtrace("[crucible] Keycloak group '{$missing}' does not exist - nobody matches it.");
+        }
+
+        $membership = [];
+        foreach ($groupids as $name => $groupid) {
+            $first = 0;
+            do {
+                $page = $this->fetch_list(
+                    $adminbase . '/groups/' . urlencode($groupid)
+                    . '/members?briefRepresentation=true&first=' . $first . '&max=' . self::PAGE_SIZE,
+                    $token,
+                    '/groups/{id}/members'
+                );
+                if ($page === null) {
+                    return null;
+                }
+                foreach ($page as $member) {
+                    if (!empty($member['id'])) {
+                        $membership[$member['id']][] = $name;
+                    }
+                }
+                $count = count($page);
+                $first += $count;
+            } while ($count === self::PAGE_SIZE);
+        }
+
+        return $membership;
+    }
+
+    /**
+     * GET a Keycloak admin endpoint expected to answer with a JSON list.
+     *
+     * @param string $url Absolute URL
+     * @param string $token Access token
+     * @param string $label Endpoint name for log lines
+     * @return array|null the list, or null on any failure
+     */
+    private function fetch_list(string $url, string $token, string $label): ?array {
         try {
             $response = $this->create_http_client()->get($url, [
                 RequestOptions::HEADERS => [
@@ -307,36 +493,37 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                 ],
             ]);
         } catch (GuzzleException $e) {
-            mtrace('[crucible] KC /users request error: ' . $e->getMessage());
-            return [];
+            mtrace('[crucible] KC ' . $label . ' request error: ' . $e->getMessage());
+            return null;
         }
 
         $resp = (string) $response->getBody();
         if ($response->getStatusCode() >= 400) {
-            mtrace('[crucible] KC /users HTTP ' . $response->getStatusCode());
-            return [];
+            mtrace('[crucible] KC ' . $label . ' HTTP ' . $response->getStatusCode());
+            return null;
         }
 
         if (stripos($resp, '<html') !== false) {
-            mtrace('[crucible] KC /users returned HTML (wrong URL or auth?)');
-            return [];
+            mtrace('[crucible] KC ' . $label . ' returned HTML (wrong URL or auth?)');
+            return null;
         }
 
         $data = json_decode($resp, true);
         if (!is_array($data)) {
-            mtrace('[crucible] KC /users non-JSON or non-array payload');
-            return [];
+            mtrace('[crucible] KC ' . $label . ' non-JSON or non-array payload');
+            return null;
         }
 
         if (isset($data['error']) || isset($data['errorMessage'])) {
-            mtrace('[crucible] KC /users returned error object');
-            return [];
+            mtrace('[crucible] KC ' . $label . ' returned error object');
+            return null;
         }
 
-        $islist = array_keys($data) === range(0, count($data) - 1);
-        if (!$islist) {
-            mtrace('[crucible] KC /users payload is not a list');
-            return [];
+        // array_is_list() rather than comparing against range(0, count - 1): for an empty
+        // payload that range is [0, -1], so a legitimately empty page read as a failure.
+        if (!array_is_list($data)) {
+            mtrace('[crucible] KC ' . $label . ' payload is not a list');
+            return null;
         }
 
         return $data;
@@ -365,21 +552,48 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     }
 
     /**
-     * Get attribute value from Keycloak user record.
+     * Get every value of an attribute on a Keycloak user record.
+     *
+     * Keycloak attributes are always multi-valued in the representation. Returning only
+     * the first value meant deleting one value silently replaced the user's org with
+     * whichever value happened to be next.
      *
      * @param array $kc Keycloak user record
      * @param string $name Attribute name
-     * @return string|null Attribute value or null
+     * @return string[] trimmed, non-empty, unique values; empty when the attribute is absent
      */
-    private function kc_attr(array $kc, string $name): ?string {
+    private function kc_attr_values(array $kc, string $name): array {
         if (!isset($kc['attributes'][$name])) {
-            return null;
+            return [];
         }
-        $v = $kc['attributes'][$name];
-        if (is_array($v)) {
-            $v = reset($v);
+
+        $values = $kc['attributes'][$name];
+        if (!is_array($values)) {
+            $values = [$values];
         }
-        $v = trim((string)$v);
-        return ($v === '') ? null : $v;
+
+        $out = [];
+        foreach ($values as $value) {
+            $value = trim((string)$value);
+            if ($value !== '' && !in_array($value, $out, true)) {
+                $out[] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * An attribute rendered for a free-text profile field nothing matches against.
+     *
+     * Unlike ssoorg and ssogroups these are informational, so they stay readable rather
+     * than being wrapped in the list delimiters an exact-element match needs.
+     *
+     * @param array $kc Keycloak user record
+     * @param string $name Attribute name
+     * @return string
+     */
+    private function kc_attr_text(array $kc, string $name): string {
+        return implode(', ', $this->kc_attr_values($kc, $name));
     }
 }

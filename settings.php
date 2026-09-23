@@ -149,6 +149,15 @@ if ($ADMIN->fulltree) {
         0
     ));
 
+    $settings->add(new admin_setting_configcheckbox(
+        'block_crucible/suspendmissingusers',
+        get_string('suspendmissingusers', 'block_crucible'),
+        get_string('configsuspendmissingusers', 'block_crucible'),
+        0,
+        1,
+        0
+    ));
+
     // Alloy
     $settings->add(new admin_setting_heading(
         'block_crucible/alloysectionheading',
