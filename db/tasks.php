@@ -34,10 +34,13 @@ $tasks = [
         'dayofweek' => '*',
         'month'     => '*',
     ],
+    // Offset from sync_keycloak_users, which runs at :00 and :30 and writes the profile
+    // fields this task reads. There is no ordering guarantee between the two, so leave
+    // the user sync room to finish rather than starting in the same minute.
     [
         'classname' => '\block_crucible\task\sync_org_roles',
         'blocking'  => 0,
-        'minute'    => '0',
+        'minute'    => '15',
         'hour'      => '*',
         'day'       => '*',
         'month'     => '*',
