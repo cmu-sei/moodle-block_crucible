@@ -63,6 +63,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         require_once($CFG->dirroot . '/user/profile/lib.php');
         $pagesize    = self::PAGE_SIZE;
         $onlyenabled = 1;
+        $suspendmissing = (bool)get_config('block_crucible', 'suspendmissingusers');
 
         // Find issuer
         $issuerid = get_config('block_crucible', 'issuerid');
@@ -204,6 +205,19 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     }
                     if ($lastname  && $existing->lastname !== $lastname) {
                         $u->lastname  = $lastname;
+                        $needs = true;
+                    }
+
+                    // Mirror of the suspend in deprovision_missing_users(). Reaching here
+                    // means Keycloak returned this user as enabled, so the condition that
+                    // justified suspending them is gone and the account has to come back -
+                    // otherwise disabling a user in Keycloak once locks them out for good.
+                    // Gated on the same setting that authorises suspending, so a deployment
+                    // that never opted in never has its manual suspensions touched. It
+                    // cannot tell a sync suspension from a manual one, which is the cost of
+                    // not tracking who suspended the account.
+                    if ($existing->suspended && $suspendmissing) {
+                        $u->suspended = 0;
                         $needs = true;
                     }
 
@@ -423,28 +437,35 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         $wanted = array_keys(org_roles::group_role_map());
         $adminbase = rtrim($adminbase, '/');
 
-        $tree = $this->fetch_list(
-            $adminbase . '/groups?briefRepresentation=true&max=' . self::PAGE_SIZE,
-            $token,
-            '/groups'
-        );
-        if ($tree === null) {
-            return null;
-        }
-
-        // Mapped groups may be nested under a parent, so walk the whole tree.
+        // /groups is paged like every other admin collection, so read it to the end: a
+        // realm with more top-level groups than one page would otherwise lose the mapped
+        // ones that sort last, and the only symptom is the "does not exist" line below.
+        //
+        // Only top-level groups resolve here. Keycloak 23+ stopped populating subGroups on
+        // this endpoint - children come from /groups/{id}/children - so a mapped group
+        // nested under a parent needs that endpoint walking instead. None of the mapped
+        // groups are nested today; this is the thing to change when one is.
         $groupids = [];
-        $walk = function (array $nodes) use (&$walk, &$groupids, $wanted): void {
-            foreach ($nodes as $node) {
+        $first = 0;
+        do {
+            $page = $this->fetch_list(
+                $adminbase . '/groups?briefRepresentation=true&first=' . $first . '&max=' . self::PAGE_SIZE,
+                $token,
+                '/groups'
+            );
+            if ($page === null) {
+                return null;
+            }
+
+            foreach ($page as $node) {
                 if (isset($node['name'], $node['id']) && in_array($node['name'], $wanted, true)) {
                     $groupids[$node['name']] = $node['id'];
                 }
-                if (!empty($node['subGroups']) && is_array($node['subGroups'])) {
-                    $walk($node['subGroups']);
-                }
             }
-        };
-        $walk($tree);
+
+            $count = count($page);
+            $first += $count;
+        } while ($count === self::PAGE_SIZE);
 
         foreach (array_diff($wanted, array_keys($groupids)) as $missing) {
             mtrace("[crucible] Keycloak group '{$missing}' does not exist - nobody matches it.");

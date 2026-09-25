@@ -391,4 +391,25 @@ final class org_roles_test extends \advanced_testcase {
         $this->assertSame(',a,b,', org_roles::join_list(['a', 'b']));
         $this->assertSame(',a,b,', org_roles::join_list(['a', 'b', 'a']));
     }
+
+    /**
+     * A value containing the delimiter is dropped, not split into elements that match nothing.
+     *
+     * "Acme, Inc." is one organization. Storing it as ",Acme,Inc.," would silently turn it
+     * into two, neither of which resolves to a category or a cohort rule.
+     */
+    public function test_join_list_drops_values_containing_the_delimiter(): void {
+        $this->assertSame(',Army,', org_roles::join_list(['Army', 'Acme, Inc.']));
+        $this->assertDebuggingCalled();
+
+        $this->assertSame('', org_roles::join_list(['Acme, Inc.']));
+        $this->assertDebuggingCalled();
+    }
+
+    /**
+     * Each array element stays whole, so a multi-valued Keycloak attribute still works.
+     */
+    public function test_join_list_keeps_separate_values_separate(): void {
+        $this->assertSame(',Demo Org,Second Org,', org_roles::join_list(['Demo Org', 'Second Org']));
+    }
 }

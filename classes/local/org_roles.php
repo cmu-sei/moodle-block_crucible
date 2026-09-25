@@ -103,16 +103,37 @@ class org_roles {
     /**
      * Render list elements in the canonical wrapped form.
      *
+     * Each array element is one list element and is kept whole. An element containing the
+     * delimiter is dropped rather than stored: the delimiter is structural here, so
+     * "Acme, Inc." would otherwise be split into "Acme" and "Inc.", two organizations
+     * that match no category and no cohort rule. Dropping it loudly beats inventing them.
+     *
      * @param string[] $values
      * @return string "" for an empty list, otherwise ",a,b,"
      */
     public static function join_list(array $values): string {
-        $values = self::split_list(implode(self::DELIM, $values));
-        if (!$values) {
+        $elements = [];
+        foreach ($values as $value) {
+            $value = trim((string)$value);
+            if ($value === '' || in_array($value, $elements, true)) {
+                continue;
+            }
+            if (strpos($value, self::DELIM) !== false) {
+                debugging(
+                    "block_crucible: list value '" . $value . "' contains the '" . self::DELIM
+                    . "' delimiter and cannot be stored - it has been dropped.",
+                    DEBUG_DEVELOPER
+                );
+                continue;
+            }
+            $elements[] = $value;
+        }
+
+        if (!$elements) {
             return '';
         }
 
-        return self::DELIM . implode(self::DELIM, $values) . self::DELIM;
+        return self::DELIM . implode(self::DELIM, $elements) . self::DELIM;
     }
 
     /**

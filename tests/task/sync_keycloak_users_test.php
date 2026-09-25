@@ -182,9 +182,17 @@ final class sync_keycloak_users_test extends \advanced_testcase {
                 return $this->json($groupmembers[urldecode($matches[1])] ?? []);
             }
             if (str_ends_with($path, '/groups')) {
-                return $grouptree === null
-                    ? Create::promiseFor(new Response(500, [], 'boom'))
-                    : $this->json($grouptree);
+                if ($grouptree === null) {
+                    return Create::promiseFor(new Response(500, [], 'boom'));
+                }
+                // Page the collection the way Keycloak does, so a caller that ignores
+                // first/max is caught here rather than in production.
+                $query = [];
+                parse_str($request->getUri()->getQuery(), $query);
+                $first = (int)($query['first'] ?? 0);
+                $max = isset($query['max']) ? (int)$query['max'] : count($grouptree);
+
+                return $this->json(array_values(array_slice($grouptree, $first, $max)));
             }
             if (str_ends_with($path, '/users')) {
                 return $usersfail
@@ -303,9 +311,8 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         $task = $this->create_realm_task(
             [$this->kc_user('kc-1'), $this->kc_user('kc-2')],
             [
-                ['id' => 'g-parent', 'name' => 'crucible', 'subGroups' => [
-                    ['id' => 'g-1', 'name' => 'cyber-managers'],
-                ]],
+                ['id' => 'g-other', 'name' => 'crucible'],
+                ['id' => 'g-1', 'name' => 'cyber-managers'],
                 ['id' => 'g-2', 'name' => 'lab-builders'],
             ],
             [
@@ -316,9 +323,94 @@ final class sync_keycloak_users_test extends \advanced_testcase {
 
         $this->run_task($task);
 
-        // The first user is in both groups, one of them nested under a parent group.
+        // The first user is in both mapped groups; the unmapped one is never asked about.
         $this->assertSame(',cyber-managers,lab-builders,', $this->profile_value('kc-1', profile_fields::GROUPS));
         $this->assertSame(',lab-builders,', $this->profile_value('kc-2', profile_fields::GROUPS));
+    }
+
+    /**
+     * A mapped group past the first page of /groups still resolves.
+     *
+     * Keycloak pages this collection like any other, and reading only the first page lost
+     * the mapped groups that sort last in a realm with many of them.
+     */
+    public function test_group_membership_reads_every_page_of_groups(): void {
+        $this->prepare_site();
+
+        // Fill the first page with groups nothing maps to, so the mapped one is only
+        // reachable by asking for the page after it.
+        $groups = [];
+        for ($i = 0; $i < testable_sync_keycloak_users::PAGE_SIZE; $i++) {
+            $groups[] = ['id' => 'g-filler-' . $i, 'name' => 'filler-' . $i];
+        }
+        $groups[] = ['id' => 'g-1', 'name' => 'cyber-managers'];
+
+        $output = $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1')],
+            $groups,
+            ['g-1' => [['id' => 'kc-1']]]
+        ));
+
+        // The other mapped groups really are absent from this fixture, so only the paged
+        // one matters here: it must not be reported missing.
+        $this->assertStringNotContainsString("'cyber-managers' does not exist", $output);
+        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+    }
+
+    /**
+     * Re-enabling a user in Keycloak gives them their Moodle account back.
+     *
+     * The suspend is only half a policy if nothing ever undoes it: disabling a user in
+     * Keycloak once would otherwise lock them out of Moodle permanently.
+     */
+    public function test_a_user_re_enabled_in_keycloak_is_unsuspended(): void {
+        global $DB;
+
+        $this->prepare_site();
+        set_config('suspendmissingusers', 1, 'block_crucible');
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1')],
+            [['id' => 'g-1', 'name' => 'cyber-managers']],
+            ['g-1' => [['id' => 'kc-1']]]
+        ));
+        $this->assertSame(0, (int)$DB->get_field('user', 'suspended', ['idnumber' => 'kc-1']));
+
+        // Disabled in Keycloak: the user drops out of the enabled-only listing entirely,
+        // so deprovisioning clears the fields and suspends the account.
+        $disabled = $this->kc_user('kc-1');
+        $disabled['enabled'] = false;
+        $this->run_task($this->create_realm_task([$disabled]));
+
+        $this->assertSame(1, (int)$DB->get_field('user', 'suspended', ['idnumber' => 'kc-1']));
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
+
+        // Enabled again.
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1')],
+            [['id' => 'g-1', 'name' => 'cyber-managers']],
+            ['g-1' => [['id' => 'kc-1']]]
+        ));
+
+        $this->assertSame(0, (int)$DB->get_field('user', 'suspended', ['idnumber' => 'kc-1']));
+        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+    }
+
+    /**
+     * A deployment that never opted into suspending keeps its manual suspensions.
+     */
+    public function test_manual_suspensions_survive_when_the_setting_is_off(): void {
+        global $DB;
+
+        $this->prepare_site();
+        set_config('suspendmissingusers', 0, 'block_crucible');
+
+        $this->run_task($this->create_realm_task([$this->kc_user('kc-1')]));
+        $DB->set_field('user', 'suspended', 1, ['idnumber' => 'kc-1']);
+
+        $this->run_task($this->create_realm_task([$this->kc_user('kc-1')]));
+
+        $this->assertSame(1, (int)$DB->get_field('user', 'suspended', ['idnumber' => 'kc-1']));
     }
 
     /**

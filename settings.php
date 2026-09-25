@@ -56,6 +56,8 @@ if ($hassiteconfig) {
 }
 
 if ($ADMIN->fulltree) {
+    global $DB, $OUTPUT;
+
     // General Settings
     $options = [];
     $issuers = core\oauth2\api::get_all_issuers();
@@ -157,6 +159,37 @@ if ($ADMIN->fulltree) {
         1,
         0
     ));
+
+    // An OAuth 2 field mapping onto one of these profile fields is a second writer. It
+    // runs at login, after this plugin has written the delimiter-wrapped form, and stores
+    // the raw claim instead - which stops the cohort conditions matching. Sites that
+    // mapped these before the sync task existed cannot be migrated automatically, because
+    // removing another plugin's configuration is not this plugin's call, so say so.
+    $conflicts = [];
+    foreach (array_keys(\block_crucible\local\profile_fields::all()) as $shortname) {
+        $mapped = $DB->get_fieldset_sql(
+            "SELECT i.name
+               FROM {oauth2_user_field_mapping} m
+               JOIN {oauth2_issuer} i ON i.id = m.issuerid
+              WHERE m.internalfield = :internalfield",
+            ['internalfield' => 'profile_field_' . $shortname]
+        );
+        foreach ($mapped as $issuername) {
+            $conflicts[] = s($issuername) . ' &rarr; ' . s($shortname);
+        }
+    }
+    if ($conflicts) {
+        $settings->add(new admin_setting_description(
+            'block_crucible/orgrolesyncmappingconflict',
+            get_string('orgrolesyncmappingconflict', 'block_crucible'),
+            $OUTPUT->notification(
+                get_string('orgrolesyncmappingconflictdesc', 'block_crucible')
+                . html_writer::alist($conflicts),
+                \core\output\notification::NOTIFY_WARNING,
+                false
+            )
+        ));
+    }
 
     // Alloy
     $settings->add(new admin_setting_heading(

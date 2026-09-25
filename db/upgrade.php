@@ -182,13 +182,23 @@ function xmldb_block_crucible_upgrade($oldversion) {
             \block_crucible\local\profile_fields::ORG,
             \block_crucible\local\profile_fields::GROUPS,
         ];
+        // "Acme, Inc." and the two-element list "Acme,Inc." are indistinguishable once
+        // split, and this rewrite cannot be undone. A comma followed by a space is never
+        // produced by join_list(), so treat those values as a single name that happens to
+        // contain a comma, leave them exactly as they are, and name them in the upgrade
+        // output for an administrator to resolve by hand.
+        $ambiguous = [];
         foreach ($listfields as $shortname) {
             $fieldid = \block_crucible\local\profile_fields::field_id($shortname);
             if (!$fieldid) {
                 continue;
             }
-            $rows = $DB->get_recordset('user_info_data', ['fieldid' => $fieldid], '', 'id, data');
+            $rows = $DB->get_recordset('user_info_data', ['fieldid' => $fieldid], '', 'id, userid, data');
             foreach ($rows as $row) {
+                if (strpos((string)$row->data, ', ') !== false) {
+                    $ambiguous[] = $shortname . ' user ' . $row->userid . ': "' . $row->data . '"';
+                    continue;
+                }
                 $elements = \block_crucible\local\org_roles::split_list($row->data);
                 $canonical = \block_crucible\local\org_roles::join_list($elements);
                 if ($canonical !== $row->data) {
@@ -196,6 +206,15 @@ function xmldb_block_crucible_upgrade($oldversion) {
                 }
             }
             $rows->close();
+        }
+
+        if ($ambiguous) {
+            mtrace('[crucible] ' . count($ambiguous) . ' profile value(s) contain ", " and were left'
+                . ' unchanged, because splitting them would invent organizations that match nothing.'
+                . ' Review them and re-save each as a single value or a comma separated list:');
+            foreach ($ambiguous as $line) {
+                mtrace('[crucible]   ' . $line);
+            }
         }
 
         upgrade_block_savepoint(true, 2026092300, 'crucible');
