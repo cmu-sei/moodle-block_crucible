@@ -170,5 +170,55 @@ function xmldb_block_crucible_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026040801, 'crucible');
     }
 
+    if ($oldversion < 2026092300) {
+        // The sso* profile field shortnames are hardcoded by both sync paths, so the
+        // plugin has to create them - without them the syncs silently do nothing.
+        \block_crucible\local\profile_fields::install();
+
+        // ssoorg and ssogroups are matched element by element now, which needs the
+        // values delimiter-wrapped (",a,b,"). Rewrite anything already stored, or the
+        // cohort conditions would stop matching users provisioned before this release.
+        $listfields = [
+            \block_crucible\local\profile_fields::ORG,
+            \block_crucible\local\profile_fields::GROUPS,
+        ];
+        // "Acme, Inc." and the two-element list "Acme,Inc." are indistinguishable once
+        // split, and this rewrite cannot be undone. A comma followed by a space is never
+        // produced by join_list(), so treat those values as a single name that happens to
+        // contain a comma, leave them exactly as they are, and name them in the upgrade
+        // output for an administrator to resolve by hand.
+        $ambiguous = [];
+        foreach ($listfields as $shortname) {
+            $fieldid = \block_crucible\local\profile_fields::field_id($shortname);
+            if (!$fieldid) {
+                continue;
+            }
+            $rows = $DB->get_recordset('user_info_data', ['fieldid' => $fieldid], '', 'id, userid, data');
+            foreach ($rows as $row) {
+                if (strpos((string)$row->data, ', ') !== false) {
+                    $ambiguous[] = $shortname . ' user ' . $row->userid . ': "' . $row->data . '"';
+                    continue;
+                }
+                $elements = \block_crucible\local\org_roles::split_list($row->data);
+                $canonical = \block_crucible\local\org_roles::join_list($elements);
+                if ($canonical !== $row->data) {
+                    $DB->set_field('user_info_data', 'data', $canonical, ['id' => $row->id]);
+                }
+            }
+            $rows->close();
+        }
+
+        if ($ambiguous) {
+            mtrace('[crucible] ' . count($ambiguous) . ' profile value(s) contain ", " and were left'
+                . ' unchanged, because splitting them would invent organizations that match nothing.'
+                . ' Review them and re-save each as a single value or a comma separated list:');
+            foreach ($ambiguous as $line) {
+                mtrace('[crucible]   ' . $line);
+            }
+        }
+
+        upgrade_block_savepoint(true, 2026092300, 'crucible');
+    }
+
     return true;
 }

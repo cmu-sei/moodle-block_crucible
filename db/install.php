@@ -15,35 +15,22 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Scheduled tasks definition.
+ * Install-time setup.
  *
  * @package    block_crucible
- * @copyright  2025 Carnegie Mellon University
+ * @copyright  2026 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$tasks = [
-    [
-        'classname' => '\block_crucible\task\sync_keycloak_users',
-        'blocking'  => 0,
-        'minute'    => '*/30',
-        'hour'      => '*',
-        'day'       => '*',
-        'dayofweek' => '*',
-        'month'     => '*',
-    ],
-    // Offset from sync_keycloak_users, which runs at :00 and :30 and writes the profile
-    // fields this task reads. There is no ordering guarantee between the two, so leave
-    // the user sync room to finish rather than starting in the same minute.
-    [
-        'classname' => '\block_crucible\task\sync_org_roles',
-        'blocking'  => 0,
-        'minute'    => '15',
-        'hour'      => '*',
-        'day'       => '*',
-        'month'     => '*',
-        'dayofweek' => '*',
-    ],
-];
+/**
+ * Create the custom profile fields the Keycloak sync writes into.
+ *
+ * @return bool
+ */
+function xmldb_block_crucible_install() {
+    \block_crucible\local\profile_fields::install();
+
+    return true;
+}
