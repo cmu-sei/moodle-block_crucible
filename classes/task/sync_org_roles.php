@@ -34,40 +34,44 @@ DM24-1176
 
 namespace block_crucible\task;
 
+use block_crucible\local\org_roles;
+use block_crucible\local\profile_fields;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
  * Scheduled task: sync Keycloak org group memberships to Moodle category-scoped roles.
  *
  * Each run:
- *   1. Reads all distinct profile_field_ssoorg values from user profiles.
- *   2. Looks for matching top-level course categories (must be created manually by admins).
- *   3. Ensures a dynamic cohort exists for each org × Keycloak group combination,
- *      filtered on auth=oauth2 + ssoorg contains org + ssogroups contains group.
- *   4. Syncs cohort members to the matching role assignment in the org's category context.
+ *   1. Maintains one dynamic cohort per org × Keycloak group, for admins to enrol and
+ *      report on. These are an output of the mapping, not an input to it.
+ *   2. Reconciles every affected user's role assignments against their sso* profile
+ *      fields via \block_crucible\local\org_roles, which the login observer also uses.
  *
  * Adding a new org requires:
- *   1. Admin manually creates a top-level course category with the org's exact name.
+ *   1. Admin manually creates a top-level course category with the org's exact name
+ *      (or with idnumber org-<slug>).
  *   2. This task will discover the category and assign roles on its next run.
  *   This prevents automatic category creation from typos or unauthorized orgs.
  *
- * Adding a new group/role mapping only requires extending GROUP_ROLE_MAP.
+ * Adding a new group/role mapping only requires extending org_roles::group_role_map().
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class sync_org_roles extends \core\task\scheduled_task
-{
-    /**
-     * Maps Keycloak group name => Moodle role shortname.
-     * The roles must already exist (created by the moodle-install.sh setup script).
-     */
-    const GROUP_ROLE_MAP = [
-        'cyber-managers'        => 'cyber-manager',
-        'lab-builders'          => 'lab-builder',
-        'curriculum-developers' => 'curriculum-developer',
-    ];
+class sync_org_roles extends \core\task\scheduled_task {
+    /** @var string tool_dynamic_cohorts condition matching on the auth plugin. */
+    const CLASS_AUTH = 'tool_dynamic_cohorts\\local\\tool_dynamic_cohorts\\condition\\auth_method';
+
+    /** @var string tool_dynamic_cohorts condition matching on a custom profile field. */
+    const CLASS_PROFILE = 'tool_dynamic_cohorts\\local\\tool_dynamic_cohorts\\condition\\user_custom_profile';
+
+    /** @var int condition_base::TEXT_CONTAINS */
+    const OP_CONTAINS = '1';
+
+    /** @var int condition_base::TEXT_IS_EQUAL_TO */
+    const OP_EQUALS = '3';
 
     /**
      * Get task name.
@@ -82,306 +86,256 @@ class sync_org_roles extends \core\task\scheduled_task
      * Execute the scheduled task.
      */
     public function execute(): void {
-        global $CFG, $DB;
+        global $CFG;
 
-        // Check if org role sync is enabled.
-        if (!get_config('block_crucible', 'enableorgrolesync')) {
-            mtrace('sync_org_roles: org role sync is disabled in plugin settings - skipping.');
-            return;
-        }
+        $trace = static function (string $line): void {
+            mtrace('sync_org_roles: ' . $line);
+        };
 
-        // Check for required dependencies before proceeding.
-        if (!$DB->get_manager()->table_exists('tool_dynamic_cohorts')) {
-            mtrace('sync_org_roles: tool_dynamic_cohorts plugin not installed - skipping.');
-            return;
-        }
-
-        $ssoorgifield = $DB->get_record('user_info_field', ['shortname' => 'ssoorg'], 'id', IGNORE_MISSING);
-        if (!$ssoorgifield) {
-            mtrace('sync_org_roles: profile field "ssoorg" not found - skipping.');
-            return;
-        }
-
-        $ssogroupsfield = $DB->get_record('user_info_field', ['shortname' => 'ssogroups'], 'id', IGNORE_MISSING);
-        if (!$ssogroupsfield) {
-            mtrace('sync_org_roles: profile field "ssogroups" not found - skipping.');
+        if (!org_roles::is_enabled()) {
+            // Turning the feature off has to give back what it granted, otherwise every
+            // managed assignment is orphaned with no code path left to clean it up.
+            $trace('org role sync is disabled in plugin settings.');
+            org_roles::revoke_all($trace);
             return;
         }
 
         require_once($CFG->dirroot . '/cohort/lib.php');
-        require_once($CFG->libdir  . '/accesslib.php');
+        require_once($CFG->libdir . '/accesslib.php');
 
-        $orgs = $this->get_distinct_orgs();
+        foreach ([profile_fields::ORG, profile_fields::GROUPS] as $shortname) {
+            if (!profile_fields::field_id($shortname)) {
+                $trace("WARNING: profile field '{$shortname}' does not exist, so no user has org data - "
+                    . 'every managed assignment will be revoked. Re-run the plugin upgrade to recreate it.');
+            }
+        }
 
-        if (empty($orgs)) {
-            mtrace('sync_org_roles: no ssoorg values found in user profiles — nothing to do.');
+        $this->sync_cohorts($trace);
+
+        $userids = org_roles::users_to_reconcile();
+        $counts = org_roles::reconcile_users($userids, $trace);
+        $trace(count($userids) . " user(s) checked: +{$counts['assigned']} assigned, "
+            . "-{$counts['unassigned']} removed.");
+        $trace('completed.');
+    }
+
+    // -------------------------------------------------------------------------
+    // Dynamic cohort upkeep
+    // -------------------------------------------------------------------------
+
+    /**
+     * Keep one dynamic cohort per org × group in step with the mapping.
+     *
+     * Optional: the cohorts exist so administrators can enrol and report on these
+     * populations. Role assignment does not read them, so a missing
+     * tool_dynamic_cohorts is a reason to skip this step, not to skip the whole task.
+     *
+     * @param callable $trace
+     */
+    private function sync_cohorts(callable $trace): void {
+        global $DB;
+
+        if (!$DB->get_manager()->table_exists('tool_dynamic_cohorts')) {
+            $trace('tool_dynamic_cohorts is not installed - skipping cohort upkeep '
+                . '(role assignment does not depend on it).');
             return;
         }
 
-        foreach ($orgs as $org) {
-            mtrace("sync_org_roles: processing org '{$org}'");
+        $orgs = $this->get_distinct_orgs();
+        if (!$orgs) {
+            $trace('no ssoorg values found in user profiles - no cohorts to maintain.');
+            return;
+        }
 
-            $categoryid = $this->get_org_category($org);
+        $ruleids = [];
+        foreach ($orgs as $org) {
+            $categoryid = org_roles::org_category_id($org);
             if (!$categoryid) {
-                // Category doesn't exist - skip this org entirely
+                $trace("org '{$org}' has no top-level category - no cohort maintained.");
                 continue;
             }
 
-            foreach (self::GROUP_ROLE_MAP as $group => $roleshort) {
-                $cohortname  = $org . ' ' . ucwords(str_replace('-', ' ', $group));
-                $cohortidnum = $this->slugify($org) . '-' . $group;
+            foreach (array_keys(org_roles::group_role_map()) as $group) {
+                $cohortname = $org . ' ' . ucwords(str_replace('-', ' ', $group));
+                $cohortidnum = org_roles::slugify($org) . '-' . $group;
 
                 try {
-                    $cohortid = $this->ensure_org_group_cohort($cohortname, $cohortidnum, $org, $group);
-                    $this->sync_cohort_category_role($cohortname, $cohortid, $roleshort, $categoryid);
+                    $ruleids[] = $this->ensure_org_group_cohort($cohortname, $cohortidnum, $org, $group, $trace);
                 } catch (\Exception $e) {
-                    mtrace("  ERROR processing '{$cohortname}': " . $e->getMessage());
-                    continue;
+                    $trace("  ERROR maintaining cohort '{$cohortname}': " . $e->getMessage());
                 }
             }
         }
 
-        mtrace('sync_org_roles: completed.');
+        if (!$ruleids) {
+            return;
+        }
+
+        // Write every rule first, then invalidate once, then process. The two events are
+        // the ones tool_dynamic_cohorts declares on its rule and condition caches, so
+        // this replaces a full-site purge_all() per org × group pair, every hour.
+        \cache_helper::purge_by_event('ruleschanged');
+        \cache_helper::purge_by_event('conditionschanged');
+
+        foreach ($ruleids as $ruleid) {
+            $this->process_cohort_rule_now($ruleid, $trace);
+        }
     }
 
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
-
     /**
-     * Return all distinct non-empty ssoorg profile field values across all users.
+     * Return every distinct org named by any user's ssoorg field.
      *
-     * @return array
+     * A user carrying two orgs contributes both, rather than one bogus "A,B" org that
+     * matches no category.
+     *
+     * @return string[]
      */
     private function get_distinct_orgs(): array {
         global $DB;
 
-        $field = $DB->get_record('user_info_field', ['shortname' => 'ssoorg'], 'id', IGNORE_MISSING);
-        if (!$field) {
-            mtrace('sync_org_roles: profile field "ssoorg" not found.');
+        $fieldid = profile_fields::field_id(profile_fields::ORG);
+        if (!$fieldid) {
             return [];
         }
 
         $values = $DB->get_fieldset_sql(
             'SELECT DISTINCT data FROM {user_info_data} WHERE fieldid = ? AND ' .
                 $DB->sql_isnotempty('user_info_data', 'data', false, true),
-            [$field->id]
+            [$fieldid]
         );
 
-        return array_filter(array_map('trim', $values));
+        $orgs = [];
+        foreach ($values as $value) {
+            foreach (org_roles::split_list($value) as $org) {
+                $orgs[$org] = true;
+            }
+        }
+
+        return array_keys($orgs);
     }
 
     /**
-     * Check if a top-level course category named after the org exists.
-     * Returns the category id if it exists, or 0 if it doesn't.
+     * Ensure a dynamic cohort and its rule exist for one org + Keycloak group pair.
      *
-     * Note: Categories must be manually created by administrators.
-     * This prevents automatic creation of categories due to typos or unauthorized orgs.
-     *
-     * @param string $org
-     * @return int
-     */
-    private function get_org_category(string $org): int {
-        global $DB;
-
-        // Look for exact match by name (case-sensitive)
-        $existing = $DB->get_record('course_categories', ['name' => $org, 'parent' => 0], 'id', IGNORE_MISSING);
-        if ($existing) {
-            mtrace("  category '{$org}' found (id: {$existing->id}).");
-            return (int)$existing->id;
-        }
-
-        // Also check by idnumber in case it was created with the expected idnumber pattern
-        $idnumber = 'org-' . $this->slugify($org);
-        $cat = $DB->get_record('course_categories', ['idnumber' => $idnumber, 'parent' => 0], 'id', IGNORE_MISSING);
-        if ($cat) {
-            mtrace("  category found by idnumber '{$idnumber}' (id: {$cat->id}).");
-            return (int)$cat->id;
-        }
-
-        mtrace("  category '{$org}' does not exist - skipping (create it manually to enable role sync).");
-        return 0;
-    }
-
-    /**
-     * Ensure a dynamic cohort exists for the given org + Keycloak group combination,
-     * with conditions: auth=oauth2 AND ssoorg contains $org AND ssogroups contains $group.
-     * Returns the cohort id.
+     * Conditions: auth = oauth2 AND ssoorg contains ",org," AND ssogroups contains
+     * ",group,". The delimiters are what stop "ex-cyber-managers" from satisfying a
+     * rule that wants "cyber-managers", and "Army Reserve" from satisfying "Army".
      *
      * @param string $cohortname
      * @param string $cohortidnumber
      * @param string $orgvalue
      * @param string $groupvalue
-     * @return int
+     * @param callable $trace
+     * @return int rule id, for the caller to process once the caches have been invalidated
      * @throws \dml_exception
      */
     private function ensure_org_group_cohort(
         string $cohortname,
         string $cohortidnumber,
         string $orgvalue,
-        string $groupvalue
+        string $groupvalue,
+        callable $trace
     ): int {
         global $DB;
 
-        $sysctx  = \context_system::instance();
+        $sysctx = \context_system::instance();
         $adminid = (int)get_admin()->id;
-        $now     = time();
+        $now = time();
 
-        // Upsert cohort.
+        // Upsert cohort. The idnumber is the stable key.
         $cohort = $DB->get_record('cohort', ['idnumber' => $cohortidnumber, 'contextid' => $sysctx->id]);
         if (!$cohort) {
             $cohort = (object)[
-                'contextid'         => $sysctx->id,
-                'name'              => $cohortname,
-                'idnumber'          => $cohortidnumber,
-                'description'       => "Auto-managed: org={$orgvalue}, group={$groupvalue}",
+                'contextid' => $sysctx->id,
+                'name' => $cohortname,
+                'idnumber' => $cohortidnumber,
+                'description' => "Auto-managed: org={$orgvalue}, group={$groupvalue}",
                 'descriptionformat' => FORMAT_HTML,
-                'visible'           => 1,
-                'component'         => 'tool_dynamic_cohorts',
-                'timecreated'       => $now,
-                'timemodified'      => $now,
+                'visible' => 1,
+                'component' => 'tool_dynamic_cohorts',
+                'timecreated' => $now,
+                'timemodified' => $now,
             ];
             $cohort->id = cohort_add_cohort($cohort);
-            mtrace("  created cohort '{$cohortname}' (id: {$cohort->id}).");
-        } else {
-            mtrace("  cohort '{$cohortname}' exists (id: {$cohort->id}).");
+            $trace("  created cohort '{$cohortname}' (id: {$cohort->id}).");
         }
 
-        // Upsert dynamic rule.
-        $CLASS_AUTH    = 'tool_dynamic_cohorts\\local\\tool_dynamic_cohorts\\condition\\auth_method';
-        $CLASS_PROFILE = 'tool_dynamic_cohorts\\local\\tool_dynamic_cohorts\\condition\\user_custom_profile';
-
-        $rule = $DB->get_record('tool_dynamic_cohorts', ['name' => $cohortname]);
+        // Upsert the dynamic rule, keyed on the cohort rather than on a display name
+        // derived from the org - otherwise renaming an org orphans the old rule and
+        // creates a second one pointing at the same cohort.
+        $rule = $DB->get_record('tool_dynamic_cohorts', ['cohortid' => $cohort->id]);
         if ($rule) {
-            $rule->cohortid     = $cohort->id;
-            $rule->enabled      = 1;
-            $rule->realtime     = 1;
-            $rule->operator     = 0; // AND
+            $rule->name = $cohortname;
+            $rule->enabled = 1;
+            $rule->realtime = 1;
+            $rule->operator = 0; // AND.
             $rule->usermodified = $adminid;
             $rule->timemodified = $now;
             $DB->update_record('tool_dynamic_cohorts', $rule);
             $ruleid = (int)$rule->id;
         } else {
             $ruleid = (int)$DB->insert_record('tool_dynamic_cohorts', (object)[
-                'name'           => $cohortname,
-                'description'    => '',
-                'cohortid'       => $cohort->id,
-                'enabled'        => 1,
+                'name' => $cohortname,
+                'description' => '',
+                'cohortid' => $cohort->id,
+                'enabled' => 1,
                 'bulkprocessing' => 0,
-                'broken'         => 0,
-                'operator'       => 0, // AND
-                'realtime'       => 1,
-                'usermodified'   => $adminid,
-                'timecreated'    => $now,
-                'timemodified'   => $now,
+                'broken' => 0,
+                'operator' => 0, // AND.
+                'realtime' => 1,
+                'usermodified' => $adminid,
+                'timecreated' => $now,
+                'timemodified' => $now,
             ], true);
-            mtrace("  created dynamic rule '{$cohortname}' (id: {$ruleid}).");
+            $trace("  created dynamic rule '{$cohortname}' (id: {$ruleid}).");
         }
 
         // Condition 0: auth = oauth2.
-        $this->upsert_condition($ruleid, $CLASS_AUTH, [
-            'authmethod'    => 'auth',
-            'auth_operator' => '3',
-            'auth_value'    => 'oauth2',
+        $this->upsert_condition($ruleid, self::CLASS_AUTH, [
+            'authmethod' => 'auth',
+            'auth_operator' => self::OP_EQUALS,
+            'auth_value' => org_roles::AUTH,
         ], 0, $adminid, $now);
 
-        // Conditions 1 & 2: ssoorg and ssogroups profile fields.
-        // Two conditions share the same classname; distinguish by 'profilefield' in configdata.
-        $orgkey = 'profile_field_ssoorg';
-        $grpkey = 'profile_field_ssogroups';
+        // Conditions 1 & 2: the ssoorg and ssogroups list fields. Both are stored
+        // delimiter-wrapped, so "contains ,value," is an exact element test.
+        $orgkey = 'profile_field_' . profile_fields::ORG;
+        $grpkey = 'profile_field_' . profile_fields::GROUPS;
 
-        $orgcfg = ['profilefield' => $orgkey, "{$orgkey}_operator" => '1', "{$orgkey}_value" => $orgvalue, 'include_missing_data' => 0];
-        $grpcfg = ['profilefield' => $grpkey, "{$grpkey}_operator" => '1', "{$grpkey}_value" => $groupvalue, 'include_missing_data' => 0];
+        $orgcfg = [
+            'profilefield' => $orgkey,
+            "{$orgkey}_operator" => self::OP_CONTAINS,
+            "{$orgkey}_value" => org_roles::list_needle($orgvalue),
+            'include_missing_data' => 0,
+        ];
+        $grpcfg = [
+            'profilefield' => $grpkey,
+            "{$grpkey}_operator" => self::OP_CONTAINS,
+            "{$grpkey}_value" => org_roles::list_needle($groupvalue),
+            'include_missing_data' => 0,
+        ];
 
+        // Two conditions share the same classname; distinguish by 'profilefield'.
         $orgcond = null;
         $grpcond = null;
-        foreach ($DB->get_records('tool_dynamic_cohorts_c', ['ruleid' => $ruleid, 'classname' => $CLASS_PROFILE]) as $rec) {
+        foreach ($DB->get_records('tool_dynamic_cohorts_c', ['ruleid' => $ruleid, 'classname' => self::CLASS_PROFILE]) as $rec) {
             $cfg = json_decode($rec->configdata, true);
-            if (isset($cfg['profilefield'])) {
-                if ($cfg['profilefield'] === $orgkey) {
-                    $orgcond = $rec;
-                }
-                if ($cfg['profilefield'] === $grpkey) {
-                    $grpcond = $rec;
-                }
+            if (!isset($cfg['profilefield'])) {
+                continue;
+            }
+            if ($cfg['profilefield'] === $orgkey) {
+                $orgcond = $rec;
+            }
+            if ($cfg['profilefield'] === $grpkey) {
+                $grpcond = $rec;
             }
         }
 
-        $this->upsert_profile_condition($orgcond, $ruleid, $CLASS_PROFILE, $orgcfg, 1, $adminid, $now);
-        $this->upsert_profile_condition($grpcond, $ruleid, $CLASS_PROFILE, $grpcfg, 2, $adminid, $now);
+        $this->upsert_condition($ruleid, self::CLASS_PROFILE, $orgcfg, 1, $adminid, $now, $orgcond);
+        $this->upsert_condition($ruleid, self::CLASS_PROFILE, $grpcfg, 2, $adminid, $now, $grpcond);
 
-        if (class_exists('\\cache_helper')) {
-            \cache_helper::purge_all();
-        }
-
-        $this->process_cohort_rule_now($ruleid);
-
-        return (int)$cohort->id;
+        return $ruleid;
     }
-
-    /**
-     * Sync all members of a cohort to a role assignment in a course category context.
-     * Uses component='block_crucible' to distinguish managed assignments from manual ones.
-     * Adds missing assignments and removes stale ones.
-     *
-     * @param string $cohortname
-     * @param int $cohortid
-     * @param string $roleshortname
-     * @param int $categoryid
-     */
-    private function sync_cohort_category_role(
-        string $cohortname,
-        int $cohortid,
-        string $roleshortname,
-        int $categoryid
-    ): void {
-        global $DB;
-
-        $role = $DB->get_record('role', ['shortname' => $roleshortname], 'id', IGNORE_MISSING);
-        if (!$role) {
-            mtrace("  WARNING: role '{$roleshortname}' not found — skipping sync for '{$cohortname}'.");
-            return;
-        }
-
-        $catctx = \context_coursecat::instance($categoryid);
-
-        $memberids  = array_map('intval', array_keys(
-            $DB->get_records('cohort_members', ['cohortid' => $cohortid], '', 'userid')
-        ));
-        $existingids = array_map('intval', array_keys(
-            $DB->get_records('role_assignments', [
-                'roleid'    => $role->id,
-                'contextid' => $catctx->id,
-                'component' => 'block_crucible',
-            ], '', 'userid')
-        ));
-
-        $added = 0;
-        foreach ($memberids as $userid) {
-            if (!in_array($userid, $existingids, true)) {
-                role_assign($role->id, $userid, $catctx->id, 'block_crucible', 0);
-                $added++;
-            }
-        }
-
-        $removed = 0;
-        foreach ($existingids as $userid) {
-            if (!in_array($userid, $memberids, true)) {
-                role_unassign($role->id, $userid, $catctx->id, 'block_crucible', 0);
-                $removed++;
-            }
-        }
-
-        if (class_exists('\\cache_helper')) {
-            \cache_helper::purge_by_event('changesincapabilities');
-        }
-
-        mtrace("  '{$cohortname}' → '{$roleshortname}': +{$added} added, -{$removed} removed.");
-    }
-
-    // -------------------------------------------------------------------------
-    // Condition helpers
-    // -------------------------------------------------------------------------
 
     /**
      * Upsert a condition record.
@@ -392,97 +346,65 @@ class sync_org_roles extends \core\task\scheduled_task
      * @param int $sortorder
      * @param int $adminid
      * @param int $now
+     * @param object|null $existing pre-resolved record, for classnames used more than once per rule
      */
-    private function upsert_condition(int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void {
-        global $DB;
-
-        $json     = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $existing = $DB->get_record('tool_dynamic_cohorts_c', ['ruleid' => $ruleid, 'classname' => $classname]);
-        if ($existing) {
-            $existing->configdata   = $json;
-            $existing->sortorder    = $sortorder;
-            $existing->usermodified = $adminid;
-            $existing->timemodified = $now;
-            $DB->update_record('tool_dynamic_cohorts_c', $existing);
-        } else {
-            $DB->insert_record('tool_dynamic_cohorts_c', (object)[
-                'ruleid'       => $ruleid,
-                'classname'    => $classname,
-                'configdata'   => $json,
-                'sortorder'    => $sortorder,
-                'usermodified' => $adminid,
-                'timecreated'  => $now,
-                'timemodified' => $now,
-            ]);
-        }
-    }
-
-    /**
-     * Upsert a profile field condition record.
-     *
-     * @param object|null $existing
-     * @param int $ruleid
-     * @param string $classname
-     * @param array $config
-     * @param int $sortorder
-     * @param int $adminid
-     * @param int $now
-     */
-    private function upsert_profile_condition(?object $existing, int $ruleid, string $classname, array $config, int $sortorder, int $adminid, int $now): void {
+    private function upsert_condition(
+        int $ruleid,
+        string $classname,
+        array $config,
+        int $sortorder,
+        int $adminid,
+        int $now,
+        ?object $existing = null
+    ): void {
         global $DB;
 
         $json = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        // Sortorder is part of the key, not just the classname: two conditions on this
+        // rule share the profile-field classname, so matching on classname alone made the
+        // second write land on top of the first and the org condition disappear.
+        $existing = $existing ?: $DB->get_record(
+            'tool_dynamic_cohorts_c',
+            ['ruleid' => $ruleid, 'classname' => $classname, 'sortorder' => $sortorder]
+        );
+
         if ($existing) {
-            $existing->configdata   = $json;
-            $existing->sortorder    = $sortorder;
+            $existing->configdata = $json;
+            $existing->sortorder = $sortorder;
             $existing->usermodified = $adminid;
             $existing->timemodified = $now;
             $DB->update_record('tool_dynamic_cohorts_c', $existing);
-        } else {
-            $DB->insert_record('tool_dynamic_cohorts_c', (object)[
-                'ruleid'       => $ruleid,
-                'classname'    => $classname,
-                'configdata'   => $json,
-                'sortorder'    => $sortorder,
-                'usermodified' => $adminid,
-                'timecreated'  => $now,
-                'timemodified' => $now,
-            ]);
+            return;
         }
-    }
 
-    /**
-     * Convert a string to a slug.
-     *
-     * @param string $value
-     * @return string
-     */
-    private function slugify(string $value): string {
-        return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($value)));
+        $DB->insert_record('tool_dynamic_cohorts_c', (object)[
+            'ruleid' => $ruleid,
+            'classname' => $classname,
+            'configdata' => $json,
+            'sortorder' => $sortorder,
+            'usermodified' => $adminid,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
     }
 
     /**
      * Process a dynamic cohort rule synchronously right now.
      *
      * @param int $ruleid
+     * @param callable $trace
      */
-    private function process_cohort_rule_now(int $ruleid): void {
-        if (!class_exists('\\tool_dynamic_cohorts\\rule')) {
-            mtrace("  WARNING: tool_dynamic_cohorts rule class not found - cannot process rule synchronously.");
-            return;
-        }
-
-        if (!class_exists('\\tool_dynamic_cohorts\\rule_manager')) {
-            mtrace("  WARNING: tool_dynamic_cohorts rule_manager class not found - cannot process rule synchronously.");
+    private function process_cohort_rule_now(int $ruleid, callable $trace): void {
+        if (!class_exists('\\tool_dynamic_cohorts\\rule') || !class_exists('\\tool_dynamic_cohorts\\rule_manager')) {
+            $trace('  WARNING: tool_dynamic_cohorts classes not found - cannot process rule synchronously.');
             return;
         }
 
         try {
             $rule = \tool_dynamic_cohorts\rule::get_record(['id' => $ruleid]);
             \tool_dynamic_cohorts\rule_manager::process_rule($rule);
-            mtrace("  processed cohort rule synchronously (id: {$ruleid}).");
         } catch (\Throwable $e) {
-            mtrace("  WARNING: failed to process cohort rule synchronously: " . $e->getMessage());
+            $trace('  WARNING: failed to process cohort rule synchronously: ' . $e->getMessage());
         }
     }
 }

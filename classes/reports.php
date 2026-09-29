@@ -26,6 +26,7 @@ namespace block_crucible;
 
 defined('MOODLE_INTERNAL') || die();
 
+use block_crucible\local\org_roles;
 use context_system;
 use core_user\fields;
 
@@ -118,7 +119,9 @@ class reports
                 $user = (object)[
                     'id'           => $uid,
                     'fullname'     => fullname($r),
-                    'organization' => s((string)($r->org ?? '')),
+                    // ssoorg is stored delimiter-wrapped (",Army,") so cohort conditions can
+                    // match one element exactly. Show the elements, not the storage form.
+                    'organization' => s(implode(', ', org_roles::split_list($r->org ?? ''))),
                     'workrole'     => s((string)($r->workrole ?? '')),
                     'cohortroles'  => '',
                     'profileurl'   => (new \moodle_url('/user/profile.php', ['id' => $uid]))->out(false),
