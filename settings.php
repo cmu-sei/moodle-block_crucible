@@ -165,6 +165,11 @@ if ($ADMIN->fulltree) {
     // the raw claim instead - which stops the cohort conditions matching. Sites that
     // mapped these before the sync task existed cannot be migrated automatically, because
     // removing another plugin's configuration is not this plugin's call, so say so.
+    //
+    // Which message is correct depends on whether the sync is on. With the sync off the
+    // mapping is not a second writer, it is the *only* writer - telling an admin to remove
+    // it would stop the fields being populated at all and silently break role granting. So
+    // warn about a conflict only when there really is one, and otherwise say "not yet".
     $conflicts = [];
     foreach (array_keys(\block_crucible\local\profile_fields::all()) as $shortname) {
         $mapped = $DB->get_fieldset_sql(
@@ -179,13 +184,19 @@ if ($ADMIN->fulltree) {
         }
     }
     if ($conflicts) {
+        if (get_config('block_crucible', 'enableorgrolesync')) {
+            $key = 'orgrolesyncmappingconflict';
+            $level = \core\output\notification::NOTIFY_WARNING;
+        } else {
+            $key = 'orgrolesyncmappingpending';
+            $level = \core\output\notification::NOTIFY_INFO;
+        }
         $settings->add(new admin_setting_description(
-            'block_crucible/orgrolesyncmappingconflict',
-            get_string('orgrolesyncmappingconflict', 'block_crucible'),
+            'block_crucible/' . $key,
+            get_string($key, 'block_crucible'),
             $OUTPUT->notification(
-                get_string('orgrolesyncmappingconflictdesc', 'block_crucible')
-                . html_writer::alist($conflicts),
-                \core\output\notification::NOTIFY_WARNING,
+                get_string($key . 'desc', 'block_crucible') . html_writer::alist($conflicts),
+                $level,
                 false
             )
         ));
