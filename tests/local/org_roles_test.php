@@ -412,4 +412,34 @@ final class org_roles_test extends \advanced_testcase {
     public function test_join_list_keeps_separate_values_separate(): void {
         $this->assertSame(',Demo Org,Second Org,', org_roles::join_list(['Demo Org', 'Second Org']));
     }
+
+    /**
+     * unstorable_values() tells a caller which values join_list() will not store.
+     *
+     * Without it, "" back from join_list() is ambiguous: no values, or no storable ones.
+     * A caller that stores the result has to be able to tell those apart, because writing
+     * "" over a real organization destroys it.
+     */
+    public function test_unstorable_values_names_the_values_that_cannot_be_stored(): void {
+        $this->assertSame([], org_roles::unstorable_values([]));
+        $this->assertSame([], org_roles::unstorable_values(['Demo Org', 'Second Org']));
+        $this->assertSame(['Acme, Inc.'], org_roles::unstorable_values(['Army', 'Acme, Inc.']));
+        $this->assertSame(['Acme, Inc.'], org_roles::unstorable_values([' Acme, Inc. ']));
+        $this->assertSame(
+            ['A,B', 'C,D'],
+            org_roles::unstorable_values(['A,B', 'Fine', 'C,D'])
+        );
+    }
+
+    /**
+     * An all-unstorable list is distinguishable from an empty one, which is the whole point.
+     */
+    public function test_an_all_unstorable_list_is_distinguishable_from_an_empty_one(): void {
+        $this->assertSame('', org_roles::join_list(['Acme, Inc.']));
+        $this->assertDebuggingCalled();
+        $this->assertSame(['Acme, Inc.'], org_roles::unstorable_values(['Acme, Inc.']));
+
+        $this->assertSame('', org_roles::join_list([]));
+        $this->assertSame([], org_roles::unstorable_values([]));
+    }
 }

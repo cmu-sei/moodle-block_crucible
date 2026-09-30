@@ -354,6 +354,132 @@ final class sync_keycloak_users_test extends \advanced_testcase {
     }
 
     /**
+     * An organization whose name contains the delimiter leaves the stored value alone.
+     *
+     * "Acme, Inc." cannot be held in a comma-separated list, so join_list() drops it and
+     * returns "". Writing that is the absent-is-not-empty fault in another guise: Keycloak
+     * sent a real organization and Moodle would store nothing. The upgrade step goes out of
+     * its way to preserve these values for an administrator; the sync must not undo that an
+     * hour later.
+     */
+    public function test_an_unstorable_org_does_not_empty_the_stored_one(): void {
+        $this->prepare_site();
+        $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Acme Inc']]),
+        ]));
+        $this->assertSame(',Acme Inc,', $this->profile_value('kc-1', profile_fields::ORG));
+
+        // Renamed in Keycloak to a form this storage cannot hold.
+        $output = $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.']]),
+        ]));
+
+        $this->assertSame(',Acme Inc,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertStringContainsString('"Acme, Inc." (1 user(s))', $output);
+        $this->assertStringContainsString('cannot be stored', $output);
+        // The drop is also reported through debugging() by join_list(), which is a
+        // developer aid and not what this test is about - the mtrace line above is.
+        $this->resetDebugging();
+    }
+
+    /**
+     * A new user whose only organization is unstorable gets an empty field, not a wrong one.
+     *
+     * There is nothing to preserve here, so the only requirement is that the run says so
+     * rather than inventing "Acme" and "Inc." as two organizations.
+     */
+    public function test_an_unstorable_org_on_a_new_user_is_reported(): void {
+        $this->prepare_site();
+
+        $output = $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.']]),
+        ]));
+
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertStringContainsString('"Acme, Inc." (1 user(s))', $output);
+        // The drop is also reported through debugging() by join_list(), which is a
+        // developer aid and not what this test is about - the mtrace line above is.
+        $this->resetDebugging();
+    }
+
+    /**
+     * A partial drop still stores the values that are storable.
+     *
+     * Those are accurate, and the dropped one grants nothing either way: org_category_id()
+     * only ever sees what split_list() produces, so a comma-containing name can never match
+     * a category. Keeping the stale list instead would be the worse trade.
+     */
+    public function test_a_partly_unstorable_org_list_stores_the_rest(): void {
+        $this->prepare_site();
+
+        $output = $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.', 'Second Org']]),
+        ]));
+
+        $this->assertSame(',Second Org,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertStringContainsString('"Acme, Inc." (1 user(s))', $output);
+        // The drop is also reported through debugging() by join_list(), which is a
+        // developer aid and not what this test is about - the mtrace line above is.
+        $this->resetDebugging();
+    }
+
+    /**
+     * The report counts users per value, not one line per user.
+     *
+     * One renamed organization can be carried by thousands of accounts, and a line each
+     * would bury everything else in the task log.
+     */
+    public function test_the_unstorable_report_counts_users_per_value(): void {
+        $this->prepare_site();
+
+        $output = $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.']]),
+            $this->kc_user('kc-2', ['organization' => ['Acme, Inc.']]),
+            $this->kc_user('kc-3', ['organization' => ['Other, Ltd.']]),
+        ]));
+
+        $this->assertStringContainsString('2 Keycloak value(s) contain', $output);
+        $this->assertStringContainsString('"Acme, Inc." (2 user(s))', $output);
+        $this->assertStringContainsString('"Other, Ltd." (1 user(s))', $output);
+        // The drop is also reported through debugging() by join_list(), which is a
+        // developer aid and not what this test is about - the mtrace line above is.
+        $this->resetDebugging();
+    }
+
+    /**
+     * A realm with nothing unstorable says nothing about it.
+     */
+    public function test_a_clean_realm_reports_no_unstorable_values(): void {
+        $this->prepare_site();
+
+        $output = $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Demo Org']]),
+        ]));
+
+        $this->assertStringNotContainsString('cannot be stored', $output);
+    }
+
+    /**
+     * A group whose name contains the delimiter never reaches the group list at all.
+     *
+     * fetch_group_membership() only records groups whose name is a group_role_map() key,
+     * and those are fixed slugs. This pins that, so the org-side guard is not copied here
+     * for a path that cannot be taken.
+     */
+    public function test_an_unstorable_group_name_never_reaches_the_group_list(): void {
+        $this->prepare_site();
+
+        $output = $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1', ['organization' => ['Demo Org']])],
+            [['id' => 'g-1', 'name' => 'odd,group'], ['id' => 'g-2', 'name' => 'cyber-managers']],
+            ['g-1' => [['id' => 'kc-1']], 'g-2' => [['id' => 'kc-1']]]
+        ));
+
+        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertStringNotContainsString('odd,group', $output);
+    }
+
+    /**
      * A run that would deprovision most of the site refuses to, and says why.
      *
      * A short page, a realm rebuild or a changed client scope all look like "Keycloak has

@@ -108,6 +108,10 @@ class org_roles {
      * "Acme, Inc." would otherwise be split into "Acme" and "Inc.", two organizations
      * that match no category and no cohort rule. Dropping it loudly beats inventing them.
      *
+     * The debugging() call here is only a developer aid, and a caller that would *store*
+     * the result must not rely on it: dropping every value returns "", and writing that
+     * over a real organization destroys it. Ask unstorable_values() first.
+     *
      * @param string[] $values
      * @return string "" for an empty list, otherwise ",a,b,"
      */
@@ -134,6 +138,30 @@ class org_roles {
         }
 
         return self::DELIM . implode(self::DELIM, $elements) . self::DELIM;
+    }
+
+    /**
+     * The values join_list() would refuse to store, so a caller can tell "no values" from
+     * "no storable values".
+     *
+     * "Acme, Inc." is an ordinary organization name, and this storage cannot represent it
+     * while the delimiter is a comma - splitting it invents two organizations that match
+     * no category, so join_list() drops it and returns "". A caller that then wrote ""
+     * would replace a real organization with nothing, which is the thing to avoid.
+     *
+     * @param string[] $values
+     * @return string[] the unstorable values, trimmed, in the order given
+     */
+    public static function unstorable_values(array $values): array {
+        $unstorable = [];
+        foreach ($values as $value) {
+            $value = trim((string)$value);
+            if ($value !== '' && strpos($value, self::DELIM) !== false) {
+                $unstorable[] = $value;
+            }
+        }
+
+        return $unstorable;
     }
 
     /**
