@@ -42,7 +42,7 @@ DM24-1176
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version = 2026093001;
+$plugin->version = 2026093002;
 $plugin->requires  = 2025041400;
 $plugin->component = 'block_crucible';
 $plugin->maturity = MATURITY_ALPHA;
