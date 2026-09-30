@@ -46,6 +46,50 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     const PAGE_SIZE = 200;
 
     /**
+     * Profile field shortname => the Keycloak user attribute that feeds it.
+     *
+     * ssogroups is not here: it comes from group membership, not an attribute. ssorole is
+     * not here either, deliberately - see the note where $fields is built.
+     *
+     * @var array<string, string>
+     */
+    const ATTRIBUTE_FIELDS = [
+        profile_fields::ORG => 'organization',
+        profile_fields::TEAM => 'team',
+        profile_fields::WORKROLE => 'work_role',
+    ];
+
+    /**
+     * Largest share of the site's linked users a single run may deprovision.
+     *
+     * A short page, a realm rebuild or a changed client scope can all make Keycloak look
+     * like it has lost most of its users. Deprovisioning is destructive enough that it is
+     * better to do nothing and say so loudly than to strip the whole site.
+     *
+     * Half is deliberately loose, and it is only sized for what the pass does today: clear
+     * ssogroups, which the next good run puts back along with the roles. A response that
+     * loses 40% of a large site still goes through, and that is tolerable precisely because
+     * it is reversible. Anything irreversible - deleting accounts, dropping enrolments,
+     * clearing a field Keycloak is not the only writer of - needs its own, much tighter
+     * limit; do not add it behind this one.
+     *
+     * @var float
+     */
+    const MAX_DEPROVISION_SHARE = 0.5;
+
+    /**
+     * Linked-user count below which the share guard is not meaningful and is skipped.
+     *
+     * Counts the site's oauth2 users with an idnumber, not the number to be deprovisioned:
+     * on a five-user site "all five are gone" is as likely to be true as not, and a guard
+     * that blocked it would leave a small deployment unable to deprovision at all. At
+     * exactly this many linked users the guard does apply.
+     *
+     * @var int
+     */
+    const DEPROVISION_GUARD_FLOOR = 10;
+
+    /**
      * Get task name.
      *
      * @return string
@@ -140,6 +184,8 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         $seen    = [];
         $touched = [];
         $fetchfailed = false;
+        $attrseen = [];
+        $pendingclears = [];
 
         do {
             $users = $this->fetch_kc_users($adminbase, $token, $first, $pagesize, $onlyenabled);
@@ -183,13 +229,30 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                 // Keycloak attributes and group membership -> custom profile fields.
                 // Multi-valued attributes are kept whole; taking only the first value
                 // made a user's org silently switch when the first one was removed.
-                $fields = [
-                    profile_fields::ROLE => $this->kc_attr_text($kc, 'moodle_roles'),
-                    profile_fields::ORG => org_roles::join_list($this->kc_attr_values($kc, 'organization')),
-                    profile_fields::TEAM => $this->kc_attr_text($kc, 'team'),
-                    profile_fields::WORKROLE => $this->kc_attr_text($kc, 'work_role'),
-                ];
+                //
+                // ssorole is deliberately absent: nothing reads it, and writing it here
+                // blanked the value an OAuth 2 login field mapping had stored, because no
+                // realm actually carries a moodle_roles attribute.
+                $fields = [];
+                foreach (self::ATTRIBUTE_FIELDS as $short => $attribute) {
+                    if (!$this->kc_has_attr($kc, $attribute)) {
+                        // The attribute is absent, which is not the same as empty. Keycloak
+                        // drops the key entirely when the last value is removed, so absence
+                        // alone cannot tell "this org was deleted" from "this realm has
+                        // never populated this attribute". Defer the clear and decide after
+                        // the whole run, once we know whether any user carries it at all.
+                        $pendingclears[$kcid][$short] = true;
+                        continue;
+                    }
+                    $attrseen[$attribute] = true;
+                    $values = $this->kc_attr_values($kc, $attribute);
+                    $fields[$short] = $short === profile_fields::ORG
+                        ? org_roles::join_list($values)
+                        : $this->kc_attr_text($kc, $attribute);
+                }
                 if ($groupmembers !== null) {
+                    // Group membership is not an attribute: an empty list means the user is
+                    // in none of the mapped groups, which is a fact, so write it.
                     $fields[profile_fields::GROUPS] = org_roles::join_list($groupmembers[$kcid] ?? []);
                 }
 
@@ -221,9 +284,10 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                         $needs = true;
                     }
 
-                    // Custom profile fields. Writing '' for an attribute Keycloak no
-                    // longer has is the point: skipping the write left a deleted
-                    // organization in place forever, and the role with it.
+                    // Custom profile fields. Writing '' for an attribute Keycloak still
+                    // carries but has emptied is the point: skipping the write left a
+                    // deleted organization in place forever, and the role with it. Fields
+                    // whose attribute was absent entirely are not here - see $pendingclears.
                     $pf = profile_user_record($existing->id, false) ?: new \stdClass();
                     $profilechanged = false;
                     foreach ($fields as $short => $val) {
@@ -287,6 +351,11 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $first += $count;
         } while ($count === $pagesize);
 
+        $cleared = 0;
+        if (!$fetchfailed) {
+            $cleared = $this->apply_pending_clears($pendingclears, $attrseen, $touched);
+        }
+
         $deprovisioned = 0;
         if ($fetchfailed) {
             mtrace('[crucible] a /users page failed - skipping the deprovision pass this run.');
@@ -295,7 +364,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         }
 
         mtrace("[crucible] sync complete: created={$created} updated={$updated} skipped={$skipped} "
-            . "deprovisioned={$deprovisioned}");
+            . "cleared={$cleared} deprovisioned={$deprovisioned}");
 
         // Reconcile the users whose org data actually moved, rather than leaving every
         // change to wait for the hourly role sync.
@@ -306,12 +375,86 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     }
 
     /**
-     * Strip the Keycloak-derived state of users Keycloak no longer lists.
+     * Clear the fields whose attribute was absent, but only where that means something.
      *
-     * A user who has been deleted or disabled in Keycloak keeps working in Moodle
-     * otherwise: clearing the sso* fields is what makes the role reconcile take their
-     * category roles back. Suspending the account as well is a separate, off-by-default
-     * choice, because some deployments keep the account for its grades and logs.
+     * An attribute no user in the realm carries is one Keycloak does not manage, so
+     * blanking the profile field would destroy whatever else populated it - an OAuth 2
+     * login field mapping, an import, a hand edit. An attribute some users carry and
+     * others do not is managed, and absence there really does mean "removed", so the
+     * clear goes ahead.
+     *
+     * Known limit: when the *last* user carrying an attribute has it removed, no user in
+     * that run carries it, so the attribute reads as unmanaged and that user keeps a stale
+     * value until someone carries it again. There is no way to tell that case apart from a
+     * realm that never had the attribute, and erring the other way is what blanked ssorole
+     * site-wide - a stale value on one user is the cheaper mistake. The trace line names
+     * the attribute so an admin can see it happening.
+     *
+     * @param array $pendingclears Keycloak id => [profile field shortname => true]
+     * @param array $attrseen Keycloak attribute names carried by at least one user
+     * @param int[] $touched collects the ids of users changed here, by reference
+     * @return int number of profile fields cleared
+     */
+    private function apply_pending_clears(array $pendingclears, array $attrseen, array &$touched): int {
+        global $DB;
+
+        $unmanaged = [];
+        foreach (self::ATTRIBUTE_FIELDS as $short => $attribute) {
+            if (!isset($attrseen[$attribute])) {
+                $unmanaged[$short] = $attribute;
+            }
+        }
+        if ($unmanaged) {
+            mtrace('[crucible] no Keycloak user carries ' . implode(', ', $unmanaged)
+                . ' - leaving the matching profile field(s) alone rather than blanking them.');
+        }
+        if (!$pendingclears) {
+            return 0;
+        }
+
+        $cleared = 0;
+        foreach ($pendingclears as $kcid => $shortnames) {
+            $shortnames = array_diff_key($shortnames, $unmanaged);
+            if (!$shortnames) {
+                continue;
+            }
+
+            $user = $DB->get_record('user', ['idnumber' => $kcid, 'deleted' => 0], 'id', IGNORE_MISSING);
+            if (!$user) {
+                continue;
+            }
+
+            $current = profile_user_record((int)$user->id, false) ?: new \stdClass();
+            $u = (object)['id' => (int)$user->id];
+            $changed = false;
+            foreach (array_keys($shortnames) as $short) {
+                if (isset($current->$short) && (string)$current->$short !== '') {
+                    $u->{'profile_field_' . $short} = '';
+                    $changed = true;
+                    $cleared++;
+                }
+            }
+            if ($changed) {
+                profile_save_data($u);
+                $touched[] = (int)$user->id;
+            }
+        }
+
+        return $cleared;
+    }
+
+    /**
+     * Take back the roles of users Keycloak no longer lists.
+     *
+     * Only ssogroups is cleared, and that is what revokes the roles: with no groups
+     * org_roles grants nothing, so the reconcile removes every managed assignment. The
+     * organization, team and work role are left in place on purpose. "Absent from
+     * Keycloak" does not mean "has no organization", those fields are shown to the user
+     * and used by the reports, and once cleared they cannot be recovered - the values
+     * only exist in a Keycloak that no longer lists the account.
+     *
+     * Suspending the account as well is a separate, off-by-default choice, because some
+     * deployments keep the account for its grades and logs.
      *
      * @param string[] $seenkcids Keycloak ids present in this run's responses
      * @param int[] $touched collects the ids of users changed here, by reference
@@ -322,7 +465,6 @@ class sync_keycloak_users extends \core\task\scheduled_task {
 
         $seen = array_fill_keys($seenkcids, true);
         $suspend = (bool)get_config('block_crucible', 'suspendmissingusers');
-        $shortnames = array_keys(profile_fields::all());
 
         $candidates = $DB->get_records_select(
             'user',
@@ -332,20 +474,39 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             'id, idnumber, suspended'
         );
 
-        $count = 0;
+        $missing = [];
         foreach ($candidates as $candidate) {
-            if (isset($seen[$candidate->idnumber])) {
-                continue;
+            if (!isset($seen[$candidate->idnumber])) {
+                $missing[] = $candidate;
             }
+        }
+        if (!$missing) {
+            return 0;
+        }
 
+        // Refuse to strip most of the site on the strength of one API response.
+        $total = count($candidates);
+        if (
+            $total >= self::DEPROVISION_GUARD_FLOOR
+            && count($missing) > $total * self::MAX_DEPROVISION_SHARE
+        ) {
+            mtrace('[crucible] ' . count($missing) . ' of ' . $total . ' linked users are missing from'
+                . ' Keycloak, which is over the ' . (int)(self::MAX_DEPROVISION_SHARE * 100)
+                . '% guard - skipping the deprovision pass. Check the realm, the client scopes and the'
+                . ' service account, then re-run the task.');
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($missing as $candidate) {
             $current = profile_user_record((int)$candidate->id, false) ?: new \stdClass();
             $u = (object)['id' => (int)$candidate->id];
             $changed = false;
-            foreach ($shortnames as $short) {
-                if (isset($current->$short) && (string)$current->$short !== '') {
-                    $u->{'profile_field_' . $short} = '';
-                    $changed = true;
-                }
+
+            $groups = profile_fields::GROUPS;
+            if (isset($current->$groups) && (string)$current->$groups !== '') {
+                $u->{'profile_field_' . $groups} = '';
+                $changed = true;
             }
 
             $suspending = $suspend && !$candidate->suspended;
@@ -570,6 +731,21 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             // Statuses are reported by the callers rather than raised.
             RequestOptions::HTTP_ERRORS => false,
         ]);
+    }
+
+    /**
+     * Whether a Keycloak user record carries an attribute at all.
+     *
+     * Distinct from the attribute being empty. Keycloak removes the key when the last
+     * value goes, so this cannot tell "deleted" from "never set" on its own - the caller
+     * decides by looking at whether any user in the realm carries it.
+     *
+     * @param array $kc Keycloak user record
+     * @param string $name Attribute name
+     * @return bool true when the key is present, whatever its value
+     */
+    private function kc_has_attr(array $kc, string $name): bool {
+        return is_array($kc['attributes'] ?? null) && array_key_exists($name, $kc['attributes']);
     }
 
     /**
