@@ -81,12 +81,30 @@ class org_roles {
      * Accepts both the canonical wrapped form (",a,b,") and a bare comma separated
      * list, so values written before the wrapping convention still resolve.
      *
+     * A value containing ", " is read as one opaque element instead of being split.
+     * join_list() can never produce that sequence - it trims every element and drops any
+     * element containing the delimiter - so the only values carrying it are the ones the
+     * 2026092300 upgrade deliberately preserved as "a single name that happens to contain a
+     * comma". Splitting "Acme, Holdings" there would produce "Acme" and "Holdings", and if either
+     * happened to name a top-level category the user would be granted roles in an
+     * organization they have nothing to do with. Granting nothing is the safe reading.
+     *
+     * Note that this is deliberately narrower than "anything unwrapped". Bare values keep
+     * being written after the upgrade - an OAuth 2 login field mapping stores the raw claim
+     * unwrapped at every login, and is the only writer of ssogroups in one deployment - so
+     * treating every unwrapped value as opaque would stop a multi-group user matching any
+     * group and revoke the roles of exactly the most privileged accounts.
+     *
      * @param string|null $value
      * @return string[] unique, non-empty, in order of first appearance
      */
     public static function split_list(?string $value): array {
         if ($value === null || trim($value) === '') {
             return [];
+        }
+
+        if (strpos($value, self::DELIM . ' ') !== false) {
+            return [trim($value)];
         }
 
         $parts = [];

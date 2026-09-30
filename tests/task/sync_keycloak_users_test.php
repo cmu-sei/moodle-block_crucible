@@ -397,6 +397,10 @@ final class sync_keycloak_users_test extends \advanced_testcase {
 
         $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORG));
         $this->assertStringContainsString('"Acme, Inc." (1 user(s))', $output);
+        // The message has to hold for this case too. An earlier wording said the field had
+        // been "left as it was rather than emptied", which is only true of an existing user.
+        $this->assertStringContainsString('one that did not is still empty', $output);
+        $this->assertStringNotContainsString('Rename', $output);
         // The drop is also reported through debugging() by join_list(), which is a
         // developer aid and not what this test is about - the mtrace line above is.
         $this->resetDebugging();

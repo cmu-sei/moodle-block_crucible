@@ -410,6 +410,11 @@ class sync_keycloak_users extends \core\task\scheduled_task {
      * One line per distinct value with the number of users carrying it, rather than one
      * line per user, because a single renamed organization would otherwise flood the log.
      *
+     * The message states what happened and stops there. It deliberately does not tell an
+     * administrator to rename the value in Keycloak: these names are unit hierarchies that
+     * the planned organization-to-category mapping is meant to resolve as they stand, so
+     * advising a rename would send someone to edit the realm for nothing.
+     *
      * @param array $unstorablevalues value => number of users carrying it
      */
     private function report_unstorable_values(array $unstorablevalues): void {
@@ -418,9 +423,10 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         }
 
         mtrace('[crucible] ' . count($unstorablevalues) . ' Keycloak value(s) contain a "'
-            . org_roles::DELIM . '" and cannot be stored in a delimiter-separated list. The'
-            . ' matching profile field has been left as it was rather than emptied. Rename'
-            . ' them in Keycloak to remove the delimiter:');
+            . org_roles::DELIM . '" and cannot be stored in this plugin\'s list format, so they'
+            . ' were not written. A profile field that already held a value keeps it; one that'
+            . ' did not is still empty. Either way these values grant no roles, because the'
+            . ' organization is matched against a course category name:');
         arsort($unstorablevalues);
         foreach ($unstorablevalues as $value => $users) {
             mtrace('[crucible]   "' . $value . '" (' . $users . ' user(s))');

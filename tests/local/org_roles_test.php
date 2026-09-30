@@ -354,6 +354,82 @@ final class org_roles_test extends \advanced_testcase {
     }
 
     /**
+     * A value the upgrade preserved grants nothing in the categories its fragments name.
+     *
+     * The 2026092300 upgrade leaves "Acme, Holdings" exactly as it is, because splitting it is
+     * irreversible and it is more likely one name than two. If the reconcile then split it,
+     * a user whose organization is "Acme, Holdings" would be granted roles in a category called
+     * "Acme" or "Holdings" - real organizations they have nothing to do with. Granting nothing is
+     * the safe reading of an ambiguous value.
+     */
+    public function test_a_preserved_legacy_value_grants_nothing_in_its_fragments(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/user/profile/lib.php');
+
+        $acme = $this->create_org_category('Acme');
+        $holdings = $this->create_org_category('Holdings');
+        $userid = $this->create_sso_user([], ['cyber-managers']);
+        // Written the way the upgrade leaves it: unwrapped, comma and space intact.
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
+        ]);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame([], $this->managed_roles($userid, $acme));
+        $this->assertSame([], $this->managed_roles($userid, $holdings));
+    }
+
+    /**
+     * A preserved value does resolve against a category named exactly that.
+     *
+     * Not the point of the change, but worth pinning: reading the value whole is what makes
+     * this possible at all, and it is the correct outcome - the administrator named the
+     * category after the organization. One deployment has a category named this way that
+     * nothing could previously match.
+     */
+    public function test_a_preserved_legacy_value_matches_a_category_named_exactly_that(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/user/profile/lib.php');
+
+        $categoryid = $this->create_org_category('Acme, Holdings');
+        $userid = $this->create_sso_user([], ['cyber-managers']);
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
+        ]);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame(['cyber-manager'], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * A bare comma separated list still splits, so the OAuth 2 mapping path keeps working.
+     *
+     * That mapping writes the raw claim unwrapped at every login, and in one deployment it
+     * is the only writer of ssogroups. Reading every unwrapped value whole would stop a
+     * multi-group user matching any group and revoke the roles of the most privileged
+     * accounts on the site.
+     */
+    public function test_a_bare_group_list_still_splits(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/user/profile/lib.php');
+
+        $categoryid = $this->create_org_category('Demo Org');
+        $userid = $this->create_sso_user(['Demo Org'], []);
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::GROUPS => 'cyber-managers,lab-builders',
+        ]);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame(['cyber-manager', 'lab-builder'], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
      * Values stored before the wrapping convention still parse.
      *
      * @param string|null $stored
@@ -374,8 +450,14 @@ final class org_roles_test extends \advanced_testcase {
             'null' => [null, []],
             'empty' => ['', []],
             'wrapped' => [',a,b,', ['a', 'b']],
+            // A bare list still splits: the OAuth 2 login field mapping writes the raw
+            // claim unwrapped at every login, so this is not only a pre-upgrade form.
             'bare csv' => ['a,b', ['a', 'b']],
-            'spaced' => ['a, b', ['a', 'b']],
+            // A comma followed by a space is the upgrade's marker for "one name that happens
+            // to contain a comma", and join_list() can never produce it, so it is read whole.
+            'spaced' => ['a, b', ['a, b']],
+            'preserved legacy org' => ['Acme, Holdings', ['Acme, Holdings']],
+            'spaced inside a longer list' => ['Globex, Ltd.', ['Globex, Ltd.']],
             'single' => ['a', ['a']],
             'duplicates' => [',a,a,b,', ['a', 'b']],
             'only delimiters' => [',,,', []],
