@@ -186,6 +186,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         $fetchfailed = false;
         $attrseen = [];
         $pendingclears = [];
+        $unstorablevalues = [];
 
         do {
             $users = $this->fetch_kc_users($adminbase, $token, $first, $pagesize, $onlyenabled);
@@ -245,14 +246,39 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                         continue;
                     }
                     $attrseen[$attribute] = true;
+                    if ($short !== profile_fields::ORG) {
+                        $fields[$short] = $this->kc_attr_text($kc, $attribute);
+                        continue;
+                    }
+
+                    // The org list is delimiter-wrapped, so a value containing the
+                    // delimiter cannot be stored and join_list() drops it. Writing the
+                    // result regardless is the absent-is-not-empty fault again in another
+                    // guise: Keycloak sent a real organization and we would store ''.
                     $values = $this->kc_attr_values($kc, $attribute);
-                    $fields[$short] = $short === profile_fields::ORG
-                        ? org_roles::join_list($values)
-                        : $this->kc_attr_text($kc, $attribute);
+                    $unstorable = org_roles::unstorable_values($values);
+                    foreach ($unstorable as $value) {
+                        $unstorablevalues[$value] = ($unstorablevalues[$value] ?? 0) + 1;
+                    }
+                    $encoded = org_roles::join_list($values);
+                    if ($encoded === '' && $unstorable) {
+                        // Nothing storable survived. Leave the field exactly as it is -
+                        // and not via $pendingclears either, because the attribute is
+                        // present and managed, so that resolution does not apply here.
+                        continue;
+                    }
+                    // A partial drop still writes the survivors: those values are accurate,
+                    // and an unstorable one grants nothing in any case, because
+                    // org_category_id() only ever sees what split_list() produces.
+                    $fields[$short] = $encoded;
                 }
                 if ($groupmembers !== null) {
                     // Group membership is not an attribute: an empty list means the user is
-                    // in none of the mapped groups, which is a fact, so write it.
+                    // in none of the mapped groups, which is a fact, so write it. No
+                    // unstorable-value guard is needed here, unlike the org above:
+                    // fetch_group_membership() only records groups whose name is a
+                    // group_role_map() key, and those are fixed slugs with no delimiter in
+                    // them. Change that if the map ever takes its names from configuration.
                     $fields[profile_fields::GROUPS] = org_roles::join_list($groupmembers[$kcid] ?? []);
                 }
 
@@ -351,6 +377,8 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $first += $count;
         } while ($count === $pagesize);
 
+        $this->report_unstorable_values($unstorablevalues);
+
         $cleared = 0;
         if (!$fetchfailed) {
             $cleared = $this->apply_pending_clears($pendingclears, $attrseen, $touched);
@@ -371,6 +399,31 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         if ($touched && org_roles::is_enabled()) {
             $counts = org_roles::reconcile_users($touched);
             mtrace("[crucible] org roles: +{$counts['assigned']} assigned, -{$counts['unassigned']} removed.");
+        }
+    }
+
+    /**
+     * Name the values this storage cannot hold, in the task log.
+     *
+     * join_list() reports these through debugging(), which is silent on any site that is
+     * not in developer mode - so the one place they mattered, production, never saw them.
+     * One line per distinct value with the number of users carrying it, rather than one
+     * line per user, because a single renamed organization would otherwise flood the log.
+     *
+     * @param array $unstorablevalues value => number of users carrying it
+     */
+    private function report_unstorable_values(array $unstorablevalues): void {
+        if (!$unstorablevalues) {
+            return;
+        }
+
+        mtrace('[crucible] ' . count($unstorablevalues) . ' Keycloak value(s) contain a "'
+            . org_roles::DELIM . '" and cannot be stored in a delimiter-separated list. The'
+            . ' matching profile field has been left as it was rather than emptied. Rename'
+            . ' them in Keycloak to remove the delimiter:');
+        arsort($unstorablevalues);
+        foreach ($unstorablevalues as $value => $users) {
+            mtrace('[crucible]   "' . $value . '" (' . $users . ' user(s))');
         }
     }
 
