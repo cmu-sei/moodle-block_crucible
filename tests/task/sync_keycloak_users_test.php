@@ -272,6 +272,50 @@ final class sync_keycloak_users_test extends \advanced_testcase {
     }
 
     /**
+     * Turn the role sync on and provision the roles and the org category it needs.
+     *
+     * Without these the reconcile has nothing to grant, so a test that only checks the
+     * profile fields would pass whether or not the roles were ever taken back.
+     *
+     * @param string $org Org name, matched against a top-level category name.
+     * @return int the category id the roles are granted in
+     */
+    private function enable_role_sync(string $org = 'Demo Org'): int {
+        set_config('enableorgrolesync', 1, 'block_crucible');
+
+        foreach (org_roles::group_role_map() as $shortname) {
+            $roleid = create_role(ucwords(str_replace('-', ' ', $shortname)), $shortname, 'Test role');
+            set_role_contextlevels($roleid, [CONTEXT_COURSECAT]);
+        }
+
+        $category = $this->getDataGenerator()->create_category(['name' => $org, 'parent' => 0]);
+        org_roles::reset_caches();
+
+        return (int)$category->id;
+    }
+
+    /**
+     * How many role assignments this plugin has granted a user in a category context.
+     *
+     * @param string $kcid Keycloak user id, stored as the Moodle idnumber.
+     * @param int $categoryid
+     * @return int
+     */
+    private function managed_assignment_count(string $kcid, int $categoryid): int {
+        global $DB;
+
+        $userid = $DB->get_field('user', 'id', ['idnumber' => $kcid, 'deleted' => 0]);
+        $this->assertNotEmpty($userid, "no Moodle user for Keycloak id {$kcid}");
+        $context = \context_coursecat::instance($categoryid);
+
+        return $DB->count_records('role_assignments', [
+            'userid' => (int)$userid,
+            'contextid' => $context->id,
+            'component' => org_roles::COMPONENT,
+        ]);
+    }
+
+    /**
      * Every value of a multi-valued attribute is stored, not just the first.
      */
     public function test_a_multi_valued_organization_is_stored_in_full(): void {
@@ -290,17 +334,216 @@ final class sync_keycloak_users_test extends \advanced_testcase {
      */
     public function test_a_deleted_attribute_is_cleared(): void {
         $this->prepare_site();
+        $keeper = ['organization' => ['Second Org'], 'team' => ['Red']];
         $this->run_task($this->create_realm_task([
             $this->kc_user('kc-1', ['organization' => ['Demo Org'], 'team' => ['Blue']]),
+            $this->kc_user('kc-2', $keeper),
         ]));
         $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
         $this->assertSame('Blue', $this->profile_value('kc-1', profile_fields::TEAM));
 
-        // The attributes are gone from Keycloak on the next run.
-        $this->run_task($this->create_realm_task([$this->kc_user('kc-1')]));
+        // The attributes are gone from this user on the next run. kc-2 still carries
+        // them, so Keycloak plainly manages them and the removal is a real deletion.
+        $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1'),
+            $this->kc_user('kc-2', $keeper),
+        ]));
 
         $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORG));
         $this->assertSame('', $this->profile_value('kc-1', profile_fields::TEAM));
+    }
+
+    /**
+     * A run that would deprovision most of the site refuses to, and says why.
+     *
+     * A short page, a realm rebuild or a changed client scope all look like "Keycloak has
+     * lost nearly everyone". Stripping the site on that evidence is worse than doing
+     * nothing, so the pass bails out above the share guard.
+     */
+    public function test_a_mass_deprovision_is_refused(): void {
+        $this->prepare_site();
+
+        $users = [];
+        $members = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $users[] = $this->kc_user('kc-' . $i, ['organization' => ['Demo Org']]);
+            $members[] = ['id' => 'kc-' . $i];
+        }
+        $this->run_task($this->create_realm_task(
+            $users,
+            [['id' => 'g-1', 'name' => 'cyber-managers']],
+            ['g-1' => $members]
+        ));
+        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+
+        // Every one of them vanishes at once.
+        $output = $this->run_task($this->create_realm_task([]));
+
+        $this->assertStringContainsString('12 of 12 linked users are missing', $output);
+        $this->assertStringContainsString('skipping the deprovision pass', $output);
+        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+    }
+
+    /**
+     * Below the guard floor the share is meaningless, so a small site still deprovisions.
+     */
+    public function test_a_small_site_still_deprovisions(): void {
+        $this->prepare_site();
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1', ['organization' => ['Demo Org']])],
+            [['id' => 'g-1', 'name' => 'cyber-managers']],
+            ['g-1' => [['id' => 'kc-1']]]
+        ));
+        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+
+        $this->run_task($this->create_realm_task([]));
+
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
+    }
+
+    /**
+     * The guard floor counts the site's linked users, not the number to be deprovisioned.
+     *
+     * Ten is a live boundary - one deployment has exactly that many linked users - so pin
+     * which side of it is guarded. At exactly the floor the guard applies, and half is the
+     * largest share that still goes through.
+     */
+    public function test_the_guard_floor_counts_linked_users(): void {
+        $this->prepare_site();
+
+        $users = [];
+        $members = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $users[] = $this->kc_user('kc-' . $i, ['organization' => ['Demo Org']]);
+            $members[] = ['id' => 'kc-' . $i];
+        }
+        $group = [['id' => 'g-1', 'name' => 'cyber-managers']];
+        $this->run_task($this->create_realm_task($users, $group, ['g-1' => $members]));
+
+        // Six of ten is over half: guarded, even though only six would be deprovisioned.
+        $output = $this->run_task($this->create_realm_task(
+            array_slice($users, 6),
+            $group,
+            ['g-1' => array_slice($members, 6)]
+        ));
+        $this->assertStringContainsString('6 of 10 linked users are missing', $output);
+        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+
+        // Five of ten is not over half, so the pass runs.
+        $output = $this->run_task($this->create_realm_task(
+            array_slice($users, 5),
+            $group,
+            ['g-1' => array_slice($members, 5)]
+        ));
+        $this->assertStringNotContainsString('skipping the deprovision pass', $output);
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
+    }
+
+    /**
+     * Deprovisioning revokes the roles in the same run, not on the next hourly sync.
+     *
+     * Clearing ssogroups is only the mechanism: with no groups the reconcile finds nothing
+     * desired and unassigns everything. The run calls that reconcile itself, so assert the
+     * assignments are actually gone rather than trusting the field write to imply it.
+     */
+    public function test_deprovisioning_revokes_the_roles_in_the_same_run(): void {
+        $this->prepare_site();
+        $categoryid = $this->enable_role_sync();
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1', ['organization' => ['Demo Org']])],
+            [['id' => 'g-1', 'name' => 'cyber-managers']],
+            ['g-1' => [['id' => 'kc-1']]]
+        ));
+        $this->assertSame(1, $this->managed_assignment_count('kc-1', $categoryid));
+
+        $output = $this->run_task($this->create_realm_task([]));
+
+        $this->assertSame(0, $this->managed_assignment_count('kc-1', $categoryid));
+        $this->assertStringContainsString('-1 removed', $output);
+        // The org survives: it is user-visible, irrecoverable, and not what grants the role.
+        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+    }
+
+    /**
+     * A refused deprovision leaves the roles in place, so nobody loses access to a bad
+     * API response.
+     */
+    public function test_a_refused_deprovision_keeps_the_roles(): void {
+        $this->prepare_site();
+        $categoryid = $this->enable_role_sync();
+
+        $users = [];
+        $members = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $users[] = $this->kc_user('kc-' . $i, ['organization' => ['Demo Org']]);
+            $members[] = ['id' => 'kc-' . $i];
+        }
+        $this->run_task($this->create_realm_task(
+            $users,
+            [['id' => 'g-1', 'name' => 'cyber-managers']],
+            ['g-1' => $members]
+        ));
+        $this->assertSame(1, $this->managed_assignment_count('kc-1', $categoryid));
+
+        $this->run_task($this->create_realm_task([]));
+
+        $this->assertSame(1, $this->managed_assignment_count('kc-1', $categoryid));
+    }
+
+    /**
+     * An attribute no one in the realm carries is not managed by Keycloak, so the field
+     * it would feed is left alone rather than blanked.
+     *
+     * This is what blanked ssorole for every user: the sync wrote '' over the value an
+     * OAuth 2 login field mapping had stored, because no realm carries moodle_roles.
+     */
+    public function test_an_attribute_no_user_carries_is_left_alone(): void {
+        global $DB;
+
+        $this->prepare_site();
+        $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Demo Org']]),
+        ]));
+
+        // Something other than this task populated team - a login mapping, an import.
+        $userid = (int)$DB->get_field('user', 'id', ['idnumber' => 'kc-1']);
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::TEAM => 'Set by the login mapping',
+        ]);
+
+        $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Demo Org']]),
+        ]));
+
+        $this->assertSame('Set by the login mapping', $this->profile_value('kc-1', profile_fields::TEAM));
+        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+    }
+
+    /**
+     * ssorole is never written, so a value from anywhere else survives every run.
+     */
+    public function test_the_sync_does_not_write_ssorole(): void {
+        global $DB;
+
+        $this->prepare_site();
+        $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['moodle_roles' => ['moodle-admin']]),
+        ]));
+
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::ROLE));
+
+        $userid = (int)$DB->get_field('user', 'id', ['idnumber' => 'kc-1']);
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::ROLE => 'moodle-admin',
+        ]);
+        $this->run_task($this->create_realm_task([$this->kc_user('kc-1')]));
+
+        $this->assertSame('moodle-admin', $this->profile_value('kc-1', profile_fields::ROLE));
     }
 
     /**
@@ -463,7 +706,10 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         // The user is gone from Keycloak on the next run.
         $this->run_task($this->create_realm_task([]));
 
-        $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORG));
+        // Only the groups go: that is what revokes the roles. The organization stays,
+        // because "absent from Keycloak" does not mean "has no organization", the value
+        // is shown to the user, and it cannot be recovered once blanked.
+        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
         $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
         $this->assertFalse($DB->record_exists('role_assignments', [
             'userid' => $userid,
