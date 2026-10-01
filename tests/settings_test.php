@@ -202,6 +202,59 @@ final class settings_test extends \advanced_testcase {
     }
 
     /**
+     * A mapping onto a field the sync does not write is not a conflict with the sync.
+     *
+     * The sync stopped writing ssorole, so that mapping is the field's only writer. Calling it
+     * a conflict and telling the administrator to remove it would destroy the data, and the
+     * remedy the conflict notice offers - run the sync task - would not bring it back.
+     */
+    public function test_a_mapping_on_a_field_the_sync_does_not_write_is_not_a_conflict(): void {
+        set_config('enableorgrolesync', 1, 'block_crucible');
+        $this->map_issuer_field(profile_fields::ROLE);
+
+        $names = $this->setting_names();
+
+        $this->assertContains('orgrolesyncmappingunmanaged', $names);
+        $this->assertNotContains('orgrolesyncmappingconflict', $names);
+        $this->assertNotContains('orgrolesyncmappingpending', $names);
+    }
+
+    /**
+     * The split does not depend on whether the sync is enabled.
+     *
+     * Enabling the sync does not make it start writing ssorole, so neither notice about
+     * maintained fields applies to that mapping in either state.
+     */
+    public function test_an_unwritten_field_is_reported_the_same_with_the_sync_off(): void {
+        set_config('enableorgrolesync', 0, 'block_crucible');
+        $this->map_issuer_field(profile_fields::ROLE);
+
+        $names = $this->setting_names();
+
+        $this->assertContains('orgrolesyncmappingunmanaged', $names);
+        $this->assertNotContains('orgrolesyncmappingpending', $names);
+        $this->assertNotContains('orgrolesyncmappingconflict', $names);
+    }
+
+    /**
+     * With both kinds mapped, each field is listed under the advice that fits it.
+     */
+    public function test_each_mapping_is_listed_under_the_advice_that_applies_to_it(): void {
+        set_config('enableorgrolesync', 1, 'block_crucible');
+        $this->map_issuer_field(profile_fields::GROUPS, 'Maintained Issuer');
+        $this->map_issuer_field(profile_fields::ROLE, 'Unmanaged Issuer');
+
+        $settings = $this->settings_on_page();
+        $conflict = $settings['orgrolesyncmappingconflict']->description ?? '';
+        $unmanaged = $settings['orgrolesyncmappingunmanaged']->description ?? '';
+
+        $this->assertStringContainsString(profile_fields::GROUPS, $conflict);
+        $this->assertStringNotContainsString(profile_fields::ROLE, $conflict);
+        $this->assertStringContainsString(profile_fields::ROLE, $unmanaged);
+        $this->assertStringNotContainsString(profile_fields::GROUPS, $unmanaged);
+    }
+
+    /**
      * Every mapped issuer is named, so an admin knows which ones to edit.
      */
     public function test_each_mapped_issuer_is_listed(): void {

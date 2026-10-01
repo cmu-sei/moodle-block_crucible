@@ -170,7 +170,12 @@ if ($ADMIN->fulltree) {
     // mapping is not a second writer, it is the *only* writer - telling an admin to remove
     // it would stop the fields being populated at all and silently break role granting. So
     // warn about a conflict only when there really is one, and otherwise say "not yet".
+    // Only the fields the sync maintains can conflict with it. A mapping onto one it does
+    // not write - ssorole - is that field's only writer, so the "remove the mappings" advice
+    // would destroy it with nothing to repopulate it. Report those separately.
     $conflicts = [];
+    $unmanaged = [];
+    $synced = \block_crucible\local\profile_fields::synced();
     foreach (array_keys(\block_crucible\local\profile_fields::all()) as $shortname) {
         $mapped = $DB->get_fieldset_sql(
             "SELECT i.name
@@ -180,7 +185,12 @@ if ($ADMIN->fulltree) {
             ['internalfield' => 'profile_field_' . $shortname]
         );
         foreach ($mapped as $issuername) {
-            $conflicts[] = s($issuername) . ' &rarr; ' . s($shortname);
+            $line = s($issuername) . ' &rarr; ' . s($shortname);
+            if (in_array($shortname, $synced, true)) {
+                $conflicts[] = $line;
+            } else {
+                $unmanaged[] = $line;
+            }
         }
     }
     if ($conflicts) {
@@ -197,6 +207,19 @@ if ($ADMIN->fulltree) {
             $OUTPUT->notification(
                 get_string($key . 'desc', 'block_crucible') . html_writer::alist($conflicts),
                 $level,
+                false
+            )
+        ));
+    }
+
+    if ($unmanaged) {
+        $settings->add(new admin_setting_description(
+            'block_crucible/orgrolesyncmappingunmanaged',
+            get_string('orgrolesyncmappingunmanaged', 'block_crucible'),
+            $OUTPUT->notification(
+                get_string('orgrolesyncmappingunmanageddesc', 'block_crucible')
+                    . html_writer::alist($unmanaged),
+                \core\output\notification::NOTIFY_INFO,
                 false
             )
         ));

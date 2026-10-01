@@ -677,6 +677,29 @@ final class sync_keycloak_users_test extends \advanced_testcase {
     }
 
     /**
+     * profile_fields::synced() has to name exactly the fields this task writes.
+     *
+     * The settings page tells an administrator which mappings conflict with the sync and
+     * which are a field's only writer, and it decides that from synced(). If the two drift,
+     * the page advises removing the only writer of an unmaintained field - which destroys it,
+     * with no way to repopulate it. Derive the expectation here from the task itself so the
+     * lists cannot separate silently.
+     */
+    public function test_the_synced_field_list_matches_what_the_sync_writes(): void {
+        $written = array_keys(sync_keycloak_users::ATTRIBUTE_FIELDS);
+        // Not attribute-derived, so it is not in ATTRIBUTE_FIELDS: it comes from group
+        // membership. The task writes it all the same.
+        $written[] = profile_fields::GROUPS;
+
+        sort($written);
+        $synced = profile_fields::synced();
+        sort($synced);
+
+        $this->assertSame($written, $synced);
+        $this->assertNotContains(profile_fields::ROLE, $synced);
+    }
+
+    /**
      * Group membership comes from the groups endpoints, because /users does not carry it.
      */
     public function test_group_membership_is_read_from_the_groups_endpoints(): void {

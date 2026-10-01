@@ -66,6 +66,26 @@ class profile_fields {
     }
 
     /**
+     * The subset of those fields the Keycloak user sync actually writes.
+     *
+     * Deliberately narrower than all(). ssorole is in all() because the plugin owns the
+     * field and creates it, but nothing populates it any more: the sync stopped writing it,
+     * because deriving it from an attribute no realm carries blanked it for every user.
+     *
+     * The distinction matters wherever the plugin makes a claim to an administrator about
+     * what the sync keeps populated. Telling someone to remove the only writer of a field
+     * the sync does not maintain destroys that field's data with no way to repopulate it.
+     *
+     * Kept in step with sync_keycloak_users::ATTRIBUTE_FIELDS by
+     * sync_keycloak_users_test::test_the_synced_field_list_matches_what_the_sync_writes().
+     *
+     * @return string[] shortnames
+     */
+    public static function synced(): array {
+        return [self::ORG, self::GROUPS, self::TEAM, self::WORKROLE];
+    }
+
+    /**
      * Create the category and any of the fields that do not exist yet.
      *
      * Idempotent: existing fields are left exactly as the administrator configured
