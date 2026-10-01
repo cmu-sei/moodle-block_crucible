@@ -255,6 +255,25 @@ final class settings_test extends \advanced_testcase {
     }
 
     /**
+     * The conflict advice must not tell an administrator to remove a mapping before checking.
+     *
+     * Removing it first leaves nothing writing the field until the task next runs, which is
+     * the outcome the ordering exists to prevent.
+     */
+    public function test_the_conflict_advice_puts_the_check_before_the_removal(): void {
+        set_config('enableorgrolesync', 1, 'block_crucible');
+        $this->map_issuer_field(profile_fields::GROUPS);
+
+        $description = $this->settings_on_page()['orgrolesyncmappingconflict']->description ?? '';
+        $check = strpos($description, 'confirm the Sync Keycloak Users task has run');
+        $remove = strpos($description, 'only then remove the mappings');
+
+        $this->assertNotFalse($check);
+        $this->assertNotFalse($remove);
+        $this->assertLessThan($remove, $check);
+    }
+
+    /**
      * Every mapped issuer is named, so an admin knows which ones to edit.
      */
     public function test_each_mapped_issuer_is_listed(): void {
