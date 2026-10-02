@@ -409,9 +409,10 @@ final class sync_keycloak_users_test extends \advanced_testcase {
     /**
      * A partial drop still stores the values that are storable.
      *
-     * Those are accurate, and the dropped one grants nothing either way: org_category_id()
-     * only ever sees what split_list() produces, so a comma-containing name can never match
-     * a category. Keeping the stale list instead would be the worse trade.
+     * Those are accurate, and the dropped one grants nothing either way: once it is dropped
+     * here nothing reads it, so a comma-containing name delivered by the sync can never match
+     * a category - not even through an alias. Keeping the stale list instead would be the
+     * worse trade.
      */
     public function test_a_partly_unstorable_org_list_stores_the_rest(): void {
         $this->prepare_site();

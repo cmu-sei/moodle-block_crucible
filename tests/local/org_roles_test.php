@@ -524,4 +524,378 @@ final class org_roles_test extends \advanced_testcase {
         $this->assertSame('', org_roles::join_list([]));
         $this->assertSame([], org_roles::unstorable_values([]));
     }
+
+    /**
+     * Configure the alias map the way an administrator or a deployment script would.
+     *
+     * @param array<string, string> $pairs org value => category name or idnumber
+     */
+    private function set_aliases(array $pairs): void {
+        $lines = [];
+        foreach ($pairs as $org => $target) {
+            $lines[] = $org . '|' . $target;
+        }
+        set_config('orgcategoryaliases', implode("\n", $lines), 'block_crucible');
+        org_roles::reset_caches();
+    }
+
+    /**
+     * An alias resolves an org whose name matches no category at all.
+     *
+     * This is the case the whole mechanism exists for: a deployment whose categories neither
+     * share a name with the organization nor carry org- idnumbers resolves nothing without it.
+     */
+    public function test_an_alias_resolves_an_org_with_no_matching_category(): void {
+        $categoryid = $this->create_org_category('Acme');
+        $this->set_aliases(['Globex Holdings' => 'Acme']);
+        $userid = $this->create_sso_user(['Globex Holdings'], ['cyber-managers']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame($categoryid, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIAS, $resolved['how']);
+        $this->assertSame(['cyber-manager'], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * An alias may name its category by ID number instead.
+     */
+    public function test_an_alias_resolves_a_category_by_idnumber(): void {
+        $category = $this->getDataGenerator()->create_category([
+            'name' => 'Acme',
+            'parent' => 0,
+            'idnumber' => 'acme-9',
+        ]);
+        $this->set_aliases(['Globex Holdings' => 'acme-9']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+
+        $this->assertSame((int)$category->id, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIAS, $resolved['how']);
+    }
+
+    /**
+     * An alias is explicit instruction, so it beats both conventions.
+     */
+    public function test_an_alias_wins_over_a_category_of_the_same_name(): void {
+        $samename = $this->create_org_category('Globex Holdings');
+        $aliased = $this->create_org_category('Acme');
+        $this->set_aliases(['Globex Holdings' => 'Acme']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+
+        $this->assertSame($aliased, $resolved['categoryid']);
+        $this->assertNotSame($samename, $resolved['categoryid']);
+    }
+
+    /**
+     * An alias may point at a category that is not top level.
+     *
+     * The conventions are guesses and stay restricted to the top level, but an administrator
+     * naming a category explicitly has already made the decision. This is what makes the
+     * separate "which parent holds the orgs" setting unnecessary.
+     */
+    public function test_an_alias_may_name_a_category_below_the_top_level(): void {
+        $parent = $this->create_org_category('Organizations');
+        $child = $this->getDataGenerator()->create_category(['name' => 'Acme', 'parent' => $parent]);
+        $this->set_aliases(['Globex Holdings' => 'Acme']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+
+        $this->assertSame((int)$child->id, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIAS, $resolved['how']);
+    }
+
+    /**
+     * An alias naming a category that does not exist is distinguishable from no alias.
+     *
+     * Both grant nothing, but only one of them is a typo in the configuration, and the
+     * settings report has to be able to say which.
+     */
+    public function test_an_alias_pointing_at_nothing_is_reported_as_such(): void {
+        global $DB;
+
+        $this->create_org_category('Acme');
+        $this->set_aliases(['Globex Holdings' => 'No Such Category']);
+        $userid = $this->create_sso_user(['Globex Holdings'], ['cyber-managers']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+        org_roles::reconcile_user($userid);
+
+        $this->assertNull($resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIASMISSING, $resolved['how']);
+        $this->assertSame(0, $DB->count_records('role_assignments', [
+            'userid' => $userid,
+            'component' => org_roles::COMPONENT,
+        ]));
+    }
+
+    /**
+     * Two top-level categories of the same name grant nothing instead of one at random.
+     *
+     * IGNORE_MULTIPLE used to pick one, so a user could be granted roles in a category
+     * belonging to a different organization with nothing logged.
+     */
+    public function test_an_ambiguous_category_name_grants_nothing(): void {
+        $first = $this->create_org_category('Acme');
+        $this->create_org_category('Acme');
+        $userid = $this->create_sso_user(['Acme'], ['cyber-managers']);
+
+        $resolved = org_roles::resolve_org('Acme');
+        org_roles::reconcile_user($userid);
+
+        $this->assertNull($resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_AMBIGUOUS, $resolved['how']);
+        $this->assertSame([], $this->managed_roles($userid, $first));
+    }
+
+    /**
+     * An alias rescues an ambiguous name, which is the remedy the report suggests.
+     */
+    public function test_an_alias_resolves_an_otherwise_ambiguous_name(): void {
+        $this->create_org_category('Acme');
+        $this->create_org_category('Acme');
+        $wanted = $this->getDataGenerator()->create_category([
+            'name' => 'Acme',
+            'parent' => 0,
+            'idnumber' => 'acme-real',
+        ]);
+        $this->set_aliases(['Acme' => 'acme-real']);
+
+        $resolved = org_roles::resolve_org('Acme');
+
+        $this->assertSame((int)$wanted->id, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIAS, $resolved['how']);
+    }
+
+    /**
+     * The stable key beats the renameable label.
+     */
+    public function test_an_idnumber_match_beats_a_name_match(): void {
+        $named = $this->create_org_category('Acme');
+        $stamped = $this->getDataGenerator()->create_category([
+            'name' => 'Something Else',
+            'parent' => 0,
+            'idnumber' => 'org-acme',
+        ]);
+        org_roles::reset_caches();
+
+        $resolved = org_roles::resolve_org('Acme');
+
+        $this->assertSame((int)$stamped->id, $resolved['categoryid']);
+        $this->assertNotSame($named, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_IDNUMBER, $resolved['how']);
+    }
+
+    /**
+     * An org that matches nothing says so, and grants nothing.
+     */
+    public function test_an_unmatched_org_is_reported_as_unmatched(): void {
+        $resolved = org_roles::resolve_org('Globex Holdings');
+
+        $this->assertNull($resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_UNMATCHED, $resolved['how']);
+    }
+
+    /**
+     * An alias matches an organization whose name contains the delimiter.
+     *
+     * The reason the alias is keyed on the whole field and looked up before it is split.
+     * Matching per split element would see "Acme" and "Holdings" and never the configured
+     * key, so exactly the values that need an alias would be the ones it could not reach.
+     */
+    public function test_an_alias_matches_an_org_name_containing_the_delimiter(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/user/profile/lib.php');
+
+        $categoryid = $this->create_org_category('Acme Holdings Group');
+        $this->set_aliases(['Acme, Holdings' => 'Acme Holdings Group']);
+        $userid = $this->create_sso_user([], ['cyber-managers']);
+        // Stored the way the upgrade preserved it: unwrapped, comma and space intact.
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
+        ]);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame(['Acme, Holdings'], org_roles::org_values('Acme, Holdings'));
+        $this->assertSame(['cyber-manager'], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * Without an alias the same value still resolves to nothing rather than to its fragments.
+     */
+    public function test_an_unaliased_delimiter_name_still_grants_nothing(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/user/profile/lib.php');
+
+        $acme = $this->create_org_category('Acme');
+        $userid = $this->create_sso_user([], ['cyber-managers']);
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
+        ]);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame([], $this->managed_roles($userid, $acme));
+    }
+
+    /**
+     * The report lists an aliased delimiter-containing name once, not as two fragments.
+     */
+    public function test_distinct_orgs_counts_an_aliased_delimiter_name_once(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/user/profile/lib.php');
+
+        $this->create_org_category('Acme Holdings Group');
+        $this->set_aliases(['Acme, Holdings' => 'Acme Holdings Group']);
+        $userid = $this->create_sso_user([], ['cyber-managers']);
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
+        ]);
+
+        $this->assertSame(['Acme, Holdings'], org_roles::distinct_orgs());
+    }
+
+    /**
+     * A blank or malformed alias line is skipped rather than breaking the map.
+     *
+     * The setting is a textarea that a human or a deployment script edits, so a stray blank
+     * line or a line without a separator has to be survivable.
+     */
+    public function test_malformed_alias_lines_are_ignored(): void {
+        set_config(
+            'orgcategoryaliases',
+            "\n  \nno separator here\nGlobex Holdings|Acme\n|missing org\nmissing target|\n",
+            'block_crucible'
+        );
+        org_roles::reset_caches();
+
+        $this->assertSame(['globex holdings' => 'Acme'], org_roles::org_aliases());
+    }
+
+    /**
+     * An alias line typed in a different case than Keycloak sends still matches.
+     *
+     * The key is a value no human ever sees, so making an administrator reproduce its
+     * capitalisation exactly buys nothing and costs a silent miss.
+     */
+    public function test_an_alias_key_matches_regardless_of_case(): void {
+        $categoryid = $this->create_org_category('Acme');
+        $this->set_aliases(['globex HOLDINGS' => 'acme']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+
+        $this->assertSame($categoryid, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIAS, $resolved['how']);
+    }
+
+    /**
+     * Renaming a category's capitalisation does not stop it resolving.
+     *
+     * It used to: the name match was exact, and because an org that resolves to nothing
+     * revokes what it granted, the next run took every role in that category away. A replay
+     * against one site's live data showed 12 of its 13 grants going that way, from a rename
+     * made days after the grants.
+     */
+    public function test_a_category_renamed_to_another_case_keeps_its_grants(): void {
+        global $DB;
+
+        $categoryid = $this->create_org_category('Acme Holdings');
+        $userid = $this->create_sso_user(['Acme Holdings'], ['lab-builders']);
+        org_roles::reconcile_user($userid);
+        $this->assertSame(['lab-builder'], $this->managed_roles($userid, $categoryid));
+
+        // What tidying the category up in the UI does to the name.
+        $DB->set_field('course_categories', 'name', 'ACME HOLDINGS ', ['id' => $categoryid]);
+        org_roles::reset_caches();
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame(org_roles::RESOLVE_NAME, org_roles::resolve_org('Acme Holdings')['how']);
+        $this->assertSame(['lab-builder'], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * Surrounding whitespace on either side is ignored too.
+     */
+    public function test_surrounding_whitespace_does_not_stop_a_name_match(): void {
+        global $DB;
+
+        $categoryid = $this->create_org_category('Acme Holdings');
+        $DB->set_field('course_categories', 'name', '  Acme Holdings  ', ['id' => $categoryid]);
+        org_roles::reset_caches();
+
+        $resolved = org_roles::resolve_org('  Acme Holdings  ');
+
+        $this->assertSame($categoryid, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_NAME, $resolved['how']);
+    }
+
+    /**
+     * Two top-level categories differing only in case are ambiguous, so neither is used.
+     *
+     * The case-insensitive match makes this pair collide where an exact match did not, so it
+     * has to land on "grant nothing" rather than on whichever row came back first.
+     */
+    public function test_two_categories_differing_only_by_case_grant_nothing(): void {
+        $first = $this->create_org_category('Acme Holdings');
+        $this->create_org_category('ACME HOLDINGS');
+        $userid = $this->create_sso_user(['Acme Holdings'], ['lab-builders']);
+
+        $resolved = org_roles::resolve_org('Acme Holdings');
+        org_roles::reconcile_user($userid);
+
+        $this->assertNull($resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_AMBIGUOUS, $resolved['how']);
+        $this->assertSame([], $this->managed_roles($userid, $first));
+    }
+
+    /**
+     * A revocation says how many grants it took and which category they were in.
+     *
+     * Without it the first evidence of a category or org rename is users reporting lost
+     * access, because the removal itself is silent.
+     */
+    public function test_a_revocation_is_logged_with_its_category_and_count(): void {
+        $categoryid = $this->create_org_category('Acme');
+        $userid = $this->create_sso_user(['Acme'], ['cyber-managers', 'lab-builders']);
+        org_roles::reconcile_user($userid);
+
+        // The org stops resolving, exactly as a rename on either side would leave it.
+        $this->set_sso_lists($userid, ['Globex Holdings'], ['cyber-managers', 'lab-builders']);
+        $lines = [];
+        org_roles::reconcile_user($userid, static function (string $line) use (&$lines): void {
+            $lines[] = $line;
+        });
+
+        $log = implode("\n", $lines);
+        $this->assertStringContainsString("revoked 2 managed grant(s) in category 'Acme'", $log);
+        $this->assertStringContainsString("org 'Globex Holdings' resolved to no category", $log);
+        $this->assertSame([], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * An org that resolves to nothing is reported once, however many users carry it.
+     */
+    public function test_an_unresolved_org_is_reported_once_per_run(): void {
+        $userids = [
+            $this->create_sso_user(['Globex Holdings'], ['cyber-managers']),
+            $this->create_sso_user(['Globex Holdings'], ['cyber-managers']),
+            $this->create_sso_user(['Globex Holdings'], ['lab-builders']),
+        ];
+
+        $lines = [];
+        org_roles::reconcile_users($userids, static function (string $line) use (&$lines): void {
+            $lines[] = $line;
+        });
+
+        $reported = array_filter($lines, static function (string $line): bool {
+            return strpos($line, "org 'Globex Holdings' resolved to no category") !== false;
+        });
+        $this->assertCount(1, $reported);
+    }
 }

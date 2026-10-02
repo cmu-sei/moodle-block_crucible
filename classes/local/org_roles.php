@@ -48,7 +48,25 @@ class org_roles {
     /** @var string The auth plugin org role sync applies to. */
     const AUTH = 'oauth2';
 
-    /** @var array<string, int|null> org name => category id, for the life of the request. */
+    /** @var string Resolved by an administrator-configured alias. */
+    const RESOLVE_ALIAS = 'alias';
+
+    /** @var string An alias is configured, but names no category. */
+    const RESOLVE_ALIASMISSING = 'aliasmissing';
+
+    /** @var string Resolved by the org- idnumber convention. */
+    const RESOLVE_IDNUMBER = 'idnumber';
+
+    /** @var string Resolved by an exact top-level category name. */
+    const RESOLVE_NAME = 'name';
+
+    /** @var string Several top-level categories carry that name, so none was chosen. */
+    const RESOLVE_AMBIGUOUS = 'ambiguous';
+
+    /** @var string Nothing represents this org. */
+    const RESOLVE_UNMATCHED = 'unmatched';
+
+    /** @var array<string, array> org name => resolution result, for the life of the request. */
     private static $categorycache = [];
 
     /**
@@ -241,6 +259,7 @@ class org_roles {
         }
 
         $desired = $enabled ? self::desired_assignments($userids, $roleids, $trace) : [];
+        $removedin = [];
 
         foreach ($userids as $userid) {
             $want = $desired[$userid] ?? [];
@@ -260,6 +279,18 @@ class org_roles {
                 }
                 role_unassign((int)$row->roleid, $userid, (int)$row->contextid, self::COMPONENT, 0);
                 $result['unassigned']++;
+                $contextid = (int)$row->contextid;
+                $removedin[$contextid] = ($removedin[$contextid] ?? 0) + 1;
+            }
+        }
+
+        if ($trace && $removedin) {
+            // Say where the losses landed. A revocation is almost always a side effect of
+            // something else - an org renamed in Keycloak, a category renamed in the UI -
+            // and without this the only evidence is users reporting lost access.
+            foreach ($removedin as $contextid => $count) {
+                $trace("revoked {$count} managed grant(s) in " . self::context_label($contextid)
+                    . ' - nothing resolving there grants them any more.');
             }
         }
 
@@ -268,6 +299,21 @@ class org_roles {
         }
 
         return $result;
+    }
+
+    /**
+     * Name a context for the log, falling back to its id when it has gone.
+     *
+     * A deleted category takes its context with it, and that is exactly when a revocation
+     * most needs explaining, so this must not throw.
+     *
+     * @param int $contextid
+     * @return string
+     */
+    private static function context_label(int $contextid): string {
+        $context = \context::instance_by_id($contextid, IGNORE_MISSING);
+
+        return $context ? "category '" . $context->get_context_name(false) . "'" : "context {$contextid}";
     }
 
     /**
@@ -362,23 +408,178 @@ class org_roles {
      * @return int|null category id, or null when no category represents this org
      */
     public static function org_category_id(string $org): ?int {
+        return self::resolve_org($org)['categoryid'];
+    }
+
+    /**
+     * Resolve an org to a category, and say which rule matched.
+     *
+     * The settings page reports resolution to an administrator from this same function, so
+     * the report cannot claim an outcome the reconcile would not reach.
+     *
+     * Order is alias, then idnumber, then name. The alias is an administrator's explicit
+     * instruction, so it wins and may point at a category at any depth. The two conventions
+     * are guesses, so they only match at the top level. The idnumber comes before the name
+     * because the name is what gets renamed in the UI, while the idnumber is a stable key.
+     *
+     * Name matching ignores case and surrounding whitespace. An exact match meant that
+     * tidying a category's capitalisation in the UI silently stopped resolving the org, and
+     * because every unresolved org revokes what it granted, the next run took every role in
+     * that category away. One site's grants were revoked that way in a replay against live
+     * data, by a rename made days after the grants.
+     *
+     * Several top-level categories may match the same name - including two that differ only
+     * in case. That used to resolve to an arbitrary one through IGNORE_MULTIPLE, which could
+     * grant roles in the wrong organization's category with nothing said. Ambiguity now
+     * grants nothing and is reported, because guessing is the worse answer.
+     *
+     * @param string $org
+     * @return array ['categoryid' => int|null, 'how' => string, one of the RESOLVE_* values]
+     */
+    public static function resolve_org(string $org): array {
         global $DB;
 
+        $org = trim($org);
         if (array_key_exists($org, self::$categorycache)) {
             return self::$categorycache[$org];
         }
 
-        $id = $DB->get_field('course_categories', 'id', ['name' => $org, 'parent' => 0], IGNORE_MULTIPLE);
-        if (!$id) {
-            $id = $DB->get_field(
+        $result = ['categoryid' => null, 'how' => self::RESOLVE_UNMATCHED];
+        $aliases = self::org_aliases();
+        $key = \core_text::strtolower($org);
+
+        if (isset($aliases[$key])) {
+            $target = $aliases[$key];
+            // The administrator named this category, so a duplicate name here is their own
+            // doing rather than a guess of ours - take either one.
+            $id = $DB->get_field_select(
                 'course_categories',
                 'id',
-                ['idnumber' => 'org-' . self::slugify($org), 'parent' => 0],
+                $DB->sql_equal('TRIM(name)', ':name', false) . ' OR idnumber = :idnumber',
+                ['name' => $target, 'idnumber' => $target],
                 IGNORE_MULTIPLE
             );
+            $result = [
+                'categoryid' => $id ? (int)$id : null,
+                'how' => $id ? self::RESOLVE_ALIAS : self::RESOLVE_ALIASMISSING,
+            ];
+
+            return self::$categorycache[$org] = $result;
         }
 
-        return self::$categorycache[$org] = $id ? (int)$id : null;
+        $id = $DB->get_field(
+            'course_categories',
+            'id',
+            ['idnumber' => 'org-' . self::slugify($org), 'parent' => 0],
+            IGNORE_MULTIPLE
+        );
+        if ($id) {
+            $result = ['categoryid' => (int)$id, 'how' => self::RESOLVE_IDNUMBER];
+
+            return self::$categorycache[$org] = $result;
+        }
+
+        $named = $DB->get_fieldset_select(
+            'course_categories',
+            'id',
+            'parent = :parent AND ' . $DB->sql_equal('TRIM(name)', ':name', false),
+            ['parent' => 0, 'name' => $org]
+        );
+        if (count($named) === 1) {
+            $result = ['categoryid' => (int)reset($named), 'how' => self::RESOLVE_NAME];
+        } else if (count($named) > 1) {
+            $result = ['categoryid' => null, 'how' => self::RESOLVE_AMBIGUOUS];
+        }
+
+        return self::$categorycache[$org] = $result;
+    }
+
+    /**
+     * The administrator-configured org to category aliases.
+     *
+     * Needed because the idnumber convention cannot be relied on: a site whose top-level
+     * categories already carry idnumbers for another purpose can never match org-<slug>, and
+     * an organization whose name does not match a category by name has nothing left. The map
+     * ships empty and is set per site, because the org list is whatever distinct ssoorg
+     * values Keycloak produced and so cannot live in a source file.
+     *
+     * Keyed on the whole raw ssoorg value, lower-cased. An organization name may contain the
+     * delimiter, and such a value never survives split_list(), so matching per split element
+     * would never see it - see org_values(). Lower-cased because these lines are typed by
+     * hand against a value nobody sees, and matching the capitalisation exactly is not a
+     * requirement worth a silent miss.
+     *
+     * @return array<string, string> lower-cased ssoorg value => category name or idnumber
+     */
+    public static function org_aliases(): array {
+        $raw = (string)get_config('block_crucible', 'orgcategoryaliases');
+        $map = [];
+
+        foreach (preg_split('/\R/', $raw) as $line) {
+            if (strpos($line, '|') === false) {
+                continue;
+            }
+            [$org, $target] = explode('|', $line, 2);
+            $org = trim($org);
+            $target = trim($target);
+            if ($org !== '' && $target !== '') {
+                $map[\core_text::strtolower($org)] = $target;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * The org values to resolve from one stored ssoorg field.
+     *
+     * Aliases are keyed on the whole field, unwrapped, and are checked before it is split -
+     * otherwise an alias for an organization whose name contains the delimiter could never
+     * match, which is exactly the case aliases exist to rescue. Anything not aliased splits
+     * as before.
+     *
+     * @param string|null $value stored field value
+     * @return string[]
+     */
+    public static function org_values(?string $value): array {
+        $whole = trim(trim((string)$value), self::DELIM);
+        if ($whole !== '' && isset(self::org_aliases()[\core_text::strtolower($whole)])) {
+            return [$whole];
+        }
+
+        return self::split_list($value);
+    }
+
+    /**
+     * Every distinct org named by any user's ssoorg field.
+     *
+     * Uses org_values(), so an aliased organization whose name contains the delimiter counts
+     * as itself rather than as two fragments that represent nothing.
+     *
+     * @return string[]
+     */
+    public static function distinct_orgs(): array {
+        global $DB;
+
+        $fieldid = profile_fields::field_id(profile_fields::ORG);
+        if (!$fieldid) {
+            return [];
+        }
+
+        $values = $DB->get_fieldset_sql(
+            'SELECT DISTINCT data FROM {user_info_data} WHERE fieldid = ? AND ' .
+                $DB->sql_isnotempty('user_info_data', 'data', false, true),
+            [$fieldid]
+        );
+
+        $orgs = [];
+        foreach ($values as $value) {
+            foreach (self::org_values($value) as $org) {
+                $orgs[$org] = true;
+            }
+        }
+
+        return array_keys($orgs);
     }
 
     /**
@@ -411,6 +612,9 @@ class org_roles {
     private static function desired_assignments(array $userids, array $roleids, ?callable $trace = null): array {
         $map = self::group_role_map();
         $desired = [];
+        // One line per org, not one per user: a site where an org stops resolving has every
+        // user carrying it in this list, and the same line thousands of times buries it.
+        $reported = [];
 
         foreach (self::load_sso_state($userids) as $userid => $state) {
             // The cohort rules this plugin writes are scoped to auth = oauth2; keep the
@@ -424,11 +628,14 @@ class org_roles {
                 continue;
             }
 
-            foreach (self::split_list($state['org']) as $org) {
-                $categoryid = self::org_category_id($org);
+            foreach (self::org_values($state['org']) as $org) {
+                $resolved = self::resolve_org($org);
+                $categoryid = $resolved['categoryid'];
                 if (!$categoryid) {
-                    if ($trace) {
-                        $trace("  no top-level category for org '{$org}' - granting nothing there.");
+                    if ($trace && !isset($reported[$org])) {
+                        $reported[$org] = true;
+                        $trace("  org '{$org}' resolved to no category (" . $resolved['how']
+                            . ") - granting nothing there.");
                     }
                     continue;
                 }

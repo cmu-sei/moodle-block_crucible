@@ -24,6 +24,7 @@
 
 namespace block_crucible;
 
+use block_crucible\local\org_roles;
 use block_crucible\local\profile_fields;
 
 defined('MOODLE_INTERNAL') || die();
@@ -286,5 +287,62 @@ final class settings_test extends \advanced_testcase {
 
         $this->assertStringContainsString('Keycloak One', $description);
         $this->assertStringContainsString('Keycloak Two', $description);
+    }
+
+    /**
+     * Give one user an org, the way the sync stores it.
+     *
+     * @param string $org
+     */
+    private function create_user_with_org(string $org): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/user/profile/lib.php');
+
+        $user = $this->getDataGenerator()->create_user(['auth' => 'oauth2']);
+        profile_save_data((object)[
+            'id' => $user->id,
+            'profile_field_' . profile_fields::ORG => org_roles::join_list([$org]),
+        ]);
+        org_roles::reset_caches();
+    }
+
+    /**
+     * The report names the category an org resolved to, and the rule that resolved it.
+     */
+    public function test_the_resolution_report_lists_each_org_and_its_category(): void {
+        $this->getDataGenerator()->create_category(['name' => 'Acme', 'parent' => 0]);
+        $this->create_user_with_org('Acme');
+
+        $report = $this->settings_on_page()['orgresolutionreport'];
+        $description = $report->description ?? '';
+
+        $this->assertStringContainsString('Acme', $description);
+        $this->assertStringContainsString(get_string('orgresolve_name', 'block_crucible'), $description);
+    }
+
+    /**
+     * An org matching nothing is still listed, so the admin can see it grants nothing.
+     */
+    public function test_the_resolution_report_lists_an_unmatched_org(): void {
+        $this->create_user_with_org('Globex Holdings');
+
+        $description = $this->settings_on_page()['orgresolutionreport']->description ?? '';
+
+        $this->assertStringContainsString('Globex Holdings', $description);
+        $this->assertStringContainsString(get_string('orgresolve_unmatched', 'block_crucible'), $description);
+    }
+
+    /**
+     * With no org data there is nothing to report, so the table is not rendered.
+     */
+    public function test_the_resolution_report_is_absent_without_any_org_data(): void {
+        $this->assertNotContains('orgresolutionreport', $this->setting_names());
+    }
+
+    /**
+     * The alias setting is always offered, since it is the only way to fix an unmatched org.
+     */
+    public function test_the_alias_setting_is_always_present(): void {
+        $this->assertContains('orgcategoryaliases', $this->setting_names());
     }
 }

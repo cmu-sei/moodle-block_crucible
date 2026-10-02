@@ -49,8 +49,8 @@ defined('MOODLE_INTERNAL') || die();
  *      fields via \block_crucible\local\org_roles, which the login observer also uses.
  *
  * Adding a new org requires:
- *   1. Admin manually creates a top-level course category with the org's exact name
- *      (or with idnumber org-<slug>).
+ *   1. Admin points the org at a category: either name one in the Organization category
+ *      aliases setting, or give the category the org's exact name or idnumber org-<slug>.
  *   2. This task will discover the category and assign roles on its next run.
  *   This prevents automatic category creation from typos or unauthorized orgs.
  *
@@ -149,9 +149,9 @@ class sync_org_roles extends \core\task\scheduled_task {
 
         $ruleids = [];
         foreach ($orgs as $org) {
-            $categoryid = org_roles::org_category_id($org);
-            if (!$categoryid) {
-                $trace("org '{$org}' has no top-level category - no cohort maintained.");
+            $resolved = org_roles::resolve_org($org);
+            if (!$resolved['categoryid']) {
+                $trace("org '{$org}' resolved to no category ({$resolved['how']}) - no cohort maintained.");
                 continue;
             }
 
@@ -191,27 +191,9 @@ class sync_org_roles extends \core\task\scheduled_task {
      * @return string[]
      */
     private function get_distinct_orgs(): array {
-        global $DB;
-
-        $fieldid = profile_fields::field_id(profile_fields::ORG);
-        if (!$fieldid) {
-            return [];
-        }
-
-        $values = $DB->get_fieldset_sql(
-            'SELECT DISTINCT data FROM {user_info_data} WHERE fieldid = ? AND ' .
-                $DB->sql_isnotempty('user_info_data', 'data', false, true),
-            [$fieldid]
-        );
-
-        $orgs = [];
-        foreach ($values as $value) {
-            foreach (org_roles::split_list($value) as $org) {
-                $orgs[$org] = true;
-            }
-        }
-
-        return array_keys($orgs);
+        // The settings page reports on the same list, so it lives on org_roles and this
+        // defers to it rather than running a second copy of the query.
+        return org_roles::distinct_orgs();
     }
 
     /**

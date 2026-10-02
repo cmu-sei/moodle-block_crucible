@@ -170,6 +170,48 @@ if ($ADMIN->fulltree) {
     // mapping is not a second writer, it is the *only* writer - telling an admin to remove
     // it would stop the fields being populated at all and silently break role granting. So
     // warn about a conflict only when there really is one, and otherwise say "not yet".
+    $settings->add(new admin_setting_configtextarea(
+        'block_crucible/orgcategoryaliases',
+        get_string('orgcategoryaliases', 'block_crucible'),
+        get_string('configorgcategoryaliases', 'block_crucible'),
+        '',
+        PARAM_RAW,
+        60,
+        5
+    ));
+
+    // Which org resolves to which category, and by which rule. Resolution is silent
+    // otherwise: both sync paths only trace a miss into cron output, where nobody looks, and
+    // an org that resolves to nothing simply grants nothing. Read-only, computed on render.
+    $orgs = \block_crucible\local\org_roles::distinct_orgs();
+    if ($orgs) {
+        sort($orgs, SORT_NATURAL | SORT_FLAG_CASE);
+        $table = new html_table();
+        $table->head = [
+            get_string('orgresolutionorg', 'block_crucible'),
+            get_string('orgresolutioncategory', 'block_crucible'),
+            get_string('orgresolutionhow', 'block_crucible'),
+        ];
+        foreach ($orgs as $org) {
+            $resolved = \block_crucible\local\org_roles::resolve_org($org);
+            $category = '-';
+            if ($resolved['categoryid']) {
+                $record = core_course_category::get($resolved['categoryid'], IGNORE_MISSING);
+                $category = $record ? $record->get_formatted_name() : '-';
+            }
+            $table->data[] = [
+                s($org),
+                $category,
+                get_string('orgresolve_' . $resolved['how'], 'block_crucible'),
+            ];
+        }
+        $settings->add(new admin_setting_description(
+            'block_crucible/orgresolutionreport',
+            get_string('orgresolutionreport', 'block_crucible'),
+            get_string('orgresolutionreportdesc', 'block_crucible') . html_writer::table($table)
+        ));
+    }
+
     // Only the fields the sync maintains can conflict with it. A mapping onto one it does
     // not write - ssorole - is that field's only writer, so the "remove the mappings" advice
     // would destroy it with nothing to repopulate it. Report those separately.
