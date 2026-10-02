@@ -268,8 +268,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                         continue;
                     }
                     // A partial drop still writes the survivors: those values are accurate,
-                    // and an unstorable one grants nothing in any case, because
-                    // org_category_id() only ever sees what split_list() produces.
+                    // and an unstorable one grants nothing in any case, because once it is
+                    // dropped here nothing reads it - not even an alias, which matches the
+                    // whole stored field.
                     $fields[$short] = $encoded;
                 }
                 if ($groupmembers !== null) {
