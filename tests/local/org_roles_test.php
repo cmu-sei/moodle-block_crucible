@@ -614,8 +614,6 @@ final class org_roles_test extends \advanced_testcase {
      * settings report has to be able to say which.
      */
     public function test_an_alias_pointing_at_nothing_is_reported_as_such(): void {
-        global $DB;
-
         $this->create_org_category('Acme');
         $this->set_aliases(['Globex Holdings' => 'No Such Category']);
         $userid = $this->create_sso_user(['Globex Holdings'], ['cyber-managers']);
@@ -625,10 +623,64 @@ final class org_roles_test extends \advanced_testcase {
 
         $this->assertNull($resolved['categoryid']);
         $this->assertSame(org_roles::RESOLVE_ALIASMISSING, $resolved['how']);
-        $this->assertSame(0, $DB->count_records('role_assignments', [
+        $this->assertSame(0, $this->managed_grant_count($userid));
+    }
+
+    /**
+     * An alias whose target names several categories grants nothing.
+     *
+     * Easier to hit than the top-level case, because an alias matches at any depth: one plain
+     * name like "Demo" can exist under several parents. Picking one would be the same guess
+     * the name match stopped making.
+     */
+    public function test_an_alias_matching_several_categories_grants_nothing(): void {
+        $first = $this->create_org_category('Programs');
+        $second = $this->create_org_category('Projects');
+        $this->getDataGenerator()->create_category(['name' => 'Acme', 'parent' => $first]);
+        $this->getDataGenerator()->create_category(['name' => 'Acme', 'parent' => $second]);
+        $this->set_aliases(['Globex Holdings' => 'Acme']);
+        $userid = $this->create_sso_user(['Globex Holdings'], ['cyber-managers']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+        org_roles::reconcile_user($userid);
+
+        $this->assertNull($resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIASAMBIGUOUS, $resolved['how']);
+        $this->assertSame(0, $this->managed_grant_count($userid));
+    }
+
+    /**
+     * Naming the ID number instead is how the administrator resolves that ambiguity.
+     */
+    public function test_an_alias_by_idnumber_resolves_several_same_named_categories(): void {
+        $parent = $this->create_org_category('Programs');
+        $this->getDataGenerator()->create_category(['name' => 'Acme', 'parent' => $parent]);
+        $wanted = $this->getDataGenerator()->create_category([
+            'name' => 'Acme',
+            'parent' => 0,
+            'idnumber' => 'acme-real',
+        ]);
+        $this->set_aliases(['Globex Holdings' => 'acme-real']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+
+        $this->assertSame((int)$wanted->id, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIAS, $resolved['how']);
+    }
+
+    /**
+     * How many managed grants a user holds anywhere.
+     *
+     * @param int $userid
+     * @return int
+     */
+    private function managed_grant_count(int $userid): int {
+        global $DB;
+
+        return $DB->count_records('role_assignments', [
             'userid' => $userid,
             'component' => org_roles::COMPONENT,
-        ]));
+        ]);
     }
 
     /**

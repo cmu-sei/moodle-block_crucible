@@ -54,6 +54,9 @@ class org_roles {
     /** @var string An alias is configured, but names no category. */
     const RESOLVE_ALIASMISSING = 'aliasmissing';
 
+    /** @var string An alias is configured, but names several categories. */
+    const RESOLVE_ALIASAMBIGUOUS = 'aliasambiguous';
+
     /** @var string Resolved by the org- idnumber convention. */
     const RESOLVE_IDNUMBER = 'idnumber';
 
@@ -431,7 +434,9 @@ class org_roles {
      * Several top-level categories may match the same name - including two that differ only
      * in case. That used to resolve to an arbitrary one through IGNORE_MULTIPLE, which could
      * grant roles in the wrong organization's category with nothing said. Ambiguity now
-     * grants nothing and is reported, because guessing is the worse answer.
+     * grants nothing and is reported, because guessing is the worse answer. The same applies
+     * to an alias whose target names several categories, which is easier to do than it
+     * sounds: an alias matches at any depth, so one plain name can match several.
      *
      * @param string $org
      * @return array ['categoryid' => int|null, 'how' => string, one of the RESOLVE_* values]
@@ -450,19 +455,24 @@ class org_roles {
 
         if (isset($aliases[$key])) {
             $target = $aliases[$key];
-            // The administrator named this category, so a duplicate name here is their own
-            // doing rather than a guess of ours - take either one.
-            $id = $DB->get_field_select(
+            // An alias matches at any depth, so a name like "Demo" can easily name several
+            // categories under different parents. Picking one of those would be the same
+            // guess the name match stopped making - the administrator has to say which, and
+            // an idnumber is how they say it.
+            $ids = $DB->get_fieldset_select(
                 'course_categories',
                 'id',
                 $DB->sql_equal('TRIM(name)', ':name', false) . ' OR idnumber = :idnumber',
-                ['name' => $target, 'idnumber' => $target],
-                IGNORE_MULTIPLE
+                ['name' => $target, 'idnumber' => $target]
             );
-            $result = [
-                'categoryid' => $id ? (int)$id : null,
-                'how' => $id ? self::RESOLVE_ALIAS : self::RESOLVE_ALIASMISSING,
-            ];
+            if (count($ids) === 1) {
+                $result = ['categoryid' => (int)reset($ids), 'how' => self::RESOLVE_ALIAS];
+            } else {
+                $result = [
+                    'categoryid' => null,
+                    'how' => $ids ? self::RESOLVE_ALIASAMBIGUOUS : self::RESOLVE_ALIASMISSING,
+                ];
+            }
 
             return self::$categorycache[$org] = $result;
         }

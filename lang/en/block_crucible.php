@@ -272,6 +272,7 @@ $string['orgresolutioncategory'] = 'Category';
 $string['orgresolutionhow'] = 'Matched by';
 $string['orgresolve_alias'] = 'Alias';
 $string['orgresolve_aliasmissing'] = 'Alias set, but no such category';
+$string['orgresolve_aliasambiguous'] = 'Alias matches several categories - use the ID number';
 $string['orgresolve_idnumber'] = 'Category ID number';
 $string['orgresolve_name'] = 'Category name';
 $string['orgresolve_ambiguous'] = 'Several categories match that name - add an alias';
