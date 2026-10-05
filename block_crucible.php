@@ -424,9 +424,7 @@ class block_crucible extends block_base
             }
 
             // Keycloak/////////////////////////////
-            $allowedGroups = get_config('block_crucible', 'keycloakgroups');
-            $groupsArray = explode('|', $allowedGroups);
-            $groupsArray = array_map('trim', $groupsArray);
+            $groupsArray = \block_crucible\crucible::config_list('keycloakgroups');
 
             $showkeycloak = get_config('block_crucible', 'showkeycloak');
             $userredirect = get_config('block_crucible', 'userredirect');
