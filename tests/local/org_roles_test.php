@@ -89,7 +89,10 @@ final class org_roles_test extends \advanced_testcase {
     }
 
     /**
-     * Write the org and group lists onto a user, in the canonical wrapped form.
+     * Write the org and group lists onto a user, as the sync writes them.
+     *
+     * The matching fields carry the wrapped form everything matches on, and the display
+     * fields carry the same values for a person to read.
      *
      * @param int $userid
      * @param string[] $orgs
@@ -101,8 +104,10 @@ final class org_roles_test extends \advanced_testcase {
 
         profile_save_data((object)[
             'id' => $userid,
-            'profile_field_' . profile_fields::ORG => org_roles::join_list($orgs),
-            'profile_field_' . profile_fields::GROUPS => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::ORGLIST => org_roles::join_list($orgs),
+            'profile_field_' . profile_fields::ORG => implode(', ', $orgs),
+            'profile_field_' . profile_fields::GROUPSLIST => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::GROUPS => implode(', ', $groups),
         ]);
     }
 
@@ -354,51 +359,15 @@ final class org_roles_test extends \advanced_testcase {
     }
 
     /**
-     * A value the upgrade preserved grants nothing in the categories its fragments name.
+     * An organization whose name contains a comma is stored whole and resolves.
      *
-     * The 2026092300 upgrade leaves "Acme, Holdings" exactly as it is, because splitting it is
-     * irreversible and it is more likely one name than two. If the reconcile then split it,
-     * a user whose organization is "Acme, Holdings" would be granted roles in a category called
-     * "Acme" or "Holdings" - real organizations they have nothing to do with. Granting nothing is
-     * the safe reading of an ambiguous value.
+     * This is why the delimiter is a vertical bar. Under the old comma an organization like
+     * "Acme, Holdings" could not be stored at all - it was dropped, and the user was granted
+     * nothing anywhere - and the only deployment this feature runs on has one.
      */
-    public function test_a_preserved_legacy_value_grants_nothing_in_its_fragments(): void {
-        global $CFG;
-        require_once($CFG->dirroot . '/user/profile/lib.php');
-
-        $acme = $this->create_org_category('Acme');
-        $holdings = $this->create_org_category('Holdings');
-        $userid = $this->create_sso_user([], ['cyber-managers']);
-        // Written the way the upgrade leaves it: unwrapped, comma and space intact.
-        profile_save_data((object)[
-            'id' => $userid,
-            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
-        ]);
-
-        org_roles::reconcile_user($userid);
-
-        $this->assertSame([], $this->managed_roles($userid, $acme));
-        $this->assertSame([], $this->managed_roles($userid, $holdings));
-    }
-
-    /**
-     * A preserved value does resolve against a category named exactly that.
-     *
-     * Not the point of the change, but worth pinning: reading the value whole is what makes
-     * this possible at all, and it is the correct outcome - the administrator named the
-     * category after the organization. One deployment has a category named this way that
-     * nothing could previously match.
-     */
-    public function test_a_preserved_legacy_value_matches_a_category_named_exactly_that(): void {
-        global $CFG;
-        require_once($CFG->dirroot . '/user/profile/lib.php');
-
+    public function test_an_org_containing_a_comma_resolves(): void {
         $categoryid = $this->create_org_category('Acme, Holdings');
-        $userid = $this->create_sso_user([], ['cyber-managers']);
-        profile_save_data((object)[
-            'id' => $userid,
-            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
-        ]);
+        $userid = $this->create_sso_user(['Acme, Holdings'], ['cyber-managers']);
 
         org_roles::reconcile_user($userid);
 
@@ -406,37 +375,48 @@ final class org_roles_test extends \advanced_testcase {
     }
 
     /**
-     * A bare comma separated list still splits, so the OAuth 2 mapping path keeps working.
+     * A login that writes the raw claim onto the display fields changes nothing.
      *
-     * That mapping writes the raw claim unwrapped at every login, and in one deployment it
-     * is the only writer of ssogroups. Reading every unwrapped value whole would stop a
-     * multi-group user matching any group and revoke the roles of the most privileged
-     * accounts on the site.
+     * An OAuth 2 issuer field mapping writes the raw token claim onto ssoorg or ssogroups at
+     * every login. That used to be the same field the reconcile matched on, so one login
+     * could leave a user matching nothing and revoke everything they had. The display fields
+     * are nobody's input now, which is the whole reason for the split.
      */
-    public function test_a_bare_group_list_still_splits(): void {
-        global $CFG;
+    public function test_a_login_writing_the_raw_claim_changes_nothing(): void {
+        global $CFG, $DB;
         require_once($CFG->dirroot . '/user/profile/lib.php');
 
         $categoryid = $this->create_org_category('Demo Org');
-        $userid = $this->create_sso_user(['Demo Org'], []);
-        profile_save_data((object)[
-            'id' => $userid,
-            'profile_field_' . profile_fields::GROUPS => 'cyber-managers,lab-builders',
-        ]);
-
+        $userid = $this->create_sso_user(['Demo Org'], ['cyber-managers', 'lab-builders']);
         org_roles::reconcile_user($userid);
 
+        // Exactly what the mapping writes: the claim, unwrapped, under the readable names.
+        profile_save_data((object)[
+            'id' => $userid,
+            'profile_field_' . profile_fields::ORG => 'Demo Org',
+            'profile_field_' . profile_fields::GROUPS => 'cyber-managers,lab-builders',
+        ]);
+        org_roles::reconcile_user($userid);
+
+        $matching = $DB->get_field_sql(
+            "SELECT d.data
+               FROM {user_info_data} d
+               JOIN {user_info_field} f ON f.id = d.fieldid
+              WHERE d.userid = :userid AND f.shortname = :shortname",
+            ['userid' => $userid, 'shortname' => profile_fields::GROUPSLIST]
+        );
+        $this->assertSame('|cyber-managers|lab-builders|', $matching);
         $this->assertSame(['cyber-manager', 'lab-builder'], $this->managed_roles($userid, $categoryid));
     }
 
     /**
-     * Values stored before the wrapping convention still parse.
+     * Stored values parse back to the elements they were made from.
      *
      * @param string|null $stored
      * @param string[] $expected
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('list_provider')]
-    public function test_split_list_accepts_both_conventions(?string $stored, array $expected): void {
+    public function test_split_list_reads_the_stored_form(?string $stored, array $expected): void {
         $this->assertSame($expected, org_roles::split_list($stored));
     }
 
@@ -449,19 +429,29 @@ final class org_roles_test extends \advanced_testcase {
         return [
             'null' => [null, []],
             'empty' => ['', []],
-            'wrapped' => [',a,b,', ['a', 'b']],
-            // A bare list still splits: the OAuth 2 login field mapping writes the raw
-            // claim unwrapped at every login, so this is not only a pre-upgrade form.
-            'bare csv' => ['a,b', ['a', 'b']],
-            // A comma followed by a space is the upgrade's marker for "one name that happens
-            // to contain a comma", and join_list() can never produce it, so it is read whole.
-            'spaced' => ['a, b', ['a, b']],
-            'preserved legacy org' => ['Acme, Holdings', ['Acme, Holdings']],
-            'spaced inside a longer list' => ['Globex, Ltd.', ['Globex, Ltd.']],
+            'wrapped' => ['|a|b|', ['a', 'b']],
+            'bare list' => ['a|b', ['a', 'b']],
+            // A delimiter followed by a space is the marker for "one name that happens to
+            // contain the delimiter", and join_list() can never produce it, so it is read
+            // whole. Under the legacy comma this is what preserved "Acme, Holdings".
+            'spaced' => ['a| b', ['a| b']],
             'single' => ['a', ['a']],
-            'duplicates' => [',a,a,b,', ['a', 'b']],
-            'only delimiters' => [',,,', []],
+            // A comma is an ordinary character now, so an organization may contain one.
+            'comma inside one name' => ['|Acme, Holdings|', ['Acme, Holdings']],
+            'duplicates' => ['|a|a|b|', ['a', 'b']],
+            'only delimiters' => ['|||', []],
         ];
+    }
+
+    /**
+     * The legacy delimiter is still readable, which is what the upgrade reads with.
+     */
+    public function test_split_list_still_reads_the_legacy_delimiter(): void {
+        $legacy = org_roles::LEGACY_DELIM;
+
+        $this->assertSame(['a', 'b'], org_roles::split_list(',a,b,', $legacy));
+        $this->assertSame(['a', 'b'], org_roles::split_list('a,b', $legacy));
+        $this->assertSame(['Acme, Holdings'], org_roles::split_list('Acme, Holdings', $legacy));
     }
 
     /**
@@ -469,30 +459,48 @@ final class org_roles_test extends \advanced_testcase {
      */
     public function test_join_list_wraps_only_non_empty_lists(): void {
         $this->assertSame('', org_roles::join_list([]));
-        $this->assertSame(',a,', org_roles::join_list(['a']));
-        $this->assertSame(',a,b,', org_roles::join_list(['a', 'b']));
-        $this->assertSame(',a,b,', org_roles::join_list(['a', 'b', 'a']));
+        $this->assertSame('|a|', org_roles::join_list(['a']));
+        $this->assertSame('|a|b|', org_roles::join_list(['a', 'b']));
+        $this->assertSame('|a|b|', org_roles::join_list(['a', 'b', 'a']));
     }
 
     /**
      * A value containing the delimiter is dropped, not split into elements that match nothing.
      *
-     * "Acme, Inc." is one organization. Storing it as ",Acme,Inc.," would silently turn it
+     * "Acme|Inc." is one organization. Storing it as "|Acme|Inc.|" would silently turn it
      * into two, neither of which resolves to a category or a cohort rule.
      */
     public function test_join_list_drops_values_containing_the_delimiter(): void {
-        $this->assertSame(',Army,', org_roles::join_list(['Army', 'Acme, Inc.']));
+        $this->assertSame('|Army|', org_roles::join_list(['Army', 'Acme|Inc.']));
         $this->assertDebuggingCalled();
 
-        $this->assertSame('', org_roles::join_list(['Acme, Inc.']));
+        $this->assertSame('', org_roles::join_list(['Acme|Inc.']));
         $this->assertDebuggingCalled();
+    }
+
+    /**
+     * A comma is an ordinary character in a stored value.
+     */
+    public function test_join_list_stores_a_value_containing_a_comma(): void {
+        $this->assertSame('|Acme, Holdings|', org_roles::join_list(['Acme, Holdings']));
+        $this->assertSame([], org_roles::unstorable_values(['Acme, Holdings']));
     }
 
     /**
      * Each array element stays whole, so a multi-valued Keycloak attribute still works.
      */
     public function test_join_list_keeps_separate_values_separate(): void {
-        $this->assertSame(',Demo Org,Second Org,', org_roles::join_list(['Demo Org', 'Second Org']));
+        $this->assertSame('|Demo Org|Second Org|', org_roles::join_list(['Demo Org', 'Second Org']));
+    }
+
+    /**
+     * The readable form is the same values, joined for a person rather than for matching.
+     */
+    public function test_join_display_reads_plainly(): void {
+        $this->assertSame('', org_roles::join_display(''));
+        $this->assertSame('Demo Org', org_roles::join_display('|Demo Org|'));
+        $this->assertSame('Demo Org, Second Org', org_roles::join_display('|Demo Org|Second Org|'));
+        $this->assertSame('Acme, Holdings', org_roles::join_display('|Acme, Holdings|'));
     }
 
     /**
@@ -505,11 +513,11 @@ final class org_roles_test extends \advanced_testcase {
     public function test_unstorable_values_names_the_values_that_cannot_be_stored(): void {
         $this->assertSame([], org_roles::unstorable_values([]));
         $this->assertSame([], org_roles::unstorable_values(['Demo Org', 'Second Org']));
-        $this->assertSame(['Acme, Inc.'], org_roles::unstorable_values(['Army', 'Acme, Inc.']));
-        $this->assertSame(['Acme, Inc.'], org_roles::unstorable_values([' Acme, Inc. ']));
+        $this->assertSame(['Acme|Inc.'], org_roles::unstorable_values(['Army', 'Acme|Inc.']));
+        $this->assertSame(['Acme|Inc.'], org_roles::unstorable_values([' Acme|Inc. ']));
         $this->assertSame(
-            ['A,B', 'C,D'],
-            org_roles::unstorable_values(['A,B', 'Fine', 'C,D'])
+            ['A|B', 'C|D'],
+            org_roles::unstorable_values(['A|B', 'Fine', 'C|D'])
         );
     }
 
@@ -517,9 +525,9 @@ final class org_roles_test extends \advanced_testcase {
      * An all-unstorable list is distinguishable from an empty one, which is the whole point.
      */
     public function test_an_all_unstorable_list_is_distinguishable_from_an_empty_one(): void {
-        $this->assertSame('', org_roles::join_list(['Acme, Inc.']));
+        $this->assertSame('', org_roles::join_list(['Acme|Inc.']));
         $this->assertDebuggingCalled();
-        $this->assertSame(['Acme, Inc.'], org_roles::unstorable_values(['Acme, Inc.']));
+        $this->assertSame(['Acme|Inc.'], org_roles::unstorable_values(['Acme|Inc.']));
 
         $this->assertSame('', org_roles::join_list([]));
         $this->assertSame([], org_roles::unstorable_values([]));
@@ -669,6 +677,28 @@ final class org_roles_test extends \advanced_testcase {
     }
 
     /**
+     * The ID number wins over a category merely named the same string.
+     *
+     * Otherwise the advice the settings page gives - "use the ID number" - fails on exactly
+     * the sites that need it: matching the name and the ID number in one query left the alias
+     * ambiguous however precisely it was written, and nothing else to try.
+     */
+    public function test_an_alias_prefers_the_idnumber_over_a_category_named_the_same(): void {
+        $wanted = $this->getDataGenerator()->create_category([
+            'name' => 'Acme Holdings Group',
+            'parent' => 0,
+            'idnumber' => 'acme-real',
+        ]);
+        $this->getDataGenerator()->create_category(['name' => 'acme-real', 'parent' => 0]);
+        $this->set_aliases(['Globex Holdings' => 'acme-real']);
+
+        $resolved = org_roles::resolve_org('Globex Holdings');
+
+        $this->assertSame((int)$wanted->id, $resolved['categoryid']);
+        $this->assertSame(org_roles::RESOLVE_ALIAS, $resolved['how']);
+    }
+
+    /**
      * How many managed grants a user holds anywhere.
      *
      * @param int $userid
@@ -751,64 +781,44 @@ final class org_roles_test extends \advanced_testcase {
     }
 
     /**
-     * An alias matches an organization whose name contains the delimiter.
+     * An alias matches an organization whose name contains a comma.
      *
-     * The reason the alias is keyed on the whole field and looked up before it is split.
-     * Matching per split element would see "Acme" and "Holdings" and never the configured
-     * key, so exactly the values that need an alias would be the ones it could not reach.
+     * The reason the alias is keyed on one whole organization rather than on fragments.
+     * Matching per fragment would see "Acme" and "Holdings" and never the configured key, so
+     * exactly the values most likely to need an alias would be the ones it could not reach.
      */
-    public function test_an_alias_matches_an_org_name_containing_the_delimiter(): void {
-        global $CFG;
-        require_once($CFG->dirroot . '/user/profile/lib.php');
-
+    public function test_an_alias_matches_an_org_name_containing_a_comma(): void {
         $categoryid = $this->create_org_category('Acme Holdings Group');
         $this->set_aliases(['Acme, Holdings' => 'Acme Holdings Group']);
-        $userid = $this->create_sso_user([], ['cyber-managers']);
-        // Stored the way the upgrade preserved it: unwrapped, comma and space intact.
-        profile_save_data((object)[
-            'id' => $userid,
-            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
-        ]);
+        $userid = $this->create_sso_user(['Acme, Holdings'], ['cyber-managers']);
 
         org_roles::reconcile_user($userid);
 
-        $this->assertSame(['Acme, Holdings'], org_roles::org_values('Acme, Holdings'));
+        $this->assertSame(['Acme, Holdings'], org_roles::org_values('|Acme, Holdings|'));
         $this->assertSame(['cyber-manager'], $this->managed_roles($userid, $categoryid));
     }
 
     /**
-     * Without an alias the same value still resolves to nothing rather than to its fragments.
+     * Without an alias the same value resolves to nothing rather than to its fragments.
      */
-    public function test_an_unaliased_delimiter_name_still_grants_nothing(): void {
-        global $CFG;
-        require_once($CFG->dirroot . '/user/profile/lib.php');
-
+    public function test_an_unaliased_comma_name_still_grants_nothing(): void {
         $acme = $this->create_org_category('Acme');
-        $userid = $this->create_sso_user([], ['cyber-managers']);
-        profile_save_data((object)[
-            'id' => $userid,
-            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
-        ]);
+        $holdings = $this->create_org_category('Holdings');
+        $userid = $this->create_sso_user(['Acme, Holdings'], ['cyber-managers']);
 
         org_roles::reconcile_user($userid);
 
         $this->assertSame([], $this->managed_roles($userid, $acme));
+        $this->assertSame([], $this->managed_roles($userid, $holdings));
     }
 
     /**
-     * The report lists an aliased delimiter-containing name once, not as two fragments.
+     * The report lists an aliased comma-containing name once, not as two fragments.
      */
-    public function test_distinct_orgs_counts_an_aliased_delimiter_name_once(): void {
-        global $CFG;
-        require_once($CFG->dirroot . '/user/profile/lib.php');
-
+    public function test_distinct_orgs_counts_an_aliased_comma_name_once(): void {
         $this->create_org_category('Acme Holdings Group');
         $this->set_aliases(['Acme, Holdings' => 'Acme Holdings Group']);
-        $userid = $this->create_sso_user([], ['cyber-managers']);
-        profile_save_data((object)[
-            'id' => $userid,
-            'profile_field_' . profile_fields::ORG => 'Acme, Holdings',
-        ]);
+        $this->create_sso_user(['Acme, Holdings'], ['cyber-managers']);
 
         $this->assertSame(['Acme, Holdings'], org_roles::distinct_orgs());
     }

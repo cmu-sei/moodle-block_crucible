@@ -92,8 +92,10 @@ final class observer_test extends \advanced_testcase {
 
         profile_save_data((object)[
             'id' => $userid,
-            'profile_field_' . profile_fields::ORG => org_roles::join_list(['Demo Org']),
-            'profile_field_' . profile_fields::GROUPS => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::ORGLIST => org_roles::join_list(['Demo Org']),
+            'profile_field_' . profile_fields::ORG => 'Demo Org',
+            'profile_field_' . profile_fields::GROUPSLIST => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::GROUPS => implode(', ', $groups),
         ]);
     }
 

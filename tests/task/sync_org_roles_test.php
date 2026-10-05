@@ -86,8 +86,10 @@ final class sync_org_roles_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user(['auth' => 'oauth2']);
         profile_save_data((object)[
             'id' => $user->id,
-            'profile_field_' . profile_fields::ORG => org_roles::join_list($orgs),
-            'profile_field_' . profile_fields::GROUPS => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::ORGLIST => org_roles::join_list($orgs),
+            'profile_field_' . profile_fields::ORG => implode(', ', $orgs),
+            'profile_field_' . profile_fields::GROUPSLIST => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::GROUPS => implode(', ', $groups),
         ]);
 
         return (int)$user->id;
@@ -252,10 +254,28 @@ final class sync_org_roles_test extends \advanced_testcase {
         $ruleid = $DB->get_field('tool_dynamic_cohorts', 'id', ['cohortid' => $cohortid]);
         $this->assertNotEmpty($ruleid);
 
-        $configs = $DB->get_fieldset_select('tool_dynamic_cohorts_c', 'configdata', 'ruleid = ?', [$ruleid]);
+        $configs = $DB->get_fieldset_select(
+            'tool_dynamic_cohorts_c',
+            'configdata',
+            'ruleid = ? AND classname = ?',
+            [$ruleid, sync_org_roles::CLASS_PROFILE]
+        );
+        // On the matching fields, never the readable ones: those hold "Demo Org" plainly,
+        // so a "contains" test on them would match any organization whose name contains
+        // another's.
+        $fields = [];
+        foreach ($configs as $configdata) {
+            $fields[] = json_decode($configdata, true)['profilefield'];
+        }
+        sort($fields);
+        $this->assertSame(
+            ['profile_field_' . profile_fields::GROUPSLIST, 'profile_field_' . profile_fields::ORGLIST],
+            $fields
+        );
+
         $configs = implode("\n", $configs);
-        $this->assertStringContainsString('",Demo Org,"', $configs);
-        $this->assertStringContainsString('",cyber-managers,"', $configs);
+        $this->assertStringContainsString('"|Demo Org|"', $configs);
+        $this->assertStringContainsString('"|cyber-managers|"', $configs);
     }
 
     /**

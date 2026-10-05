@@ -33,17 +33,30 @@ namespace block_crucible\local;
  * profile fields alone, and any role_assignments row carrying
  * component = 'block_crucible' that is not in that set gets removed.
  *
- * Matching is on exact list elements, not substrings. ssoorg and ssogroups hold
- * delimiter-wrapped lists (",a,b,") so that a dynamic cohort's "contains" operator can
- * be anchored on ",value,", and so that a group called "ex-cyber-managers" can never
- * satisfy a rule that wants "cyber-managers".
+ * Matching is on exact list elements, not substrings. ssoorglist and ssogroupslist hold
+ * delimiter-wrapped lists ("|a|b|") so that a dynamic cohort's "contains" operator can
+ * be anchored on "|value|", and so that a group called "ex-cyber-managers" can never
+ * satisfy a rule that wants "cyber-managers". The ssoorg and ssogroups fields carry the
+ * same values in readable form and nothing matches on them - see profile_fields::MATCHING.
  */
 class org_roles {
     /** @var string Component marking the role assignments this plugin owns. */
     const COMPONENT = 'block_crucible';
 
-    /** @var string Delimiter used to wrap and separate list values. */
-    const DELIM = ',';
+    /**
+     * Delimiter used to wrap and separate list values.
+     *
+     * A pipe rather than a comma because an organization name routinely contains a comma -
+     * "Acme, Inc." - and the delimiter is structural, so any value carrying it has to be
+     * refused. Nothing stops a name containing a pipe either, and such a value still cannot
+     * be stored; it is just far rarer. The alias setting and the user sync's log both say so.
+     *
+     * @var string
+     */
+    const DELIM = '|';
+
+    /** @var string The delimiter used before the matching fields were split out. */
+    const LEGACY_DELIM = ',';
 
     /** @var string The auth plugin org role sync applies to. */
     const AUTH = 'oauth2';
@@ -99,37 +112,36 @@ class org_roles {
     /**
      * Parse a stored list value into its elements.
      *
-     * Accepts both the canonical wrapped form (",a,b,") and a bare comma separated
-     * list, so values written before the wrapping convention still resolve.
+     * Accepts both the canonical wrapped form ("|a|b|") and a bare separated list, so a
+     * value written without the wrapping still resolves.
      *
-     * A value containing ", " is read as one opaque element instead of being split.
-     * join_list() can never produce that sequence - it trims every element and drops any
-     * element containing the delimiter - so the only values carrying it are the ones the
-     * 2026092300 upgrade deliberately preserved as "a single name that happens to contain a
-     * comma". Splitting "Acme, Holdings" there would produce "Acme" and "Holdings", and if either
-     * happened to name a top-level category the user would be granted roles in an
-     * organization they have nothing to do with. Granting nothing is the safe reading.
+     * A value containing the delimiter followed by a space is read as one opaque element
+     * instead of being split. join_list() can never produce that sequence - it trims every
+     * element and drops any element containing the delimiter - so the only values carrying it
+     * are the ones an upgrade deliberately preserved as "a single name that happens to
+     * contain the delimiter". Splitting "Acme, Holdings" under the old comma delimiter would
+     * have produced "Acme" and "Holdings", and if either happened to name a top-level
+     * category the user would be granted roles in an organization they have nothing to do
+     * with. Granting nothing is the safe reading.
      *
-     * Note that this is deliberately narrower than "anything unwrapped". Bare values keep
-     * being written after the upgrade - an OAuth 2 login field mapping stores the raw claim
-     * unwrapped at every login, and is the only writer of ssogroups in one deployment - so
-     * treating every unwrapped value as opaque would stop a multi-group user matching any
-     * group and revoke the roles of exactly the most privileged accounts.
+     * The delimiter is a parameter so that the upgrade can read values stored under the old
+     * one. Production code always uses the default.
      *
      * @param string|null $value
+     * @param string $delim delimiter the value was stored with
      * @return string[] unique, non-empty, in order of first appearance
      */
-    public static function split_list(?string $value): array {
+    public static function split_list(?string $value, string $delim = self::DELIM): array {
         if ($value === null || trim($value) === '') {
             return [];
         }
 
-        if (strpos($value, self::DELIM . ' ') !== false) {
+        if (strpos($value, $delim . ' ') !== false) {
             return [trim($value)];
         }
 
         $parts = [];
-        foreach (explode(self::DELIM, $value) as $part) {
+        foreach (explode($delim, $value) as $part) {
             $part = trim($part);
             if ($part !== '' && !in_array($part, $parts, true)) {
                 $parts[] = $part;
@@ -140,11 +152,25 @@ class org_roles {
     }
 
     /**
+     * Render a stored list for a person to read.
+     *
+     * Takes the stored value rather than the elements so that the display field cannot
+     * disagree with the matching field it mirrors: anything join_list() refused to store is
+     * not in the stored value, so it is not shown either.
+     *
+     * @param string|null $stored canonical stored value
+     * @return string "" for an empty list, otherwise "a, b"
+     */
+    public static function join_display(?string $stored): string {
+        return implode(', ', self::split_list($stored));
+    }
+
+    /**
      * Render list elements in the canonical wrapped form.
      *
      * Each array element is one list element and is kept whole. An element containing the
      * delimiter is dropped rather than stored: the delimiter is structural here, so
-     * "Acme, Inc." would otherwise be split into "Acme" and "Inc.", two organizations
+     * "Acme|Inc." would otherwise be split into "Acme" and "Inc.", two organizations
      * that match no category and no cohort rule. Dropping it loudly beats inventing them.
      *
      * The debugging() call here is only a developer aid, and a caller that would *store*
@@ -152,18 +178,19 @@ class org_roles {
      * over a real organization destroys it. Ask unstorable_values() first.
      *
      * @param string[] $values
-     * @return string "" for an empty list, otherwise ",a,b,"
+     * @param string $delim delimiter to store the value with
+     * @return string "" for an empty list, otherwise "|a|b|"
      */
-    public static function join_list(array $values): string {
+    public static function join_list(array $values, string $delim = self::DELIM): string {
         $elements = [];
         foreach ($values as $value) {
             $value = trim((string)$value);
             if ($value === '' || in_array($value, $elements, true)) {
                 continue;
             }
-            if (strpos($value, self::DELIM) !== false) {
+            if (strpos($value, $delim) !== false) {
                 debugging(
-                    "block_crucible: list value '" . $value . "' contains the '" . self::DELIM
+                    "block_crucible: list value '" . $value . "' contains the '" . $delim
                     . "' delimiter and cannot be stored - it has been dropped.",
                     DEBUG_DEVELOPER
                 );
@@ -176,17 +203,17 @@ class org_roles {
             return '';
         }
 
-        return self::DELIM . implode(self::DELIM, $elements) . self::DELIM;
+        return $delim . implode($delim, $elements) . $delim;
     }
 
     /**
      * The values join_list() would refuse to store, so a caller can tell "no values" from
      * "no storable values".
      *
-     * "Acme, Inc." is an ordinary organization name, and this storage cannot represent it
-     * while the delimiter is a comma - splitting it invents two organizations that match
-     * no category, so join_list() drops it and returns "". A caller that then wrote ""
-     * would replace a real organization with nothing, which is the thing to avoid.
+     * The delimiter is structural, so a value carrying it cannot be represented - splitting
+     * it invents organizations that match no category, so join_list() drops it and returns
+     * "". A caller that then wrote "" would replace a real organization with nothing, which
+     * is the thing to avoid.
      *
      * @param string[] $values
      * @return string[] the unstorable values, trimmed, in the order given
@@ -349,7 +376,7 @@ class org_roles {
     /**
      * Every user who either carries org data or currently holds a managed assignment.
      *
-     * The second half matters: a user whose ssoorg was cleared has no org data left to
+     * The second half matters: a user whose ssoorglist was cleared has no org data left to
      * find them by, but still needs their roles taken away.
      *
      * @return int[]
@@ -364,7 +391,7 @@ class org_roles {
             [self::COMPONENT]
         );
 
-        $orgfieldid = profile_fields::field_id(profile_fields::ORG);
+        $orgfieldid = profile_fields::field_id(profile_fields::ORGLIST);
         if ($orgfieldid) {
             $ids = array_merge($ids, $DB->get_fieldset_sql(
                 'SELECT DISTINCT d.userid
@@ -436,7 +463,9 @@ class org_roles {
      * grant roles in the wrong organization's category with nothing said. Ambiguity now
      * grants nothing and is reported, because guessing is the worse answer. The same applies
      * to an alias whose target names several categories, which is easier to do than it
-     * sounds: an alias matches at any depth, so one plain name can match several.
+     * sounds: an alias matches at any depth, so one plain name can match several. An alias
+     * target is read as an idnumber before it is read as a name, so writing the idnumber is
+     * always a way out of that.
      *
      * @param string $org
      * @return array ['categoryid' => int|null, 'how' => string, one of the RESOLVE_* values]
@@ -459,12 +488,20 @@ class org_roles {
             // categories under different parents. Picking one of those would be the same
             // guess the name match stopped making - the administrator has to say which, and
             // an idnumber is how they say it.
-            $ids = $DB->get_fieldset_select(
-                'course_categories',
-                'id',
-                $DB->sql_equal('TRIM(name)', ':name', false) . ' OR idnumber = :idnumber',
-                ['name' => $target, 'idnumber' => $target]
-            );
+            //
+            // So the idnumber is looked up on its own first. Matching both at once made the
+            // reported advice - "use the ID number" - fail whenever some other category was
+            // named the same string as the idnumber: the alias stayed ambiguous however
+            // precisely it was written, and there was nothing left to try.
+            $ids = $DB->get_fieldset_select('course_categories', 'id', 'idnumber = :idnumber', ['idnumber' => $target]);
+            if (!$ids) {
+                $ids = $DB->get_fieldset_select(
+                    'course_categories',
+                    'id',
+                    $DB->sql_equal('TRIM(name)', ':name', false),
+                    ['name' => $target]
+                );
+            }
             if (count($ids) === 1) {
                 $result = ['categoryid' => (int)reset($ids), 'how' => self::RESOLVE_ALIAS];
             } else {
@@ -513,13 +550,11 @@ class org_roles {
      * ships empty and is set per site, because the org list is whatever distinct ssoorg
      * values Keycloak produced and so cannot live in a source file.
      *
-     * Keyed on the whole raw ssoorg value, lower-cased. An organization name may contain the
-     * delimiter, and such a value never survives split_list(), so matching per split element
-     * would never see it - see org_values(). Lower-cased because these lines are typed by
-     * hand against a value nobody sees, and matching the capitalisation exactly is not a
-     * requirement worth a silent miss.
+     * Keyed on one organization, lower-cased - not on the whole stored field. Lower-cased
+     * because these lines are typed by hand against a value nobody sees, and matching the
+     * capitalisation exactly is not a requirement worth a silent miss.
      *
-     * @return array<string, string> lower-cased ssoorg value => category name or idnumber
+     * @return array<string, string> lower-cased organization => category name or idnumber
      */
     public static function org_aliases(): array {
         $raw = (string)get_config('block_crucible', 'orgcategoryaliases');
@@ -541,37 +576,29 @@ class org_roles {
     }
 
     /**
-     * The org values to resolve from one stored ssoorg field.
+     * The org values to resolve from one stored ssoorglist field.
      *
-     * Aliases are keyed on the whole field, unwrapped, and are checked before it is split -
-     * otherwise an alias for an organization whose name contains the delimiter could never
-     * match, which is exactly the case aliases exist to rescue. Anything not aliased splits
-     * as before.
+     * This used to check the whole unwrapped field against the alias map before splitting it,
+     * because an organization whose name contained the comma delimiter never survived
+     * split_list() and so could never be aliased. The delimiter is a pipe now, so "Acme, Inc."
+     * stores and splits as one element and there is nothing left to rescue.
      *
      * @param string|null $value stored field value
      * @return string[]
      */
     public static function org_values(?string $value): array {
-        $whole = trim(trim((string)$value), self::DELIM);
-        if ($whole !== '' && isset(self::org_aliases()[\core_text::strtolower($whole)])) {
-            return [$whole];
-        }
-
         return self::split_list($value);
     }
 
     /**
-     * Every distinct org named by any user's ssoorg field.
-     *
-     * Uses org_values(), so an aliased organization whose name contains the delimiter counts
-     * as itself rather than as two fragments that represent nothing.
+     * Every distinct org named by any user's ssoorglist field.
      *
      * @return string[]
      */
     public static function distinct_orgs(): array {
         global $DB;
 
-        $fieldid = profile_fields::field_id(profile_fields::ORG);
+        $fieldid = profile_fields::field_id(profile_fields::ORGLIST);
         if (!$fieldid) {
             return [];
         }
@@ -673,7 +700,11 @@ class org_roles {
     }
 
     /**
-     * Load auth method and the two sso list fields for a set of users in one query.
+     * Load auth method and the two matching fields for a set of users in one query.
+     *
+     * The matching fields, never the display ones: the display fields are there to be read,
+     * and in some deployments an OAuth 2 login field mapping writes the raw claim over them
+     * at every login. Reading them would make a user's roles depend on which writer went last.
      *
      * @param int[] $userids
      * @return array userid => ['auth' => string, 'org' => string|null, 'groups' => string|null]
@@ -682,8 +713,8 @@ class org_roles {
         global $DB;
 
         [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'u');
-        $params['orgfield'] = (int)profile_fields::field_id(profile_fields::ORG);
-        $params['groupfield'] = (int)profile_fields::field_id(profile_fields::GROUPS);
+        $params['orgfield'] = (int)profile_fields::field_id(profile_fields::ORGLIST);
+        $params['groupfield'] = (int)profile_fields::field_id(profile_fields::GROUPSLIST);
 
         $rows = $DB->get_records_sql(
             "SELECT u.id, u.auth, org.data AS orgdata, grp.data AS groupdata

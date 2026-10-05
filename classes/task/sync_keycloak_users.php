@@ -24,6 +24,7 @@
 
 namespace block_crucible\task;
 
+use block_crucible\local\keycloak;
 use block_crucible\local\org_roles;
 use block_crucible\local\profile_fields;
 use core\http_client;
@@ -109,63 +110,23 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         $onlyenabled = 1;
         $suspendmissing = (bool)get_config('block_crucible', 'suspendmissingusers');
 
-        // Find issuer
-        $issuerid = get_config('block_crucible', 'issuerid');
-        if (!$issuerid) {
-            $issuers = \core\oauth2\api::get_all_issuers();
-            foreach ($issuers as $cand) {
-                if (stripos($cand->get('name'), 'keycloak') !== false) {
-                    $issuerid = $cand->get('id');
-                    break;
-                }
-            }
-        }
-        if (!$issuerid) {
-            mtrace('[crucible] no issuer found');
+        // Where the realm is and what to authenticate to it with. Shared with the login
+        // path, so the two cannot disagree about which Keycloak they are talking to.
+        $realm = keycloak::realm();
+        if ($realm === null) {
+            mtrace('[crucible] no usable Keycloak issuer is configured - check the issuer setting '
+                . 'and that its token endpoint is a realm URL.');
             return;
         }
+        $adminbase = $realm['adminbase'];
 
-        $issuer       = \core\oauth2\api::get_issuer($issuerid);
-        $clientid     = $issuer->get('clientid');
-        $clientsecret = $issuer->get('clientsecret');
-
-        $endpoints = \core\oauth2\api::get_endpoints($issuer);
-
-        $tokenurl = null;
-        if (isset($endpoints['token_endpoint'])) {
-            $tokenurl = rtrim($endpoints['token_endpoint']->get('url'), '/');
-        } else {
-            foreach ($endpoints as $name => $ep) {
-                $epname = is_object($ep) ? $ep->get('name') : (is_string($name) ? $name : '');
-                if ($epname === 'token_endpoint') {
-                    $tokenurl = rtrim($ep->get('url'), '/');
-                    break;
-                }
-            }
-        }
-
-        if (!$tokenurl) {
-            mtrace('[crucible] token_endpoint not found on issuer');
-            return;
-        }
-
-        // Derive realm URL and admin base from token endpoint.
-        $realmurl = preg_replace('#/protocol/openid-connect/token/?$#', '', rtrim($tokenurl, '/'));
-        if ($realmurl === $tokenurl) {
-            mtrace('[crucible] token endpoint did not match expected KC pattern');
-            return;
-        }
-        if (!preg_match('#/realms/[^/]+$#', $realmurl)) {
-            mtrace('[crucible] realmurl does not end with /realms/{realm}');
-            return;
-        }
-        $adminbase = preg_replace('#/realms/#', '/admin/realms/', $realmurl, 1);
-
-        // Fetch token
-        $token = $this->fetch_token($tokenurl, $clientid, $clientsecret);
+        // Fetch token. A failure here is thrown rather than traced: without a token the run
+        // does nothing at all, and returning quietly left Moodle recording the task as having
+        // succeeded, so a service account missing its realm-management roles looked exactly
+        // like a healthy site with no changes to make.
+        $token = $this->fetch_token($realm['tokenurl'], $realm['clientid'], $realm['clientsecret']);
         if (!$token) {
-            mtrace('[crucible] could not obtain Keycloak token.');
-            return;
+            throw new \moodle_exception('errorkeycloaktoken', 'block_crucible');
         }
 
         // /users carries attributes but not group membership, so ask the groups
@@ -269,9 +230,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     }
                     // A partial drop still writes the survivors: those values are accurate,
                     // and an unstorable one grants nothing in any case, because once it is
-                    // dropped here nothing reads it - not even an alias, which matches the
-                    // whole stored field.
-                    $fields[$short] = $encoded;
+                    // dropped here nothing reads it.
+                    $fields[profile_fields::ORGLIST] = $encoded;
+                    $fields[$short] = org_roles::join_display($encoded);
                 }
                 if ($groupmembers !== null) {
                     // Group membership is not an attribute: an empty list means the user is
@@ -280,7 +241,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     // fetch_group_membership() only records groups whose name is a
                     // group_role_map() key, and those are fixed slugs with no delimiter in
                     // them. Change that if the map ever takes its names from configuration.
-                    $fields[profile_fields::GROUPS] = org_roles::join_list($groupmembers[$kcid] ?? []);
+                    $encoded = org_roles::join_list($groupmembers[$kcid] ?? []);
+                    $fields[profile_fields::GROUPSLIST] = $encoded;
+                    $fields[profile_fields::GROUPS] = org_roles::join_display($encoded);
                 }
 
                 $existing = $DB->get_record('user', ['idnumber' => $kcid, 'deleted' => 0], '*', IGNORE_MISSING);
@@ -487,7 +450,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $current = profile_user_record((int)$user->id, false) ?: new \stdClass();
             $u = (object)['id' => (int)$user->id];
             $changed = false;
-            foreach (array_keys($shortnames) as $short) {
+            foreach ($this->with_matching_fields(array_keys($shortnames)) as $short) {
                 if (isset($current->$short) && (string)$current->$short !== '') {
                     $u->{'profile_field_' . $short} = '';
                     $changed = true;
@@ -504,9 +467,30 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     }
 
     /**
+     * Add the matching counterpart of every display field in a list.
+     *
+     * Clearing a display field on its own would leave the matching field - the one role
+     * granting and the cohort rules read - still holding the value that was just removed.
+     *
+     * @param string[] $shortnames display field shortnames
+     * @return string[] those shortnames plus their matching counterparts
+     */
+    private function with_matching_fields(array $shortnames): array {
+        $all = [];
+        foreach ($shortnames as $short) {
+            $all[] = $short;
+            if (isset(profile_fields::MATCHING[$short])) {
+                $all[] = profile_fields::MATCHING[$short];
+            }
+        }
+
+        return $all;
+    }
+
+    /**
      * Take back the roles of users Keycloak no longer lists.
      *
-     * Only ssogroups is cleared, and that is what revokes the roles: with no groups
+     * Only the group fields are cleared, and that is what revokes the roles: with no groups
      * org_roles grants nothing, so the reconcile removes every managed assignment. The
      * organization, team and work role are left in place on purpose. "Absent from
      * Keycloak" does not mean "has no organization", those fields are shown to the user
@@ -563,10 +547,11 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $u = (object)['id' => (int)$candidate->id];
             $changed = false;
 
-            $groups = profile_fields::GROUPS;
-            if (isset($current->$groups) && (string)$current->$groups !== '') {
-                $u->{'profile_field_' . $groups} = '';
-                $changed = true;
+            foreach ($this->with_matching_fields([profile_fields::GROUPS]) as $groups) {
+                if (isset($current->$groups) && (string)$current->$groups !== '') {
+                    $u->{'profile_field_' . $groups} = '';
+                    $changed = true;
+                }
             }
 
             $suspending = $suspend && !$candidate->suspended;

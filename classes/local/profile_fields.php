@@ -35,11 +35,32 @@ class profile_fields {
     /** @var string Shortname of the category the fields are created in. */
     const CATEGORY = 'Crucible SSO';
 
-    /** @var string Organisation(s) the user belongs to, as a delimited list. */
+    /** @var string Organisation(s) the user belongs to, for a person to read. */
     const ORG = 'ssoorg';
 
-    /** @var string Keycloak groups the user belongs to, as a delimited list. */
+    /** @var string Keycloak groups the user belongs to, for a person to read. */
     const GROUPS = 'ssogroups';
+
+    /** @var string Organisation(s) the user belongs to, as a delimited list. */
+    const ORGLIST = 'ssoorglist';
+
+    /** @var string Keycloak groups the user belongs to, as a delimited list. */
+    const GROUPSLIST = 'ssogroupslist';
+
+    /**
+     * Display field => the matching field that carries the same values in delimited form.
+     *
+     * One field cannot be both. The delimited form is what the category lookup and the
+     * cohort conditions match on, and it is unreadable: a user looking at their own profile
+     * saw "|Acme|Globex Holdings|" where the organization should be. Splitting them lets the
+     * display field read plainly while matching stays anchored on whole list elements.
+     *
+     * @var array<string, string>
+     */
+    const MATCHING = [
+        self::ORG => self::ORGLIST,
+        self::GROUPS => self::GROUPSLIST,
+    ];
 
     /** @var string Moodle roles asserted by Keycloak. */
     const ROLE = 'ssorole';
@@ -58,11 +79,26 @@ class profile_fields {
     public static function all(): array {
         return [
             self::ORG => 'profilefield_ssoorg',
+            self::ORGLIST => 'profilefield_ssoorglist',
             self::GROUPS => 'profilefield_ssogroups',
+            self::GROUPSLIST => 'profilefield_ssogroupslist',
             self::ROLE => 'profilefield_ssorole',
             self::TEAM => 'profilefield_ssoteam',
             self::WORKROLE => 'profilefield_ssoworkrole',
         ];
+    }
+
+    /**
+     * The fields role granting and the cohort rules match on.
+     *
+     * Only these have to hold the delimited form, and only a second writer on one of these
+     * can stop a user's roles being granted. A second writer on a display field is untidy
+     * and nothing more.
+     *
+     * @return string[] shortnames
+     */
+    public static function matching(): array {
+        return array_values(self::MATCHING);
     }
 
     /**
@@ -82,7 +118,7 @@ class profile_fields {
      * @return string[] shortnames
      */
     public static function synced(): array {
-        return [self::ORG, self::GROUPS, self::TEAM, self::WORKROLE];
+        return [self::ORG, self::ORGLIST, self::GROUPS, self::GROUPSLIST, self::TEAM, self::WORKROLE];
     }
 
     /**
