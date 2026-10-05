@@ -185,9 +185,6 @@ class crucible
         global $USER;
         $userid = $USER->idnumber;
 
-        $roles = get_config('block_crucible', 'keycloakroles');
-        $groups = get_config('block_crucible', 'keycloakgroups');
-
         if ($this->client == null) {
             debugging("Session not set up", DEBUG_DEVELOPER);
             return null;
@@ -197,13 +194,51 @@ class crucible
             return null;
         }
 
-        // Check Keycloak roles and groups for Administrator.
-        $userRoles = $this->get_keycloak_roles();
-        if (is_array($userRoles) && in_array($roles, $userRoles)) {
-            return $roles;
+        // Both settings are "|" separated lists, as their help text says. Compared whole, as
+        // they were, they could only ever match on a site that had configured exactly one
+        // value: no Keycloak role is named "admin|siteadmin". Every administrator on a site
+        // listing two was told they had no permissions, which hides the app tiles this gates.
+        $roles = self::config_list('keycloakroles');
+        $groups = self::config_list('keycloakgroups');
+
+        // Roles first, as before, so a site matching on both reports the same value it did.
+        $userroles = $this->get_keycloak_roles();
+        if (is_array($userroles)) {
+            $matched = array_intersect($roles, $userroles);
+            if ($matched) {
+                return reset($matched);
+            }
+        }
+
+        // The group half was read and then dropped, so "Admin Keycloak Groups" did nothing
+        // here however it was filled in, though the docblock above has always promised it
+        // would. The same list is matched on in block_crucible.php, which is why the setting
+        // looked like it worked.
+        $usergroups = $this->get_keycloak_groups();
+        if (is_array($usergroups)) {
+            $matched = array_intersect($groups, $usergroups);
+            if ($matched) {
+                return reset($matched);
+            }
         }
 
         return 0;
+    }
+
+    /**
+     * Split one of this plugin's "|" separated settings into its values.
+     *
+     * explode() on an unset setting yields one empty string rather than no values, which is
+     * a value that compares equal to a surprising number of things. Dropping the empties
+     * means an unconfigured setting matches nothing, which is what it should do.
+     *
+     * @param string $name Setting name under block_crucible.
+     * @return string[] Trimmed, non-empty values in the order configured.
+     */
+    public static function config_list(string $name): array {
+        $raw = (string)get_config('block_crucible', $name);
+
+        return array_values(array_filter(array_map('trim', explode('|', $raw)), 'strlen'));
     }
 
     // PLAYER//////////////////////

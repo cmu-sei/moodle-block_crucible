@@ -78,8 +78,9 @@ final class keycloak_client_test extends \advanced_testcase {
     /**
      * Build a client that answers each Keycloak endpoint from the given map.
      *
-     * @param array $responses Response keyed by 'token', 'users' and 'records'; each is
-     *                         [status, body] or omitted to answer 200 with an empty object.
+     * @param array $responses Response keyed by 'token', 'users' and 'records', or by 'roles'
+     *                         and 'groups' to answer those two sub-resources differently; each
+     *                         is [status, body] or omitted to answer 200 with an empty object.
      * @return testable_crucible
      */
     private function create_crucible(array $responses = []): testable_crucible {
@@ -91,6 +92,10 @@ final class keycloak_client_test extends \advanced_testcase {
                 $answer = $responses['token'] ?? [200, '{"access_token": "kc-token"}'];
             } else if (str_contains($uri, '/users?')) {
                 $answer = $responses['users'] ?? [200, '[{"id": "kc-uuid"}]'];
+            } else if (str_contains($uri, '/role-mappings/realm') && isset($responses['roles'])) {
+                $answer = $responses['roles'];
+            } else if (str_contains($uri, '/groups') && isset($responses['groups'])) {
+                $answer = $responses['groups'];
             } else {
                 $answer = $responses['records'] ?? [200, '[{"name": "operators"}]'];
             }
@@ -208,5 +213,128 @@ final class keycloak_client_test extends \advanced_testcase {
         foreach ($this->requests as $made) {
             $this->assertTrue($made['options'][RequestOptions::VERIFY]);
         }
+    }
+
+    /**
+     * Sign in a user Keycloak can be asked about.
+     */
+    private function set_linked_user(): void {
+        $this->setUser($this->getDataGenerator()->create_user([
+            'email' => 'learner@example.test',
+            'idnumber' => 'kc-uuid',
+        ]));
+    }
+
+    /**
+     * Each configured admin role is matched on its own, not as one opaque string.
+     *
+     * Both settings are "|" separated lists, as their help text says. Compared whole they
+     * could only match on a site that had configured exactly one value, because no Keycloak
+     * role is named "admin|siteadmin" - so every administrator on a site listing two was told
+     * they had no permissions, which hides the app tiles this gates.
+     */
+    public function test_an_admin_role_is_matched_out_of_a_list(): void {
+        $this->set_linked_user();
+        set_config('keycloakroles', 'siteadmin|operators', 'block_crucible');
+        $crucible = $this->create_crucible(['roles' => [200, '[{"name": "operators"}]']]);
+
+        $this->assertSame('operators', $crucible->get_user_permissions());
+    }
+
+    /**
+     * A single configured role still behaves exactly as it did.
+     */
+    public function test_a_single_admin_role_still_matches(): void {
+        $this->set_linked_user();
+        set_config('keycloakroles', 'operators', 'block_crucible');
+        $crucible = $this->create_crucible(['roles' => [200, '[{"name": "operators"}]']]);
+
+        $this->assertSame('operators', $crucible->get_user_permissions());
+    }
+
+    /**
+     * The group half of the setting is read too.
+     *
+     * It was read into a variable and then dropped, so "Admin Keycloak Groups" did nothing
+     * here however it was filled in, though the docblock has always promised it would.
+     */
+    public function test_an_admin_group_grants_permissions(): void {
+        $this->set_linked_user();
+        set_config('keycloakgroups', 'analysts|operators', 'block_crucible');
+        $crucible = $this->create_crucible([
+            'roles' => [200, '[{"name": "learners"}]'],
+            'groups' => [200, '[{"name": "operators"}]'],
+        ]);
+
+        $this->assertSame('operators', $crucible->get_user_permissions());
+    }
+
+    /**
+     * A role match is reported ahead of a group match, as it was before.
+     */
+    public function test_a_role_match_is_preferred_over_a_group_match(): void {
+        $this->set_linked_user();
+        set_config('keycloakroles', 'operators', 'block_crucible');
+        set_config('keycloakgroups', 'analysts', 'block_crucible');
+        $crucible = $this->create_crucible([
+            'roles' => [200, '[{"name": "operators"}]'],
+            'groups' => [200, '[{"name": "analysts"}]'],
+        ]);
+
+        $this->assertSame('operators', $crucible->get_user_permissions());
+    }
+
+    /**
+     * A user in none of the configured roles or groups is granted nothing.
+     */
+    public function test_no_match_grants_nothing(): void {
+        $this->set_linked_user();
+        set_config('keycloakroles', 'siteadmin|operators', 'block_crucible');
+        set_config('keycloakgroups', 'analysts', 'block_crucible');
+        $crucible = $this->create_crucible([
+            'roles' => [200, '[{"name": "learners"}]'],
+            'groups' => [200, '[{"name": "students"}]'],
+        ]);
+
+        $this->assertSame(0, $crucible->get_user_permissions());
+    }
+
+    /**
+     * Neither setting configured matches nothing, rather than matching an empty name.
+     *
+     * explode() on an unset setting yields one empty string rather than no values, and an
+     * empty string compares equal to more than it looks like it should.
+     */
+    public function test_unconfigured_settings_match_nothing(): void {
+        $this->set_linked_user();
+        $crucible = $this->create_crucible([
+            'roles' => [200, '[{"name": ""}]'],
+            'groups' => [200, '[{"name": ""}]'],
+        ]);
+
+        $this->assertSame(0, $crucible->get_user_permissions());
+    }
+
+    /**
+     * Resolving permissions costs no more Keycloak requests than it did.
+     *
+     * The group lookup is new here, but a block render already asked for the groups further
+     * down, and the answers are resolved once per render.
+     */
+    public function test_resolving_permissions_reuses_the_render_answers(): void {
+        $this->set_linked_user();
+        set_config('keycloakroles', 'operators', 'block_crucible');
+        set_config('keycloakgroups', 'analysts', 'block_crucible');
+        $crucible = $this->create_crucible([
+            'roles' => [200, '[{"name": "learners"}]'],
+            'groups' => [200, '[{"name": "students"}]'],
+        ]);
+
+        $crucible->get_user_permissions();
+        $before = count($this->requests);
+        $crucible->get_keycloak_groups();
+        $crucible->get_keycloak_roles();
+
+        $this->assertSame($before, count($this->requests));
     }
 }
