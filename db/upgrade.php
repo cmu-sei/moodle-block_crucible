@@ -199,8 +199,13 @@ function xmldb_block_crucible_upgrade($oldversion) {
                     $ambiguous[] = $shortname . ' user ' . $row->userid . ': "' . $row->data . '"';
                     continue;
                 }
-                $elements = \block_crucible\local\org_roles::split_list($row->data);
-                $canonical = \block_crucible\local\org_roles::join_list($elements);
+                // The delimiter of the day, explicitly: it is a comma no longer, and this
+                // step has to keep rewriting values into the form it rewrote them into when
+                // it shipped, or a site upgrading across both releases gets a value that
+                // neither step understands.
+                $legacy = \block_crucible\local\org_roles::LEGACY_DELIM;
+                $elements = \block_crucible\local\org_roles::split_list($row->data, $legacy);
+                $canonical = \block_crucible\local\org_roles::join_list($elements, $legacy);
                 if ($canonical !== $row->data) {
                     $DB->set_field('user_info_data', 'data', $canonical, ['id' => $row->id]);
                 }
@@ -218,6 +223,136 @@ function xmldb_block_crucible_upgrade($oldversion) {
         }
 
         upgrade_block_savepoint(true, 2026092300, 'crucible');
+    }
+
+    if ($oldversion < 2026100300) {
+        // One field cannot be both readable and matchable. ssoorg and ssogroups showed users
+        // "|Acme|Globex Holdings|" on their own profile, and widening the delimiter to let the
+        // value read plainly would have stopped an exact element match working. Split them:
+        // the existing fields keep the readable value, and a new matching field beside each
+        // carries the delimited form everything matches on.
+        \block_crucible\local\profile_fields::install();
+
+        $legacy = \block_crucible\local\org_roles::LEGACY_DELIM;
+        $unstorable = [];
+        foreach (\block_crucible\local\profile_fields::MATCHING as $display => $matching) {
+            $displayid = \block_crucible\local\profile_fields::field_id($display);
+            $matchingid = \block_crucible\local\profile_fields::field_id($matching);
+            if (!$displayid || !$matchingid) {
+                continue;
+            }
+
+            $rows = $DB->get_recordset('user_info_data', ['fieldid' => $displayid], '', 'id, userid, data');
+            foreach ($rows as $row) {
+                // Read under the old comma delimiter, including its rule that a comma
+                // followed by a space is one name rather than a separator. Values that could
+                // not be stored then - "Acme, Inc." - can be stored now, so this is also when
+                // they stop being dropped.
+                $elements = \block_crucible\local\org_roles::split_list($row->data, $legacy);
+                $stored = \block_crucible\local\org_roles::join_list($elements);
+
+                $existing = $DB->get_record('user_info_data', ['userid' => $row->userid, 'fieldid' => $matchingid]);
+                if ($existing) {
+                    if ($existing->data !== $stored) {
+                        $DB->set_field('user_info_data', 'data', $stored, ['id' => $existing->id]);
+                    }
+                } else if ($stored !== '') {
+                    $DB->insert_record('user_info_data', (object)[
+                        'userid' => $row->userid,
+                        'fieldid' => $matchingid,
+                        'data' => $stored,
+                        'dataformat' => 0,
+                    ]);
+                }
+
+                // The readable value is the only copy of a name the new delimiter cannot
+                // store, so leave it exactly as it is. join_display() reads back what was
+                // stored, which for "Acme|Inc." is nothing at all, and writing that over a
+                // real organization is the thing this release is careful not to do.
+                $dropped = \block_crucible\local\org_roles::unstorable_values($elements);
+                if ($dropped) {
+                    foreach ($dropped as $value) {
+                        $unstorable[] = $display . ' user ' . $row->userid . ': "' . $value . '"';
+                    }
+                    continue;
+                }
+
+                $readable = \block_crucible\local\org_roles::join_display($stored);
+                if ($readable !== $row->data) {
+                    $DB->set_field('user_info_data', 'data', $readable, ['id' => $row->id]);
+                }
+            }
+            $rows->close();
+        }
+
+        if ($unstorable) {
+            mtrace('[crucible] ' . count($unstorable) . ' profile value(s) contain the "'
+                . \block_crucible\local\org_roles::DELIM . '" delimiter, so they cannot be matched on and'
+                . ' grant no roles. They have been left readable rather than overwritten. Rename the'
+                . ' organization in Keycloak, or add an alias, to resolve each:');
+            foreach ($unstorable as $line) {
+                mtrace('[crucible]   ' . $line);
+            }
+        }
+
+        // Re-point the cohort conditions this plugin wrote at the matching fields. Waiting
+        // for the next sync_org_roles run would do it, but the rules are processed in real
+        // time, so for up to an hour every one of them would match nobody and the cohorts
+        // would empty - taking any enrolment made through them with it.
+        if ($dbman->table_exists('tool_dynamic_cohorts_c')) {
+            $class = \block_crucible\task\sync_org_roles::CLASS_PROFILE;
+            $repointed = 0;
+            foreach ($DB->get_records('tool_dynamic_cohorts_c', ['classname' => $class]) as $condition) {
+                $config = json_decode($condition->configdata, true);
+                if (!is_array($config) || !isset($config['profilefield'])) {
+                    continue;
+                }
+                $old = (string)$config['profilefield'];
+                $shortname = preg_replace('/^profile_field_/', '', $old);
+                if (!isset(\block_crucible\local\profile_fields::MATCHING[$shortname])) {
+                    continue;
+                }
+
+                // Only conditions carrying a wrapped needle. An unwrapped one is not
+                // necessarily hand-written - this plugin wrote the needle bare itself until
+                // 2026092300, so on a site that has not run the sync task since upgrading to
+                // that release every condition it owns is still in the bare form.
+                //
+                // Leaving those alone is the right answer either way. The needle is a
+                // "contains" test, the readable field still holds the same names, so it keeps
+                // matching exactly as well as it did before - which is to say loosely, since
+                // that is what the bare form always was - and the next sync_org_roles run
+                // rewrites the condition onto the matching field with a wrapped needle. The
+                // alternative is to guess here whether a bare needle was meant as a whole
+                // element, and a wrong guess empties a cohort.
+                $value = (string)($config[$old . '_value'] ?? '');
+                if (strlen($value) < 3 || $value[0] !== $legacy || substr($value, -1) !== $legacy) {
+                    continue;
+                }
+
+                $new = 'profile_field_' . \block_crucible\local\profile_fields::MATCHING[$shortname];
+                $config['profilefield'] = $new;
+                $config[$new . '_operator'] = $config[$old . '_operator'] ?? null;
+                $config[$new . '_value'] = \block_crucible\local\org_roles::list_needle(trim($value, $legacy));
+                unset($config[$old . '_operator'], $config[$old . '_value']);
+
+                $DB->set_field(
+                    'tool_dynamic_cohorts_c',
+                    'configdata',
+                    json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                    ['id' => $condition->id]
+                );
+                $repointed++;
+            }
+
+            if ($repointed) {
+                \cache_helper::purge_by_event('ruleschanged');
+                \cache_helper::purge_by_event('conditionschanged');
+                mtrace("[crucible] re-pointed {$repointed} cohort condition(s) at the matching profile fields.");
+            }
+        }
+
+        upgrade_block_savepoint(true, 2026100300, 'crucible');
     }
 
     return true;

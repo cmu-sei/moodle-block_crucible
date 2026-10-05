@@ -88,13 +88,18 @@ if ($ADMIN->fulltree) {
     ));
 
     // OAUTH
-    $settings->add(new admin_setting_configselect(
+    $issuersetting = new admin_setting_configselect(
         'block_crucible/issuerid',
         get_string('issuerid', 'block_crucible'),
         get_string('configissuerid', 'block_crucible'),
         0,
         $options
-    ));
+    );
+    // Pointing the plugin at a different issuer otherwise leaves the login path holding a
+    // token for the old realm until the cache expires. A block's lib.php is not loaded on
+    // the admin pages, so the callback has to be a class method rather than a function.
+    $issuersetting->set_updatedcallback('\block_crucible\local\keycloak::purge_cache');
+    $settings->add($issuersetting);
 
     // Checkbox
     $settings->add(new admin_setting_configcheckbox(
@@ -212,11 +217,15 @@ if ($ADMIN->fulltree) {
         ));
     }
 
-    // Only the fields the sync maintains can conflict with it. A mapping onto one it does
-    // not write - ssorole - is that field's only writer, so the "remove the mappings" advice
-    // would destroy it with nothing to repopulate it. Report those separately.
+    // Three different situations, and the advice for each is nearly the opposite of the
+    // others. A mapping onto a matching field really does break role granting. A mapping onto
+    // a readable field the sync also writes is only untidy - nothing matches on it. A mapping
+    // onto a field the sync does not write at all - ssorole - is that field's only writer, so
+    // "remove the mappings" would destroy it with nothing to repopulate it.
     $conflicts = [];
+    $display = [];
     $unmanaged = [];
+    $matching = \block_crucible\local\profile_fields::matching();
     $synced = \block_crucible\local\profile_fields::synced();
     foreach (array_keys(\block_crucible\local\profile_fields::all()) as $shortname) {
         $mapped = $DB->get_fieldset_sql(
@@ -228,8 +237,10 @@ if ($ADMIN->fulltree) {
         );
         foreach ($mapped as $issuername) {
             $line = s($issuername) . ' &rarr; ' . s($shortname);
-            if (in_array($shortname, $synced, true)) {
+            if (in_array($shortname, $matching, true)) {
                 $conflicts[] = $line;
+            } else if (in_array($shortname, $synced, true)) {
+                $display[] = $line;
             } else {
                 $unmanaged[] = $line;
             }
@@ -249,6 +260,19 @@ if ($ADMIN->fulltree) {
             $OUTPUT->notification(
                 get_string($key . 'desc', 'block_crucible') . html_writer::alist($conflicts),
                 $level,
+                false
+            )
+        ));
+    }
+
+    if ($display) {
+        $settings->add(new admin_setting_description(
+            'block_crucible/orgrolesyncmappingdisplay',
+            get_string('orgrolesyncmappingdisplay', 'block_crucible'),
+            $OUTPUT->notification(
+                get_string('orgrolesyncmappingdisplaydesc', 'block_crucible')
+                    . html_writer::alist($display),
+                \core\output\notification::NOTIFY_INFO,
                 false
             )
         ));

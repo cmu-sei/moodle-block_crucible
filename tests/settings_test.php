@@ -133,7 +133,7 @@ final class settings_test extends \advanced_testcase {
      */
     public function test_a_mapping_warns_when_the_sync_is_enabled(): void {
         set_config('enableorgrolesync', 1, 'block_crucible');
-        $this->map_issuer_field(profile_fields::GROUPS);
+        $this->map_issuer_field(profile_fields::GROUPSLIST);
 
         $names = $this->setting_names();
 
@@ -147,7 +147,7 @@ final class settings_test extends \advanced_testcase {
      */
     public function test_a_mapping_does_not_warn_when_the_sync_is_disabled(): void {
         set_config('enableorgrolesync', 0, 'block_crucible');
-        $this->map_issuer_field(profile_fields::GROUPS);
+        $this->map_issuer_field(profile_fields::GROUPSLIST);
 
         $names = $this->setting_names();
 
@@ -242,17 +242,60 @@ final class settings_test extends \advanced_testcase {
      */
     public function test_each_mapping_is_listed_under_the_advice_that_applies_to_it(): void {
         set_config('enableorgrolesync', 1, 'block_crucible');
-        $this->map_issuer_field(profile_fields::GROUPS, 'Maintained Issuer');
+        $this->map_issuer_field(profile_fields::GROUPSLIST, 'Maintained Issuer');
         $this->map_issuer_field(profile_fields::ROLE, 'Unmanaged Issuer');
 
         $settings = $this->settings_on_page();
         $conflict = $settings['orgrolesyncmappingconflict']->description ?? '';
         $unmanaged = $settings['orgrolesyncmappingunmanaged']->description ?? '';
 
-        $this->assertStringContainsString(profile_fields::GROUPS, $conflict);
+        $this->assertStringContainsString(profile_fields::GROUPSLIST, $conflict);
         $this->assertStringNotContainsString(profile_fields::ROLE, $conflict);
         $this->assertStringContainsString(profile_fields::ROLE, $unmanaged);
-        $this->assertStringNotContainsString(profile_fields::GROUPS, $unmanaged);
+        $this->assertStringNotContainsString(profile_fields::GROUPSLIST, $unmanaged);
+    }
+
+    /**
+     * A mapping onto a readable field is untidy rather than broken, and is said to be.
+     *
+     * Nothing matches on the readable fields, so such a mapping cannot revoke a role or empty
+     * a cohort - it only means the two writers overwrite each other. Calling that a conflict
+     * would spend an administrator's attention on the wrong mapping.
+     */
+    public function test_a_mapping_on_a_readable_field_is_reported_separately(): void {
+        set_config('enableorgrolesync', 1, 'block_crucible');
+        $this->map_issuer_field(profile_fields::GROUPS);
+
+        $names = $this->setting_names();
+
+        $this->assertContains('orgrolesyncmappingdisplay', $names);
+        $this->assertNotContains('orgrolesyncmappingconflict', $names);
+        $this->assertNotContains('orgrolesyncmappingunmanaged', $names);
+    }
+
+    /**
+     * All three kinds at once, each under the advice that fits it.
+     */
+    public function test_the_three_kinds_of_mapping_are_separated(): void {
+        set_config('enableorgrolesync', 1, 'block_crucible');
+        $this->map_issuer_field(profile_fields::ORGLIST, 'Matching Issuer');
+        $this->map_issuer_field(profile_fields::ORG, 'Readable Issuer');
+        $this->map_issuer_field(profile_fields::ROLE, 'Unmanaged Issuer');
+
+        $settings = $this->settings_on_page();
+
+        $this->assertStringContainsString(
+            'Matching Issuer',
+            $settings['orgrolesyncmappingconflict']->description ?? ''
+        );
+        $this->assertStringContainsString(
+            'Readable Issuer',
+            $settings['orgrolesyncmappingdisplay']->description ?? ''
+        );
+        $this->assertStringContainsString(
+            'Unmanaged Issuer',
+            $settings['orgrolesyncmappingunmanaged']->description ?? ''
+        );
     }
 
     /**
@@ -263,7 +306,7 @@ final class settings_test extends \advanced_testcase {
      */
     public function test_the_conflict_advice_puts_the_check_before_the_removal(): void {
         set_config('enableorgrolesync', 1, 'block_crucible');
-        $this->map_issuer_field(profile_fields::GROUPS);
+        $this->map_issuer_field(profile_fields::GROUPSLIST);
 
         $description = $this->settings_on_page()['orgrolesyncmappingconflict']->description ?? '';
         $check = strpos($description, 'confirm the Sync Keycloak Users task has run');
@@ -279,8 +322,8 @@ final class settings_test extends \advanced_testcase {
      */
     public function test_each_mapped_issuer_is_listed(): void {
         set_config('enableorgrolesync', 1, 'block_crucible');
-        $this->map_issuer_field(profile_fields::GROUPS, 'Keycloak One');
-        $this->map_issuer_field(profile_fields::ORG, 'Keycloak Two');
+        $this->map_issuer_field(profile_fields::GROUPSLIST, 'Keycloak One');
+        $this->map_issuer_field(profile_fields::ORGLIST, 'Keycloak Two');
 
         $notice = $this->settings_on_page()['orgrolesyncmappingconflict'];
         $description = $notice->description ?? '';
@@ -301,7 +344,8 @@ final class settings_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user(['auth' => 'oauth2']);
         profile_save_data((object)[
             'id' => $user->id,
-            'profile_field_' . profile_fields::ORG => org_roles::join_list([$org]),
+            'profile_field_' . profile_fields::ORGLIST => org_roles::join_list([$org]),
+            'profile_field_' . profile_fields::ORG => $org,
         ]);
         org_roles::reset_caches();
     }

@@ -326,7 +326,45 @@ final class sync_keycloak_users_test extends \advanced_testcase {
 
         $this->run_task($task);
 
-        $this->assertSame(',Demo Org,Second Org,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('|Demo Org|Second Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
+    }
+
+    /**
+     * The readable fields read as a person would write them, with no delimiters in sight.
+     *
+     * The whole reason for the split: a user looking at their own profile used to see
+     * "|Demo Org|Second Org|" there, because one field was being asked to be both the
+     * readable value and the thing an exact element match is made against.
+     */
+    public function test_the_display_fields_read_plainly(): void {
+        $this->prepare_site();
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1', ['organization' => ['Demo Org', 'Second Org']])],
+            [['id' => 'g-1', 'name' => 'cyber-managers'], ['id' => 'g-2', 'name' => 'lab-builders']],
+            ['g-1' => [['id' => 'kc-1']], 'g-2' => [['id' => 'kc-1']]]
+        ));
+
+        $this->assertSame('Demo Org, Second Org', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('cyber-managers, lab-builders', $this->profile_value('kc-1', profile_fields::GROUPS));
+    }
+
+    /**
+     * An organization whose name contains a comma is stored and read back whole.
+     *
+     * Under the old comma delimiter this value could not be stored at all, and the only
+     * deployment this runs on has one.
+     */
+    public function test_an_org_containing_a_comma_is_stored(): void {
+        $this->prepare_site();
+
+        $output = $this->run_task($this->create_realm_task([
+            $this->kc_user('kc-1', ['organization' => ['Acme, Holdings']]),
+        ]));
+
+        $this->assertSame('|Acme, Holdings|', $this->profile_value('kc-1', profile_fields::ORGLIST));
+        $this->assertSame('Acme, Holdings', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertStringNotContainsString('cannot be stored', $output);
     }
 
     /**
@@ -339,7 +377,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             $this->kc_user('kc-1', ['organization' => ['Demo Org'], 'team' => ['Blue']]),
             $this->kc_user('kc-2', $keeper),
         ]));
-        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('|Demo Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
         $this->assertSame('Blue', $this->profile_value('kc-1', profile_fields::TEAM));
 
         // The attributes are gone from this user on the next run. kc-2 still carries
@@ -349,33 +387,34 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             $this->kc_user('kc-2', $keeper),
         ]));
 
-        $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORGLIST));
         $this->assertSame('', $this->profile_value('kc-1', profile_fields::TEAM));
     }
 
     /**
      * An organization whose name contains the delimiter leaves the stored value alone.
      *
-     * "Acme, Inc." cannot be held in a comma-separated list, so join_list() drops it and
-     * returns "". Writing that is the absent-is-not-empty fault in another guise: Keycloak
-     * sent a real organization and Moodle would store nothing. The upgrade step goes out of
-     * its way to preserve these values for an administrator; the sync must not undo that an
-     * hour later.
+     * A vertical bar is what separates the stored elements, so "Acme|Inc." cannot be held as
+     * one value: join_list() drops it and returns "". Writing that is the absent-is-not-empty
+     * fault in another guise - Keycloak sent a real organization and Moodle would store
+     * nothing - so the previous value stays and the run says what happened. Rare rather than
+     * routine now: the delimiter used to be a comma, which organization names really do
+     * contain.
      */
     public function test_an_unstorable_org_does_not_empty_the_stored_one(): void {
         $this->prepare_site();
         $this->run_task($this->create_realm_task([
             $this->kc_user('kc-1', ['organization' => ['Acme Inc']]),
         ]));
-        $this->assertSame(',Acme Inc,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('|Acme Inc|', $this->profile_value('kc-1', profile_fields::ORGLIST));
 
         // Renamed in Keycloak to a form this storage cannot hold.
         $output = $this->run_task($this->create_realm_task([
-            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.']]),
+            $this->kc_user('kc-1', ['organization' => ['Acme|Inc.']]),
         ]));
 
-        $this->assertSame(',Acme Inc,', $this->profile_value('kc-1', profile_fields::ORG));
-        $this->assertStringContainsString('"Acme, Inc." (1 user(s))', $output);
+        $this->assertSame('|Acme Inc|', $this->profile_value('kc-1', profile_fields::ORGLIST));
+        $this->assertStringContainsString('"Acme|Inc." (1 user(s))', $output);
         $this->assertStringContainsString('cannot be stored', $output);
         // The drop is also reported through debugging() by join_list(), which is a
         // developer aid and not what this test is about - the mtrace line above is.
@@ -386,17 +425,17 @@ final class sync_keycloak_users_test extends \advanced_testcase {
      * A new user whose only organization is unstorable gets an empty field, not a wrong one.
      *
      * There is nothing to preserve here, so the only requirement is that the run says so
-     * rather than inventing "Acme" and "Inc." as two organizations.
+     * rather than inventing "Acme" and "Inc." as two organizations the user belongs to.
      */
     public function test_an_unstorable_org_on_a_new_user_is_reported(): void {
         $this->prepare_site();
 
         $output = $this->run_task($this->create_realm_task([
-            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.']]),
+            $this->kc_user('kc-1', ['organization' => ['Acme|Inc.']]),
         ]));
 
-        $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORG));
-        $this->assertStringContainsString('"Acme, Inc." (1 user(s))', $output);
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::ORGLIST));
+        $this->assertStringContainsString('"Acme|Inc." (1 user(s))', $output);
         // The message has to hold for this case too. An earlier wording said the field had
         // been "left as it was rather than emptied", which is only true of an existing user.
         $this->assertStringContainsString('one that did not is still empty', $output);
@@ -410,7 +449,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
      * A partial drop still stores the values that are storable.
      *
      * Those are accurate, and the dropped one grants nothing either way: once it is dropped
-     * here nothing reads it, so a comma-containing name delivered by the sync can never match
+     * here nothing reads it, so a bar-containing name delivered by the sync can never match
      * a category - not even through an alias. Keeping the stale list instead would be the
      * worse trade.
      */
@@ -418,11 +457,11 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         $this->prepare_site();
 
         $output = $this->run_task($this->create_realm_task([
-            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.', 'Second Org']]),
+            $this->kc_user('kc-1', ['organization' => ['Acme|Inc.', 'Second Org']]),
         ]));
 
-        $this->assertSame(',Second Org,', $this->profile_value('kc-1', profile_fields::ORG));
-        $this->assertStringContainsString('"Acme, Inc." (1 user(s))', $output);
+        $this->assertSame('|Second Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
+        $this->assertStringContainsString('"Acme|Inc." (1 user(s))', $output);
         // The drop is also reported through debugging() by join_list(), which is a
         // developer aid and not what this test is about - the mtrace line above is.
         $this->resetDebugging();
@@ -438,14 +477,14 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         $this->prepare_site();
 
         $output = $this->run_task($this->create_realm_task([
-            $this->kc_user('kc-1', ['organization' => ['Acme, Inc.']]),
-            $this->kc_user('kc-2', ['organization' => ['Acme, Inc.']]),
-            $this->kc_user('kc-3', ['organization' => ['Other, Ltd.']]),
+            $this->kc_user('kc-1', ['organization' => ['Acme|Inc.']]),
+            $this->kc_user('kc-2', ['organization' => ['Acme|Inc.']]),
+            $this->kc_user('kc-3', ['organization' => ['Other|Ltd.']]),
         ]));
 
         $this->assertStringContainsString('2 Keycloak value(s) contain', $output);
-        $this->assertStringContainsString('"Acme, Inc." (2 user(s))', $output);
-        $this->assertStringContainsString('"Other, Ltd." (1 user(s))', $output);
+        $this->assertStringContainsString('"Acme|Inc." (2 user(s))', $output);
+        $this->assertStringContainsString('"Other|Ltd." (1 user(s))', $output);
         // The drop is also reported through debugging() by join_list(), which is a
         // developer aid and not what this test is about - the mtrace line above is.
         $this->resetDebugging();
@@ -480,7 +519,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             ['g-1' => [['id' => 'kc-1']], 'g-2' => [['id' => 'kc-1']]]
         ));
 
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
         $this->assertStringNotContainsString('odd,group', $output);
     }
 
@@ -505,15 +544,15 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             [['id' => 'g-1', 'name' => 'cyber-managers']],
             ['g-1' => $members]
         ));
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
 
         // Every one of them vanishes at once.
         $output = $this->run_task($this->create_realm_task([]));
 
         $this->assertStringContainsString('12 of 12 linked users are missing', $output);
         $this->assertStringContainsString('skipping the deprovision pass', $output);
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
-        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
+        $this->assertSame('|Demo Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
     }
 
     /**
@@ -527,11 +566,11 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             [['id' => 'g-1', 'name' => 'cyber-managers']],
             ['g-1' => [['id' => 'kc-1']]]
         ));
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
 
         $this->run_task($this->create_realm_task([]));
 
-        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
     }
 
     /**
@@ -560,7 +599,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             ['g-1' => array_slice($members, 6)]
         ));
         $this->assertStringContainsString('6 of 10 linked users are missing', $output);
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
 
         // Five of ten is not over half, so the pass runs.
         $output = $this->run_task($this->create_realm_task(
@@ -569,7 +608,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             ['g-1' => array_slice($members, 5)]
         ));
         $this->assertStringNotContainsString('skipping the deprovision pass', $output);
-        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
     }
 
     /**
@@ -595,7 +634,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         $this->assertSame(0, $this->managed_assignment_count('kc-1', $categoryid));
         $this->assertStringContainsString('-1 removed', $output);
         // The org survives: it is user-visible, irrecoverable, and not what grants the role.
-        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('|Demo Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
     }
 
     /**
@@ -651,7 +690,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         ]));
 
         $this->assertSame('Set by the login mapping', $this->profile_value('kc-1', profile_fields::TEAM));
-        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('|Demo Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
     }
 
     /**
@@ -691,6 +730,12 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         // Not attribute-derived, so it is not in ATTRIBUTE_FIELDS: it comes from group
         // membership. The task writes it all the same.
         $written[] = profile_fields::GROUPS;
+        // Each list field is written as a readable value and as a matching one.
+        foreach ($written as $shortname) {
+            if (isset(profile_fields::MATCHING[$shortname])) {
+                $written[] = profile_fields::MATCHING[$shortname];
+            }
+        }
 
         sort($written);
         $synced = profile_fields::synced();
@@ -721,8 +766,8 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         $this->run_task($task);
 
         // The first user is in both mapped groups; the unmapped one is never asked about.
-        $this->assertSame(',cyber-managers,lab-builders,', $this->profile_value('kc-1', profile_fields::GROUPS));
-        $this->assertSame(',lab-builders,', $this->profile_value('kc-2', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|lab-builders|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
+        $this->assertSame('|lab-builders|', $this->profile_value('kc-2', profile_fields::GROUPSLIST));
     }
 
     /**
@@ -751,7 +796,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         // The other mapped groups really are absent from this fixture, so only the paged
         // one matters here: it must not be reported missing.
         $this->assertStringNotContainsString("'cyber-managers' does not exist", $output);
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
     }
 
     /**
@@ -780,7 +825,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         $this->run_task($this->create_realm_task([$disabled]));
 
         $this->assertSame(1, (int)$DB->get_field('user', 'suspended', ['idnumber' => 'kc-1']));
-        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
 
         // Enabled again.
         $this->run_task($this->create_realm_task(
@@ -790,7 +835,7 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         ));
 
         $this->assertSame(0, (int)$DB->get_field('user', 'suspended', ['idnumber' => 'kc-1']));
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
     }
 
     /**
@@ -821,12 +866,12 @@ final class sync_keycloak_users_test extends \advanced_testcase {
             [['id' => 'g-1', 'name' => 'cyber-managers']],
             ['g-1' => [['id' => 'kc-1']]]
         ));
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
 
         $output = $this->run_task($this->create_realm_task([$this->kc_user('kc-1')], null));
 
         $this->assertStringContainsString('group membership fetch failed', $output);
-        $this->assertSame(',cyber-managers,', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
     }
 
     /**
@@ -863,8 +908,8 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         // Only the groups go: that is what revokes the roles. The organization stays,
         // because "absent from Keycloak" does not mean "has no organization", the value
         // is shown to the user, and it cannot be recovered once blanked.
-        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
-        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPS));
+        $this->assertSame('|Demo Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
+        $this->assertSame('', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
         $this->assertFalse($DB->record_exists('role_assignments', [
             'userid' => $userid,
             'component' => org_roles::COMPONENT,
@@ -899,6 +944,30 @@ final class sync_keycloak_users_test extends \advanced_testcase {
         $output = $this->run_task($this->create_realm_task([], [], [], true));
 
         $this->assertStringContainsString('skipping the deprovision pass', $output);
-        $this->assertSame(',Demo Org,', $this->profile_value('kc-1', profile_fields::ORG));
+        $this->assertSame('|Demo Org|', $this->profile_value('kc-1', profile_fields::ORGLIST));
+    }
+
+    /**
+     * A token failure fails the task, rather than reporting a successful run that did nothing.
+     *
+     * This read nobody and wrote nothing, which is indistinguishable from a healthy run in
+     * the task log and in the scheduled task list. A revoked client secret could sit like
+     * that indefinitely. Failing is also what gets the task retried.
+     */
+    public function test_a_token_failure_fails_the_task(): void {
+        $this->prepare_site();
+
+        $this->requests = [];
+        $task = new testable_sync_keycloak_users();
+        $task->set_handler(function (RequestInterface $request, array $options): PromiseInterface {
+            $this->requests[] = ['request' => $request, 'options' => $options];
+
+            return Create::promiseFor(new Response(401, [], '{"error": "unauthorized_client"}'));
+        });
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectOutputRegex('/token HTTP 401/');
+
+        $task->execute();
     }
 }

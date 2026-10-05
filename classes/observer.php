@@ -34,6 +34,7 @@ DM24-1176
 
 namespace block_crucible;
 
+use block_crucible\local\keycloak;
 use block_crucible\local\org_roles;
 
 defined('MOODLE_INTERNAL') || die();
@@ -57,8 +58,10 @@ class observer {
      * role sets. That includes removals: a user who has lost a Keycloak group loses the
      * role here rather than keeping it until the next hourly run.
      *
-     * The profile fields themselves are not refreshed here - sync_keycloak_users owns
-     * them, and having login write them too would reintroduce login-only staleness.
+     * This user's organization and groups are read from Keycloak first, so that someone
+     * logging in for the first time is not left without any organization data until the next
+     * hourly run. It is one account's worth of request, it fails soft, and the throttle below
+     * means repeated logins do not each make it - see \block_crucible\local\keycloak.
      *
      * @param \core\event\user_loggedin $event
      */
@@ -80,6 +83,17 @@ class observer {
         }
 
         require_once($CFG->libdir . '/accesslib.php');
+
+        // Separately, because the reconcile has to happen either way: it is the part that
+        // takes a lost role back, and it reads what Moodle already holds.
+        try {
+            \core\di::get(keycloak::class)->refresh_user($userid);
+        } catch (\Throwable $e) {
+            debugging(
+                'block_crucible: could not read user ' . $userid . ' from Keycloak: ' . $e->getMessage(),
+                DEBUG_DEVELOPER
+            );
+        }
 
         try {
             org_roles::reconcile_user($userid);

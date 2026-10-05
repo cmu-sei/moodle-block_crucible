@@ -24,10 +24,15 @@
 
 namespace block_crucible;
 
+use block_crucible\local\keycloak;
 use block_crucible\local\org_roles;
 use block_crucible\local\profile_fields;
+use block_crucible\local\stub_keycloak;
 
 defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/blocks/crucible/tests/fixtures/stub_keycloak.php');
 
 /**
  * Unit tests for \block_crucible\observer.
@@ -65,6 +70,19 @@ final class observer_test extends \advanced_testcase {
         $category = $this->getDataGenerator()->create_category(['name' => 'Demo Org', 'parent' => 0]);
         $this->categoryid = (int)$category->id;
         org_roles::reset_caches();
+
+        // No test here should reach a network, so the login-time read does nothing unless
+        // the test says what it does.
+        $this->set_keycloak_double(null);
+    }
+
+    /**
+     * Say what the login-time Keycloak read does.
+     *
+     * @param callable|null $onrefresh Called with the user id, or null to read nothing.
+     */
+    private function set_keycloak_double(?callable $onrefresh): void {
+        \core\di::set(keycloak::class, new stub_keycloak($onrefresh));
     }
 
     /**
@@ -92,8 +110,10 @@ final class observer_test extends \advanced_testcase {
 
         profile_save_data((object)[
             'id' => $userid,
-            'profile_field_' . profile_fields::ORG => org_roles::join_list(['Demo Org']),
-            'profile_field_' . profile_fields::GROUPS => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::ORGLIST => org_roles::join_list(['Demo Org']),
+            'profile_field_' . profile_fields::ORG => 'Demo Org',
+            'profile_field_' . profile_fields::GROUPSLIST => org_roles::join_list($groups),
+            'profile_field_' . profile_fields::GROUPS => implode(', ', $groups),
         ]);
     }
 
@@ -198,6 +218,46 @@ final class observer_test extends \advanced_testcase {
         $this->log_in($user);
 
         $this->assertSame(['cyber-manager'], $this->managed_roles((int)$user->id));
+    }
+
+    /**
+     * What Keycloak says at login time is written before the roles are worked out.
+     *
+     * Someone logging in for the first time has no organization data at all, so without this
+     * they would hold no roles until the next hourly run.
+     */
+    public function test_the_login_fetch_is_applied_before_the_reconcile(): void {
+        $user = $this->getDataGenerator()->create_user(['auth' => 'oauth2', 'idnumber' => 'kc-1']);
+        $this->set_keycloak_double(function (int $userid): void {
+            $this->set_groups($userid, ['cyber-managers']);
+        });
+
+        $this->log_in($user);
+
+        $this->assertSame(['cyber-manager'], $this->managed_roles((int)$user->id));
+    }
+
+    /**
+     * A Keycloak that cannot be read does not stop the reconcile.
+     *
+     * The reconcile is what takes a lost role back, and it reads what Moodle already holds,
+     * so it has to run whether or not Keycloak answered. The two used to share one try block,
+     * which made an unreachable Keycloak leave every login's roles unexamined.
+     */
+    public function test_a_failing_keycloak_still_reconciles(): void {
+        $user = $this->create_sso_user(['cyber-managers', 'lab-builders']);
+        $this->log_in($user);
+        $this->assertSame(['cyber-manager', 'lab-builder'], $this->managed_roles((int)$user->id));
+
+        $this->set_groups((int)$user->id, ['lab-builders']);
+        $this->clear_throttle((int)$user->id);
+        $this->set_keycloak_double(function (int $userid): void {
+            throw new \moodle_exception('error');
+        });
+        $this->log_in($user);
+
+        $this->assertSame(['lab-builder'], $this->managed_roles((int)$user->id));
+        $this->assertDebuggingCalled();
     }
 
     /**

@@ -103,7 +103,7 @@ class sync_org_roles extends \core\task\scheduled_task {
         require_once($CFG->dirroot . '/cohort/lib.php');
         require_once($CFG->libdir . '/accesslib.php');
 
-        foreach ([profile_fields::ORG, profile_fields::GROUPS] as $shortname) {
+        foreach (profile_fields::matching() as $shortname) {
             if (!profile_fields::field_id($shortname)) {
                 $trace("WARNING: profile field '{$shortname}' does not exist, so no user has org data - "
                     . 'every managed assignment will be revoked. Re-run the plugin upgrade to recreate it.');
@@ -143,7 +143,7 @@ class sync_org_roles extends \core\task\scheduled_task {
 
         $orgs = $this->get_distinct_orgs();
         if (!$orgs) {
-            $trace('no ssoorg values found in user profiles - no cohorts to maintain.');
+            $trace('no organization values found in user profiles - no cohorts to maintain.');
             return;
         }
 
@@ -183,7 +183,7 @@ class sync_org_roles extends \core\task\scheduled_task {
     }
 
     /**
-     * Return every distinct org named by any user's ssoorg field.
+     * Return every distinct org named by any user's ssoorglist field.
      *
      * A user carrying two orgs contributes both, rather than one bogus "A,B" org that
      * matches no category.
@@ -199,9 +199,10 @@ class sync_org_roles extends \core\task\scheduled_task {
     /**
      * Ensure a dynamic cohort and its rule exist for one org + Keycloak group pair.
      *
-     * Conditions: auth = oauth2 AND ssoorg contains ",org," AND ssogroups contains
-     * ",group,". The delimiters are what stop "ex-cyber-managers" from satisfying a
-     * rule that wants "cyber-managers", and "Army Reserve" from satisfying "Army".
+     * Conditions: auth = oauth2 AND ssoorglist contains "|org|" AND ssogroupslist contains
+     * "|group|". The delimiters are what stop "ex-cyber-managers" from satisfying a
+     * rule that wants "cyber-managers", and "Army Reserve" from satisfying "Army". The
+     * matching fields, not the readable ones - see profile_fields::MATCHING.
      *
      * @param string $cohortname
      * @param string $cohortidnumber
@@ -279,10 +280,10 @@ class sync_org_roles extends \core\task\scheduled_task {
             'auth_value' => org_roles::AUTH,
         ], 0, $adminid, $now);
 
-        // Conditions 1 & 2: the ssoorg and ssogroups list fields. Both are stored
-        // delimiter-wrapped, so "contains ,value," is an exact element test.
-        $orgkey = 'profile_field_' . profile_fields::ORG;
-        $grpkey = 'profile_field_' . profile_fields::GROUPS;
+        // Conditions 1 & 2: the two matching fields. Both are stored delimiter-wrapped,
+        // so "contains |value|" is an exact element test.
+        $orgkey = 'profile_field_' . profile_fields::ORGLIST;
+        $grpkey = 'profile_field_' . profile_fields::GROUPSLIST;
 
         $orgcfg = [
             'profilefield' => $orgkey,
