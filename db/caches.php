@@ -51,4 +51,14 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 100,
     ],
+    // The login path's Keycloak token and its last failure. Short lived on purpose: the
+    // token is a realm admin credential at rest, and the failure stamp only has to outlast
+    // a burst of logins. \block_crucible\local\keycloak checks both expiries itself too.
+    'keycloak' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'ttl' => 300, // 5 minutes.
+        'staticacceleration' => true,
+        'staticaccelerationsize' => 2,
+    ],
 ];

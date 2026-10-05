@@ -88,13 +88,18 @@ if ($ADMIN->fulltree) {
     ));
 
     // OAUTH
-    $settings->add(new admin_setting_configselect(
+    $issuersetting = new admin_setting_configselect(
         'block_crucible/issuerid',
         get_string('issuerid', 'block_crucible'),
         get_string('configissuerid', 'block_crucible'),
         0,
         $options
-    ));
+    );
+    // Pointing the plugin at a different issuer otherwise leaves the login path holding a
+    // token for the old realm until the cache expires. A block's lib.php is not loaded on
+    // the admin pages, so the callback has to be a class method rather than a function.
+    $issuersetting->set_updatedcallback('\block_crucible\local\keycloak::purge_cache');
+    $settings->add($issuersetting);
 
     // Checkbox
     $settings->add(new admin_setting_configcheckbox(
