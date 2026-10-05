@@ -98,11 +98,34 @@ final class upgrade_test extends \advanced_testcase {
 
     /**
      * Run the upgrade from the release before the split.
+     *
+     * @return string the upgrade's trace output
      */
-    private function run_upgrade(): void {
+    private function run_upgrade(): string {
         ob_start();
         xmldb_block_crucible_upgrade(self::SPLIT_VERSION - 1);
+
+        return (string)ob_get_clean();
+    }
+
+    /**
+     * Run the org role sync task, discarding its trace output.
+     */
+    private function run_sync(): void {
+        ob_start();
+        (new sync_org_roles())->execute();
         ob_get_clean();
+    }
+
+    /**
+     * Skip a test that needs the optional cohort plugin.
+     */
+    private function require_dynamic_cohorts(): void {
+        global $DB;
+
+        if (!$DB->get_manager()->table_exists('tool_dynamic_cohorts_c')) {
+            $this->markTestSkipped('tool_dynamic_cohorts is not installed.');
+        }
     }
 
     /**
@@ -148,6 +171,39 @@ final class upgrade_test extends \advanced_testcase {
     }
 
     /**
+     * A name the new delimiter cannot store is left readable rather than overwritten.
+     *
+     * The readable field is the only copy of it. join_display() reads back what was stored,
+     * which for a single such value is nothing, so writing that would replace a real
+     * organization with "" - the outcome the rest of this release is careful to avoid. It
+     * cannot be matched on, so it grants no roles, and the upgrade says so in its output.
+     */
+    public function test_a_value_the_delimiter_cannot_store_is_left_alone(): void {
+        $userid = (int)$this->getDataGenerator()->create_user(['auth' => 'oauth2'])->id;
+        $this->store_raw($userid, profile_fields::ORG, 'Acme|Holdings');
+
+        $output = $this->run_upgrade();
+
+        $this->assertSame('Acme|Holdings', $this->stored($userid, profile_fields::ORG));
+        $this->assertStringContainsString('Acme|Holdings', $output);
+        // join_list() says so as it drops it, which is how the caller knows to ask.
+        $this->assertDebuggingCalled();
+    }
+
+    /**
+     * A storable organization beside an unstorable one still grants its roles.
+     */
+    public function test_the_storable_half_of_a_mixed_list_is_still_matched_on(): void {
+        $userid = (int)$this->getDataGenerator()->create_user(['auth' => 'oauth2'])->id;
+        $this->store_raw($userid, profile_fields::ORG, ',Demo Org,Acme|Holdings,');
+
+        $this->run_upgrade();
+
+        $this->assertSame('|Demo Org|', $this->stored($userid, profile_fields::ORGLIST));
+        $this->assertDebuggingCalled();
+    }
+
+    /**
      * The cohort conditions this plugin wrote are re-pointed at the matching fields.
      *
      * Leaving them for the next hourly run would not do: the rules are processed in real time,
@@ -157,9 +213,7 @@ final class upgrade_test extends \advanced_testcase {
     public function test_the_cohort_conditions_are_repointed(): void {
         global $DB;
 
-        if (!$DB->get_manager()->table_exists('tool_dynamic_cohorts_c')) {
-            $this->markTestSkipped('tool_dynamic_cohorts is not installed.');
-        }
+        $this->require_dynamic_cohorts();
 
         $id = $DB->insert_record('tool_dynamic_cohorts_c', (object)[
             'ruleid' => 1,
@@ -189,16 +243,19 @@ final class upgrade_test extends \advanced_testcase {
     }
 
     /**
-     * A condition an administrator wrote by hand is theirs, and still means what it says.
+     * A condition carrying an unwrapped needle is left exactly as it is.
+     *
+     * Not because an administrator must have written it - this plugin wrote the needle bare
+     * itself until 2026092300, so on a site that has not run the sync task since upgrading to
+     * that release every condition it owns is still in this form. Rewriting one would mean
+     * guessing whether a bare needle was meant as a whole element, and a wrong guess empties
+     * a cohort. The next sync_org_roles run re-points it, which the test below checks.
      */
-    public function test_a_hand_written_condition_is_left_alone(): void {
+    public function test_a_condition_with_an_unwrapped_needle_is_left_alone(): void {
         global $DB;
 
-        if (!$DB->get_manager()->table_exists('tool_dynamic_cohorts_c')) {
-            $this->markTestSkipped('tool_dynamic_cohorts is not installed.');
-        }
+        $this->require_dynamic_cohorts();
 
-        // No wrapping delimiters, so this is not one of ours.
         $configdata = json_encode([
             'profilefield' => 'profile_field_' . profile_fields::ORG,
             'profile_field_' . profile_fields::ORG . '_operator' => sync_org_roles::OP_CONTAINS,
@@ -218,5 +275,142 @@ final class upgrade_test extends \advanced_testcase {
         $this->run_upgrade();
 
         $this->assertSame($configdata, $DB->get_field('tool_dynamic_cohorts_c', 'configdata', ['id' => $id]));
+    }
+
+    /**
+     * The realistic production path: conditions in the pre-2026092300 bare form, the upgrade,
+     * then one sync_org_roles run.
+     *
+     * A site that last ran the sync task before 2026092300 holds the plugin's own conditions
+     * with bare needles on the readable fields. The upgrade leaves them, so this checks that
+     * the state it leaves behind still works and that one task run finishes the job: the
+     * conditions end up on the matching fields with wrapped needles, no condition is left
+     * pointing at a readable field, and the user is still in the cohort throughout.
+     */
+    public function test_bare_conditions_are_repointed_by_the_next_sync_run(): void {
+        global $DB;
+
+        $this->require_dynamic_cohorts();
+
+        $this->getDataGenerator()->create_category(['name' => 'Demo Org', 'parent' => 0]);
+        foreach (org_roles::group_role_map() as $shortname) {
+            $roleid = create_role(ucwords(str_replace('-', ' ', $shortname)), $shortname, 'Test role');
+            set_role_contextlevels($roleid, [CONTEXT_COURSECAT]);
+        }
+        set_config('enableorgrolesync', 1, 'block_crucible');
+        org_roles::reset_caches();
+
+        $userid = (int)$this->getDataGenerator()->create_user(['auth' => 'oauth2'])->id;
+        $this->store_raw($userid, profile_fields::ORG, ',Demo Org,');
+        $this->store_raw($userid, profile_fields::GROUPS, ',cyber-managers,');
+
+        // The rule as a site last synced before 2026092300 holds it: the readable fields, and
+        // bare needles. The sortorders are the ones the task has always used, because that is
+        // how it finds its own conditions again.
+        $ruleid = $this->create_bare_rule('demo-org-cyber-managers', 'Demo Org Cyber Managers', [
+            1 => [profile_fields::ORG, 'Demo Org'],
+            2 => [profile_fields::GROUPS, 'cyber-managers'],
+        ]);
+
+        $this->run_upgrade();
+        $this->run_sync();
+
+        $expected = [
+            'profile_field_' . profile_fields::ORGLIST => org_roles::list_needle('Demo Org'),
+            'profile_field_' . profile_fields::GROUPSLIST => org_roles::list_needle('cyber-managers'),
+        ];
+        $conditions = $DB->get_records('tool_dynamic_cohorts_c', ['ruleid' => $ruleid]);
+        // Three, not five: the task finds its own conditions by sortorder and rewrites them
+        // in place, rather than adding a second pair beside the bare ones.
+        $this->assertCount(3, $conditions);
+
+        $found = [];
+        foreach ($conditions as $condition) {
+            $config = json_decode($condition->configdata, true);
+            if (!isset($config['profilefield'])) {
+                continue;
+            }
+            $key = $config['profilefield'];
+            $found[$key] = $config[$key . '_value'] ?? null;
+        }
+        ksort($expected);
+        ksort($found);
+        $this->assertSame($expected, $found);
+    }
+
+    /**
+     * Create a cohort, a rule and the conditions in the pre-2026092300 bare form.
+     *
+     * @param string $idnumber cohort idnumber, which is how the task finds the rule again
+     * @param string $name
+     * @param array $conditions sortorder => [profile field shortname, bare needle]
+     * @return int rule id
+     */
+    private function create_bare_rule(string $idnumber, string $name, array $conditions): int {
+        global $DB;
+
+        $cohortid = (int)$DB->insert_record('cohort', (object)[
+            'contextid' => \context_system::instance()->id,
+            'name' => $name,
+            'idnumber' => $idnumber,
+            'description' => '',
+            'descriptionformat' => FORMAT_HTML,
+            'visible' => 1,
+            'component' => 'tool_dynamic_cohorts',
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+        $ruleid = (int)$DB->insert_record('tool_dynamic_cohorts', (object)[
+            'name' => $name,
+            'description' => '',
+            'cohortid' => $cohortid,
+            'enabled' => 1,
+            'bulkprocessing' => 0,
+            'broken' => 0,
+            'operator' => 0,
+            'realtime' => 1,
+            'usermodified' => 2,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+
+        $this->insert_condition($ruleid, sync_org_roles::CLASS_AUTH, 0, [
+            'authmethod' => 'auth',
+            'auth_operator' => sync_org_roles::OP_EQUALS,
+            'auth_value' => org_roles::AUTH,
+        ]);
+        foreach ($conditions as $sortorder => [$shortname, $needle]) {
+            $key = 'profile_field_' . $shortname;
+            $this->insert_condition($ruleid, sync_org_roles::CLASS_PROFILE, $sortorder, [
+                'profilefield' => $key,
+                $key . '_operator' => sync_org_roles::OP_CONTAINS,
+                $key . '_value' => $needle,
+                'include_missing_data' => 0,
+            ]);
+        }
+
+        return $ruleid;
+    }
+
+    /**
+     * Insert one rule condition.
+     *
+     * @param int $ruleid
+     * @param string $classname
+     * @param int $sortorder
+     * @param array $config
+     */
+    private function insert_condition(int $ruleid, string $classname, int $sortorder, array $config): void {
+        global $DB;
+
+        $DB->insert_record('tool_dynamic_cohorts_c', (object)[
+            'ruleid' => $ruleid,
+            'classname' => $classname,
+            'configdata' => json_encode($config),
+            'sortorder' => $sortorder,
+            'usermodified' => 2,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
     }
 }

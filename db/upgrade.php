@@ -234,6 +234,7 @@ function xmldb_block_crucible_upgrade($oldversion) {
         \block_crucible\local\profile_fields::install();
 
         $legacy = \block_crucible\local\org_roles::LEGACY_DELIM;
+        $unstorable = [];
         foreach (\block_crucible\local\profile_fields::MATCHING as $display => $matching) {
             $displayid = \block_crucible\local\profile_fields::field_id($display);
             $matchingid = \block_crucible\local\profile_fields::field_id($matching);
@@ -264,12 +265,34 @@ function xmldb_block_crucible_upgrade($oldversion) {
                     ]);
                 }
 
+                // The readable value is the only copy of a name the new delimiter cannot
+                // store, so leave it exactly as it is. join_display() reads back what was
+                // stored, which for "Acme|Inc." is nothing at all, and writing that over a
+                // real organization is the thing this release is careful not to do.
+                $dropped = \block_crucible\local\org_roles::unstorable_values($elements);
+                if ($dropped) {
+                    foreach ($dropped as $value) {
+                        $unstorable[] = $display . ' user ' . $row->userid . ': "' . $value . '"';
+                    }
+                    continue;
+                }
+
                 $readable = \block_crucible\local\org_roles::join_display($stored);
                 if ($readable !== $row->data) {
                     $DB->set_field('user_info_data', 'data', $readable, ['id' => $row->id]);
                 }
             }
             $rows->close();
+        }
+
+        if ($unstorable) {
+            mtrace('[crucible] ' . count($unstorable) . ' profile value(s) contain the "'
+                . \block_crucible\local\org_roles::DELIM . '" delimiter, so they cannot be matched on and'
+                . ' grant no roles. They have been left readable rather than overwritten. Rename the'
+                . ' organization in Keycloak, or add an alias, to resolve each:');
+            foreach ($unstorable as $line) {
+                mtrace('[crucible]   ' . $line);
+            }
         }
 
         // Re-point the cohort conditions this plugin wrote at the matching fields. Waiting
@@ -290,9 +313,18 @@ function xmldb_block_crucible_upgrade($oldversion) {
                     continue;
                 }
 
-                // Only conditions carrying a wrapped needle, which is this plugin's own
-                // signature. An administrator's hand-written "contains Acme" on the readable
-                // field is theirs, and still means what it says.
+                // Only conditions carrying a wrapped needle. An unwrapped one is not
+                // necessarily hand-written - this plugin wrote the needle bare itself until
+                // 2026092300, so on a site that has not run the sync task since upgrading to
+                // that release every condition it owns is still in the bare form.
+                //
+                // Leaving those alone is the right answer either way. The needle is a
+                // "contains" test, the readable field still holds the same names, so it keeps
+                // matching exactly as well as it did before - which is to say loosely, since
+                // that is what the bare form always was - and the next sync_org_roles run
+                // rewrites the condition onto the matching field with a wrapped needle. The
+                // alternative is to guess here whether a bare needle was meant as a whole
+                // element, and a wrong guess empties a cohort.
                 $value = (string)($config[$old . '_value'] ?? '');
                 if (strlen($value) < 3 || $value[0] !== $legacy || substr($value, -1) !== $legacy) {
                     continue;
