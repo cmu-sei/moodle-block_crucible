@@ -38,6 +38,8 @@ class stub_keycloak extends keycloak {
     private $onrefresh;
 
     /**
+     * Build a stub that does what the test says a login-time read does.
+     *
      * @param callable|null $onrefresh Called with the user id, or null to read nothing.
      */
     public function __construct(?callable $onrefresh = null) {

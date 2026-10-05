@@ -324,10 +324,82 @@ final class keycloak_test extends \advanced_testcase {
         $client->refresh_user($userid);
 
         $options = $this->requests[0]['options'];
-        $this->assertSame(2, $options[RequestOptions::CONNECT_TIMEOUT]);
-        $this->assertSame(3, $options[RequestOptions::TIMEOUT]);
+        $this->assertGreaterThan(0, $options[RequestOptions::CONNECT_TIMEOUT]);
+        $this->assertLessThanOrEqual(keycloak::CONNECT_TIMEOUT_SECONDS, $options[RequestOptions::CONNECT_TIMEOUT]);
+        $this->assertGreaterThan(0, $options[RequestOptions::TIMEOUT]);
+        $this->assertLessThanOrEqual(keycloak::TIMEOUT_SECONDS, $options[RequestOptions::TIMEOUT]);
         // The request carries the client secret and then a realm admin token.
         $this->assertTrue($options[RequestOptions::VERIFY]);
+    }
+
+    /**
+     * One read is up to three requests, and they share one deadline rather than each
+     * carrying its own timeout.
+     *
+     * A per-request timeout bounds a request, not a login: a token request, a user request
+     * and a groups request carrying three seconds each cost nine. That only happens when
+     * Keycloak's admin API is slow while its login still works, which is exactly the
+     * situation a login-time read has to survive.
+     */
+    public function test_the_whole_read_shares_one_deadline(): void {
+        $userid = $this->create_linked_user();
+        $client = $this->create_client(['id' => 'kc-1'], [['name' => 'cyber-managers']]);
+
+        $client->refresh_user($userid);
+
+        $this->assertCount(3, $this->requests);
+        $previous = null;
+        foreach ($this->requests as $made) {
+            $timeout = $made['options'][RequestOptions::TIMEOUT];
+            $this->assertLessThanOrEqual(keycloak::BUDGET_SECONDS, $timeout);
+            if ($previous !== null) {
+                $this->assertLessThanOrEqual($previous, $timeout);
+            }
+            $previous = $timeout;
+        }
+    }
+
+    /**
+     * A read that changed something announces it, so realtime cohort rules see the change.
+     *
+     * profile_save_data() fires no event of its own, and tool_dynamic_cohorts' realtime
+     * processing reacts to user_created and user_updated only - not to the user_loggedin this
+     * runs under. Without the event the roles are granted during the login but cohort
+     * membership, and any enrolment made through a cohort, waits for that plugin's own run.
+     */
+    public function test_a_change_triggers_user_updated(): void {
+        $userid = $this->create_linked_user();
+        $client = $this->create_client(['id' => 'kc-1'], [['name' => 'cyber-managers']]);
+
+        $sink = $this->redirectEvents();
+        $this->assertTrue($client->refresh_user($userid));
+
+        $updates = 0;
+        foreach ($sink->get_events() as $event) {
+            if ($event instanceof \core\event\user_updated && (int)$event->objectid === $userid) {
+                $updates++;
+            }
+        }
+        $this->assertSame(1, $updates);
+    }
+
+    /**
+     * An ordinary login, where Keycloak says what Moodle already holds, announces nothing.
+     *
+     * The event is observed by every realtime rule with a profile condition, so firing it on
+     * every login would spend that work on nothing.
+     */
+    public function test_a_read_that_changes_nothing_triggers_no_event(): void {
+        $userid = $this->create_linked_user();
+        $this->create_client(['id' => 'kc-1'], [['name' => 'cyber-managers']])->refresh_user($userid);
+
+        $client = $this->create_client(['id' => 'kc-1'], [['name' => 'cyber-managers']]);
+        $sink = $this->redirectEvents();
+        $this->assertFalse($client->refresh_user($userid));
+
+        foreach ($sink->get_events() as $event) {
+            $this->assertNotInstanceOf(\core\event\user_updated::class, $event);
+        }
     }
 
     /**

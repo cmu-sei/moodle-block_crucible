@@ -42,8 +42,9 @@ use GuzzleHttp\RequestOptions;
  *  - An absent attribute cannot be read as "removed". The scheduled task can tell those
  *    apart because it sees whether any user in the realm carries the attribute; one record
  *    carries no such evidence, so an absent attribute leaves the field alone.
- *  - The request budget is a page load, not a cron slot, so the timeouts are seconds rather
- *    than tens of seconds and nothing is retried.
+ *  - The budget is a page load, not a cron slot. One read is up to three requests - a token,
+ *    when the cached one has expired, then the user, then the user's groups - so they share
+ *    one deadline rather than each carrying its own timeout, and nothing is retried.
  */
 class keycloak {
     /** @var int Maximum time to establish a connection, in seconds. */
@@ -51,6 +52,9 @@ class keycloak {
 
     /** @var int Maximum total duration of one request, in seconds. */
     const TIMEOUT_SECONDS = 3;
+
+    /** @var int Maximum total duration of one user's whole read, in seconds. */
+    const BUDGET_SECONDS = 3;
 
     /** @var int How long to stop asking Keycloak after a failure, in seconds. */
     const FAILURE_BACKOFF_SECONDS = 300;
@@ -60,6 +64,9 @@ class keycloak {
 
     /** @var int Stop reusing a token this long before it expires. */
     const TOKEN_MARGIN_SECONDS = 30;
+
+    /** @var float Unix time the read in progress must be finished by; 0.0 outside a read. */
+    private float $deadline = 0.0;
 
     /**
      * Where the configured Keycloak realm is, and what to authenticate to it with.
@@ -174,6 +181,13 @@ class keycloak {
         }
         if ($changed) {
             profile_save_data($update);
+            // profile_save_data() fires no event, and tool_dynamic_cohorts' realtime
+            // processing reacts to user_created and user_updated only - not to the
+            // user_loggedin this is running under. Without this the roles are granted during
+            // the login, because reconcile_user() assigns them directly, while cohort
+            // membership - and any enrolment made through a cohort - waits for that plugin's
+            // own scheduled run. Only on a real change, so an ordinary login fires nothing.
+            \core\event\user_updated::create_from_userid($userid)->trigger();
         }
 
         return $changed;
@@ -195,6 +209,8 @@ class keycloak {
         if ($realm === null) {
             return null;
         }
+
+        $this->deadline = microtime(true) + self::BUDGET_SECONDS;
 
         $token = $this->token($realm);
         if ($token === null) {
@@ -236,6 +252,30 @@ class keycloak {
     }
 
     /**
+     * Timeout options for the next request, out of what is left of the read's budget.
+     *
+     * A per-request timeout is not a bound on what a login pays: three requests carrying
+     * three seconds each cost nine. Sharing one deadline bounds the whole read, and whichever
+     * request finds the budget spent is not made at all. That only happens when Keycloak's
+     * admin API is slow while its login still works, which is the case this guards.
+     *
+     * @return array|null Guzzle options, or null when there is no time left to make a request
+     */
+    private function timeout_options(): ?array {
+        $remaining = $this->deadline > 0.0 ? $this->deadline - microtime(true) : (float)self::TIMEOUT_SECONDS;
+        if ($remaining <= 0.0) {
+            debugging('block_crucible: no time left in the Keycloak read budget.', DEBUG_DEVELOPER);
+
+            return null;
+        }
+
+        return [
+            RequestOptions::CONNECT_TIMEOUT => min((float)self::CONNECT_TIMEOUT_SECONDS, $remaining),
+            RequestOptions::TIMEOUT => min((float)self::TIMEOUT_SECONDS, $remaining),
+        ];
+    }
+
+    /**
      * Trimmed, unique values of one Keycloak attribute.
      *
      * @param mixed $raw attribute value as Keycloak represented it
@@ -272,8 +312,13 @@ class keycloak {
             return $cached['token'];
         }
 
+        $timeouts = $this->timeout_options();
+        if ($timeouts === null) {
+            return null;
+        }
+
         try {
-            $response = $this->create_http_client()->post($realm['tokenurl'], [
+            $response = $this->create_http_client()->post($realm['tokenurl'], $timeouts + [
                 RequestOptions::FORM_PARAMS => [
                     'grant_type' => 'client_credentials',
                     'client_id' => $realm['clientid'],
@@ -322,8 +367,13 @@ class keycloak {
     private function get_json(string $url, string $token, ?int &$status = null): ?array {
         $status = 0;
 
+        $timeouts = $this->timeout_options();
+        if ($timeouts === null) {
+            return null;
+        }
+
         try {
-            $response = $this->create_http_client()->get($url, [
+            $response = $this->create_http_client()->get($url, $timeouts + [
                 RequestOptions::HEADERS => [
                     'Authorization' => 'Bearer ' . $token,
                     'Accept' => 'application/json',
@@ -392,6 +442,7 @@ class keycloak {
         return new http_client($extraconfig + [
             // These run while a user waits for a login to complete, so an unreachable
             // Keycloak must cost a couple of seconds, not a timeout a cron job would accept.
+            // A default: each request narrows it to what is left of the read's whole budget.
             RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT_SECONDS,
             RequestOptions::TIMEOUT => self::TIMEOUT_SECONDS,
             // Statuses are reported by the callers rather than raised.
