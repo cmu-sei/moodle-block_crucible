@@ -1114,4 +1114,92 @@ final class org_roles_test extends \advanced_testcase {
 
         $this->assertSame(org_roles::ROLE_NOTINCATEGORY, $report[0]['state']);
     }
+
+    /**
+     * A mistyped group name is reported, which is the mistake that looks like nothing.
+     *
+     * "lab-builder|lab-builder" names a role that exists and is assignable, so every other
+     * check passes - while the group matches nobody, so the sync writes everyone's groups
+     * without it and the next reconcile revokes every role that mapping granted.
+     */
+    public function test_the_report_names_a_group_the_realm_does_not_have(): void {
+        $this->set_group_roles(['lab-builder' => 'lab-builder']);
+        org_roles::record_missing_groups(['lab-builder']);
+
+        $report = org_roles::group_role_report();
+
+        $this->assertSame(org_roles::ROLE_NOGROUP, $report[0]['state']);
+    }
+
+    /**
+     * A missing group is reported ahead of a problem with the role.
+     *
+     * Either way the mapping grants nothing, but only this half reads as working.
+     */
+    public function test_a_missing_group_is_reported_before_a_missing_role(): void {
+        $this->set_group_roles(['no-such-group' => 'no-such-role']);
+        org_roles::record_missing_groups(['no-such-group']);
+
+        $report = org_roles::group_role_report();
+
+        $this->assertSame(org_roles::ROLE_NOGROUP, $report[0]['state']);
+    }
+
+    /**
+     * A mapping added since the last group read carries no group verdict, not a wrong one.
+     */
+    public function test_a_group_not_yet_checked_is_not_called_missing(): void {
+        org_roles::record_missing_groups([]);
+        $this->set_group_roles(['range-staff' => 'lab-builder']);
+
+        $report = org_roles::group_role_report();
+
+        $this->assertSame(org_roles::ROLE_OK, $report[0]['state']);
+    }
+
+    /**
+     * A group the realm does have is not reported as missing once it is found again.
+     */
+    public function test_a_group_found_again_stops_being_reported(): void {
+        $this->set_group_roles(['range-staff' => 'lab-builder']);
+        org_roles::record_missing_groups(['range-staff']);
+        $this->assertSame(org_roles::ROLE_NOGROUP, org_roles::group_role_report()[0]['state']);
+
+        org_roles::record_missing_groups([]);
+
+        $this->assertSame(org_roles::ROLE_OK, org_roles::group_role_report()[0]['state']);
+    }
+
+    /**
+     * One group cannot grant two roles, and the report says which line lost.
+     *
+     * The map is keyed on the group, so the duplicate is gone by the time anything could
+     * report it unless the lines are kept.
+     */
+    public function test_the_report_flags_a_duplicated_group(): void {
+        set_config('grouprolemap', "range-staff|cyber-manager\nrange-staff|lab-builder", 'block_crucible');
+        org_roles::reset_caches();
+
+        $report = org_roles::group_role_report();
+
+        $this->assertCount(2, $report);
+        $this->assertSame(org_roles::ROLE_OVERRIDDEN, $report[0]['state']);
+        $this->assertSame('cyber-manager', $report[0]['role']);
+        $this->assertSame(org_roles::ROLE_OK, $report[1]['state']);
+        $this->assertSame('lab-builder', $report[1]['role']);
+    }
+
+    /**
+     * The last line of a duplicated group is the one that grants.
+     */
+    public function test_the_last_line_of_a_duplicated_group_wins(): void {
+        set_config('grouprolemap', "range-staff|cyber-manager\nrange-staff|lab-builder", 'block_crucible');
+        org_roles::reset_caches();
+        $categoryid = $this->create_org_category('Demo Org');
+        $userid = $this->create_sso_user(['Demo Org'], ['range-staff']);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame(['lab-builder'], $this->managed_roles($userid, $categoryid));
+    }
 }

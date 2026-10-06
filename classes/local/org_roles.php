@@ -91,6 +91,12 @@ class org_roles {
     /** @var string The mapped role exists but is not allowed in a category context. */
     const ROLE_NOTINCATEGORY = 'notincategory';
 
+    /** @var string The realm had no group of that name when it was last read. */
+    const ROLE_NOGROUP = 'nogroup';
+
+    /** @var string A later line maps the same group, so this one is inert. */
+    const ROLE_OVERRIDDEN = 'overridden';
+
     /**
      * The group to role mappings a site gets before it configures any of its own.
      *
@@ -129,12 +135,37 @@ class org_roles {
      * @return array<string, string>
      */
     public static function group_role_map(): array {
-        $raw = get_config('block_crucible', 'grouprolemap');
-        if ($raw === false || $raw === null) {
-            return self::DEFAULT_GROUP_ROLES;
+        $map = [];
+        foreach (self::group_role_lines() as $line) {
+            // One group cannot grant two roles, so a repeated group keeps its last line.
+            // group_role_report() flags the ones that lost, which is the only way an
+            // administrator would find out.
+            $map[$line['group']] = $line['role'];
         }
 
-        $map = [];
+        return $map;
+    }
+
+    /**
+     * Every configured mapping, in the order written, duplicates included.
+     *
+     * The map itself is keyed on the group, so a duplicate is already gone by the time
+     * anything could report it. This keeps the lines so the report can.
+     *
+     * @return array<int, array{group: string, role: string}>
+     */
+    private static function group_role_lines(): array {
+        $raw = get_config('block_crucible', 'grouprolemap');
+        $lines = [];
+
+        if ($raw === false || $raw === null) {
+            foreach (self::DEFAULT_GROUP_ROLES as $group => $role) {
+                $lines[] = ['group' => $group, 'role' => $role];
+            }
+
+            return $lines;
+        }
+
         foreach (preg_split('/\R/', (string)$raw) as $line) {
             if (strpos($line, self::DELIM) === false) {
                 continue;
@@ -143,11 +174,43 @@ class org_roles {
             $group = trim($group);
             $role = trim($role);
             if ($group !== '' && $role !== '') {
-                $map[$group] = $role;
+                $lines[] = ['group' => $group, 'role' => $role];
             }
         }
 
-        return $map;
+        return $lines;
+    }
+
+    /**
+     * Record which configured groups the realm turned out not to have.
+     *
+     * A typo in the group half of a mapping is the dangerous one, and it looks like nothing:
+     * the role exists and is assignable, so the mapping reads as working, while the group
+     * matches nobody - so the sync writes every user's groups without it and the next
+     * reconcile revokes every role that mapping ever granted. Until now the only trace was a
+     * line in cron output.
+     *
+     * Stored rather than looked up on demand so the settings page can say so without making
+     * a Keycloak call while an administrator waits for the page. Only the task that read the
+     * whole group list knows this, and only when that read succeeded.
+     *
+     * @param string[] $missing configured group names the realm has no group for
+     */
+    public static function record_missing_groups(array $missing): void {
+        set_config('grouprolemissing', self::join_list($missing), 'block_crucible');
+        set_config('grouprolecheckedat', time(), 'block_crucible');
+    }
+
+    /**
+     * The configured groups the last successful group read did not find.
+     *
+     * A mapping added since that run is in no such list, so it carries no group verdict
+     * rather than a wrong one. The report says when the check was last made.
+     *
+     * @return string[]
+     */
+    public static function missing_groups(): array {
+        return self::split_list((string)get_config('block_crucible', 'grouprolemissing'));
     }
 
     /**
@@ -179,22 +242,62 @@ class org_roles {
      *         the ROLE_* values
      */
     public static function group_role_report(): array {
-        global $DB;
+        $lines = self::group_role_lines();
+        $missing = self::missing_groups();
+
+        // Which line of a repeated group is the one group_role_map() keeps.
+        $inforce = [];
+        foreach ($lines as $index => $line) {
+            $inforce[$line['group']] = $index;
+        }
 
         $rows = [];
-        foreach (self::group_role_map() as $group => $shortname) {
-            $roleid = (int)$DB->get_field('role', 'id', ['shortname' => $shortname], IGNORE_MISSING);
-            if (!$roleid) {
-                $state = self::ROLE_MISSING;
-            } else if (!in_array(CONTEXT_COURSECAT, array_map('intval', get_role_contextlevels($roleid)), true)) {
-                $state = self::ROLE_NOTINCATEGORY;
-            } else {
-                $state = self::ROLE_OK;
-            }
-            $rows[] = ['group' => $group, 'role' => $shortname, 'state' => $state];
+        foreach ($lines as $index => $line) {
+            $rows[] = [
+                'group' => $line['group'],
+                'role' => $line['role'],
+                'state' => self::group_role_state(
+                    $line,
+                    $index !== $inforce[$line['group']],
+                    $missing
+                ),
+            ];
         }
 
         return $rows;
+    }
+
+    /**
+     * What one mapping line currently grants, if anything.
+     *
+     * @param array{group: string, role: string} $line
+     * @param bool $overridden whether a later line maps the same group
+     * @param string[] $missing group names the last group read did not find
+     * @return string one of the ROLE_* values
+     */
+    private static function group_role_state(array $line, bool $overridden, array $missing): string {
+        global $DB;
+
+        if ($overridden) {
+            return self::ROLE_OVERRIDDEN;
+        }
+
+        // Reported ahead of any problem with the role, because this is the one that looks
+        // like nothing is wrong: an existing, assignable role beside a group name the realm
+        // has never heard of reads as a working mapping right up until it revokes everything.
+        if (in_array($line['group'], $missing, true)) {
+            return self::ROLE_NOGROUP;
+        }
+
+        $roleid = (int)$DB->get_field('role', 'id', ['shortname' => $line['role']], IGNORE_MISSING);
+        if (!$roleid) {
+            return self::ROLE_MISSING;
+        }
+        if (!in_array(CONTEXT_COURSECAT, array_map('intval', get_role_contextlevels($roleid)), true)) {
+            return self::ROLE_NOTINCATEGORY;
+        }
+
+        return self::ROLE_OK;
     }
 
     /**

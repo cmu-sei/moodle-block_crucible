@@ -209,10 +209,18 @@ if ($ADMIN->fulltree) {
                 get_string('grouprole_' . $row['state'], 'block_crucible'),
             ];
         }
+        // The group half of each mapping is only as fresh as the last sync run, so say when
+        // that was rather than let the table imply it was checked on render.
+        $description = get_string('grouprolereportdesc', 'block_crucible');
+        $checkedat = (int)get_config('block_crucible', 'grouprolecheckedat');
+        $description .= ' ' . ($checkedat
+            ? get_string('grouprolereportchecked', 'block_crucible', format_time(time() - $checkedat))
+            : get_string('grouprolereportunchecked', 'block_crucible'));
+
         $settings->add(new admin_setting_description(
             'block_crucible/grouprolereport',
             get_string('grouprolereport', 'block_crucible'),
-            get_string('grouprolereportdesc', 'block_crucible') . html_writer::table($table)
+            $description . html_writer::table($table)
         ));
     }
 

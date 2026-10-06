@@ -447,4 +447,51 @@ final class settings_test extends \advanced_testcase {
 
         $this->assertNotContains('grouprolemapempty', $this->setting_names());
     }
+
+    /**
+     * A mapping naming a group the realm does not have is reported as granting nothing.
+     */
+    public function test_the_group_role_report_names_a_missing_group(): void {
+        $roleid = create_role('Lab Builder', 'lab-builder', 'Test role');
+        set_role_contextlevels($roleid, [CONTEXT_COURSECAT]);
+        set_config('grouprolemap', 'lab-builder|lab-builder', 'block_crucible');
+        org_roles::record_missing_groups(['lab-builder']);
+
+        $description = $this->settings_on_page()['grouprolereport']->description ?? '';
+
+        $this->assertStringContainsString(get_string('grouprole_nogroup', 'block_crucible'), $description);
+    }
+
+    /**
+     * The report says when the group names were last checked, so the table is not read as
+     * being resolved on render.
+     */
+    public function test_the_group_role_report_says_when_the_groups_were_checked(): void {
+        set_config('grouprolemap', 'range-staff|lab-builder', 'block_crucible');
+
+        $unchecked = $this->settings_on_page()['grouprolereport']->description ?? '';
+        $this->assertStringContainsString(
+            get_string('grouprolereportunchecked', 'block_crucible'),
+            $unchecked
+        );
+
+        org_roles::record_missing_groups([]);
+        $checked = $this->settings_on_page()['grouprolereport']->description ?? '';
+
+        $this->assertStringNotContainsString(
+            get_string('grouprolereportunchecked', 'block_crucible'),
+            $checked
+        );
+    }
+
+    /**
+     * A group mapped twice is flagged, since only the last line applies.
+     */
+    public function test_the_group_role_report_flags_a_duplicated_group(): void {
+        set_config('grouprolemap', "range-staff|cyber-manager\nrange-staff|lab-builder", 'block_crucible');
+
+        $description = $this->settings_on_page()['grouprolereport']->description ?? '';
+
+        $this->assertStringContainsString(get_string('grouprole_overridden', 'block_crucible'), $description);
+    }
 }

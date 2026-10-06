@@ -674,7 +674,14 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $first += $count;
         } while ($count === self::PAGE_SIZE);
 
-        foreach (array_diff($wanted, array_keys($groupids)) as $missing) {
+        // Recorded as well as traced. A cron line is the only thing that ever reported a
+        // mistyped group name, and that mistake revokes every role the mapping granted - so
+        // the settings page reads this back instead of asking Keycloak on every page render.
+        // Safe to treat as complete: a failed page returns above, so reaching here means the
+        // whole group list was read.
+        $missinggroups = array_values(array_diff($wanted, array_keys($groupids)));
+        org_roles::record_missing_groups($missinggroups);
+        foreach ($missinggroups as $missing) {
             mtrace("[crucible] Keycloak group '{$missing}' does not exist - nobody matches it.");
         }
 
