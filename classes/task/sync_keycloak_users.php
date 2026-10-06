@@ -239,8 +239,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     // in none of the mapped groups, which is a fact, so write it. No
                     // unstorable-value guard is needed here, unlike the org above:
                     // fetch_group_membership() only records groups whose name is a
-                    // group_role_map() key, and those are fixed slugs with no delimiter in
-                    // them. Change that if the map ever takes its names from configuration.
+                    // group_role_map() key, and a key cannot contain the delimiter even now
+                    // the map is configured - the delimiter is what separates the two halves
+                    // of a mapping line, so no line expresses such a name.
                     $encoded = org_roles::join_list($groupmembers[$kcid] ?? []);
                     $fields[profile_fields::GROUPSLIST] = $encoded;
                     $fields[profile_fields::GROUPS] = org_roles::join_display($encoded);
@@ -673,7 +674,14 @@ class sync_keycloak_users extends \core\task\scheduled_task {
             $first += $count;
         } while ($count === self::PAGE_SIZE);
 
-        foreach (array_diff($wanted, array_keys($groupids)) as $missing) {
+        // Recorded as well as traced. A cron line is the only thing that ever reported a
+        // mistyped group name, and that mistake revokes every role the mapping granted - so
+        // the settings page reads this back instead of asking Keycloak on every page render.
+        // Safe to treat as complete: a failed page returns above, so reaching here means the
+        // whole group list was read.
+        $missinggroups = array_values(array_diff($wanted, array_keys($groupids)));
+        org_roles::record_missing_groups($missinggroups);
+        foreach ($missinggroups as $missing) {
             mtrace("[crucible] Keycloak group '{$missing}' does not exist - nobody matches it.");
         }
 

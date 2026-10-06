@@ -54,7 +54,9 @@ defined('MOODLE_INTERNAL') || die();
  *   2. This task will discover the category and assign roles on its next run.
  *   This prevents automatic category creation from typos or unauthorized orgs.
  *
- * Adding a new group/role mapping only requires extending org_roles::group_role_map().
+ * Which group grants which role is the Group role mappings setting, so adding a pair needs
+ * no code change. The role has to exist and be allowed in a category context; the settings
+ * page reads back what each mapping currently grants.
  *
  * @package    block_crucible
  * @copyright  2024 Carnegie Mellon University

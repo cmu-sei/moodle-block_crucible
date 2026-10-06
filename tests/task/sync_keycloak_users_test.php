@@ -800,6 +800,47 @@ final class sync_keycloak_users_test extends \advanced_testcase {
     }
 
     /**
+     * The groups the realm does not have are recorded, not just traced.
+     *
+     * A mistyped group name in a mapping revokes every role that mapping granted, and a line
+     * in cron output was the only thing that ever said so. The settings page reads this back
+     * rather than asking Keycloak while an administrator waits for the page.
+     */
+    public function test_the_groups_the_realm_does_not_have_are_recorded(): void {
+        $this->prepare_site();
+        set_config('grouprolemap', "lab-builders|lab-builder\nlab-builder|lab-builder", 'block_crucible');
+        org_roles::reset_caches();
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1')],
+            [['id' => 'g-1', 'name' => 'lab-builders']],
+            ['g-1' => [['id' => 'kc-1']]]
+        ));
+
+        // The typo, and only the typo: the real group was found.
+        $this->assertSame(['lab-builder'], org_roles::missing_groups());
+        $this->assertNotEmpty(get_config('block_crucible', 'grouprolecheckedat'));
+    }
+
+    /**
+     * A group found again stops being recorded as missing.
+     */
+    public function test_a_group_found_again_is_no_longer_recorded_as_missing(): void {
+        $this->prepare_site();
+        set_config('grouprolemap', 'lab-builders|lab-builder', 'block_crucible');
+        org_roles::reset_caches();
+        org_roles::record_missing_groups(['lab-builders']);
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1')],
+            [['id' => 'g-1', 'name' => 'lab-builders']],
+            ['g-1' => [['id' => 'kc-1']]]
+        ));
+
+        $this->assertSame([], org_roles::missing_groups());
+    }
+
+    /**
      * Re-enabling a user in Keycloak gives them their Moodle account back.
      *
      * The suspend is only half a policy if nothing ever undoes it: disabling a user in

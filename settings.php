@@ -165,6 +165,65 @@ if ($ADMIN->fulltree) {
         0
     ));
 
+    // Which Keycloak group grants which role. Hardcoded until now, which meant a site whose
+    // realm names its groups anything else had to patch the plugin to use the feature at all.
+    $settings->add(new admin_setting_configtextarea(
+        'block_crucible/grouprolemap',
+        get_string('grouprolemap', 'block_crucible'),
+        get_string('configgrouprolemap', 'block_crucible'),
+        \block_crucible\local\org_roles::default_group_role_setting(),
+        PARAM_RAW,
+        60,
+        5
+    ));
+
+    // What each mapping currently grants, if anything. A mapping naming a role that does not
+    // exist, or one nobody allowed in a category, grants nothing - and the sync only says so
+    // in cron output, where nobody looks. Read-only, computed on render.
+    $rolereport = \block_crucible\local\org_roles::group_role_report();
+    if (!$rolereport) {
+        if (\block_crucible\local\org_roles::is_enabled()) {
+            // Expressible on purpose, but far more likely a cleared box than a decision, and
+            // the next sync run takes every managed role back.
+            $settings->add(new admin_setting_description(
+                'block_crucible/grouprolemapempty',
+                get_string('grouprolemapempty', 'block_crucible'),
+                $OUTPUT->notification(
+                    get_string('grouprolemapemptydesc', 'block_crucible'),
+                    \core\output\notification::NOTIFY_WARNING,
+                    false
+                )
+            ));
+        }
+    } else {
+        $table = new html_table();
+        $table->head = [
+            get_string('grouprolegroup', 'block_crucible'),
+            get_string('grouprolerole', 'block_crucible'),
+            get_string('grouprolestate', 'block_crucible'),
+        ];
+        foreach ($rolereport as $row) {
+            $table->data[] = [
+                s($row['group']),
+                s($row['role']),
+                get_string('grouprole_' . $row['state'], 'block_crucible'),
+            ];
+        }
+        // The group half of each mapping is only as fresh as the last sync run, so say when
+        // that was rather than let the table imply it was checked on render.
+        $description = get_string('grouprolereportdesc', 'block_crucible');
+        $checkedat = (int)get_config('block_crucible', 'grouprolecheckedat');
+        $description .= ' ' . ($checkedat
+            ? get_string('grouprolereportchecked', 'block_crucible', format_time(time() - $checkedat))
+            : get_string('grouprolereportunchecked', 'block_crucible'));
+
+        $settings->add(new admin_setting_description(
+            'block_crucible/grouprolereport',
+            get_string('grouprolereport', 'block_crucible'),
+            $description . html_writer::table($table)
+        ));
+    }
+
     // An OAuth 2 field mapping onto one of these profile fields is a second writer. It
     // runs at login, after this plugin has written the delimiter-wrapped form, and stores
     // the raw claim instead - which stops the cohort conditions matching. Sites that
