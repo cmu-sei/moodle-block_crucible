@@ -960,4 +960,158 @@ final class org_roles_test extends \advanced_testcase {
         });
         $this->assertCount(1, $reported);
     }
+
+    /**
+     * Write the group role mapping setting.
+     *
+     * @param array<string, string> $pairs group => role shortname
+     */
+    private function set_group_roles(array $pairs): void {
+        $lines = [];
+        foreach ($pairs as $group => $role) {
+            $lines[] = $group . '|' . $role;
+        }
+        set_config('grouprolemap', implode("\n", $lines), 'block_crucible');
+        org_roles::reset_caches();
+    }
+
+    /**
+     * An unset setting means the mappings the plugin shipped with.
+     *
+     * Every site already running was on those, and an upgrade must not change who holds what.
+     */
+    public function test_an_unset_setting_keeps_the_shipped_mappings(): void {
+        unset_config('grouprolemap', 'block_crucible');
+
+        $this->assertSame(org_roles::DEFAULT_GROUP_ROLES, org_roles::group_role_map());
+    }
+
+    /**
+     * A configured mapping replaces the shipped ones rather than adding to them.
+     */
+    public function test_a_configured_mapping_replaces_the_defaults(): void {
+        $this->set_group_roles(['range-staff' => 'lab-builder']);
+
+        $this->assertSame(['range-staff' => 'lab-builder'], org_roles::group_role_map());
+    }
+
+    /**
+     * A group named only in the setting grants its role, which is the point of the setting.
+     */
+    public function test_a_configured_group_grants_its_role(): void {
+        $this->set_group_roles(['range-staff' => 'lab-builder']);
+        $categoryid = $this->create_org_category('Demo Org');
+        $userid = $this->create_sso_user(['Demo Org'], ['range-staff']);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame(['lab-builder'], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * A group that was mapped by default no longer grants once the setting names others.
+     */
+    public function test_an_unmapped_default_group_grants_nothing(): void {
+        $this->set_group_roles(['range-staff' => 'lab-builder']);
+        $categoryid = $this->create_org_category('Demo Org');
+        $userid = $this->create_sso_user(['Demo Org'], ['lab-builders']);
+
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame([], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * Removing a mapping takes the role it granted back.
+     *
+     * The reconcile is authoritative over what it granted, so this follows from the setting
+     * being read on every run rather than needing its own mechanism.
+     */
+    public function test_removing_a_mapping_revokes_the_role_it_granted(): void {
+        $categoryid = $this->create_org_category('Demo Org');
+        $userid = $this->create_sso_user(['Demo Org'], ['lab-builders']);
+        org_roles::reconcile_user($userid);
+        $this->assertSame(['lab-builder'], $this->managed_roles($userid, $categoryid));
+
+        $this->set_group_roles(['cyber-managers' => 'cyber-manager']);
+        org_roles::reconcile_user($userid);
+
+        $this->assertSame([], $this->managed_roles($userid, $categoryid));
+    }
+
+    /**
+     * A cleared setting means no mappings, not the defaults back.
+     *
+     * "No mappings" has to be expressible. If a cleared box restored the defaults, the only
+     * way to stop granting one role would be to turn the whole feature off, which revokes
+     * the others too. The settings page warns about it instead.
+     */
+    public function test_a_cleared_setting_means_no_mappings(): void {
+        set_config('grouprolemap', '', 'block_crucible');
+
+        $this->assertSame([], org_roles::group_role_map());
+    }
+
+    /**
+     * Lines that do not name a pair are skipped, and the halves are trimmed.
+     */
+    public function test_malformed_mapping_lines_are_skipped(): void {
+        set_config(
+            'grouprolemap',
+            "  range-staff | lab-builder  \n\nnot-a-mapping\n|lab-builder\nrange-leads|\n",
+            'block_crucible'
+        );
+
+        $this->assertSame(['range-staff' => 'lab-builder'], org_roles::group_role_map());
+    }
+
+    /**
+     * The default the setting shows is the default the code uses.
+     *
+     * The box is pre-filled rather than empty, so an administrator can see what is in force;
+     * these must not be able to drift apart.
+     */
+    public function test_the_setting_default_parses_back_to_the_shipped_mappings(): void {
+        set_config('grouprolemap', org_roles::default_group_role_setting(), 'block_crucible');
+
+        $this->assertSame(org_roles::DEFAULT_GROUP_ROLES, org_roles::group_role_map());
+    }
+
+    /**
+     * The report says a mapping is in force when its role exists and is allowed in a category.
+     */
+    public function test_the_report_confirms_a_working_mapping(): void {
+        $this->set_group_roles(['range-staff' => 'lab-builder']);
+
+        $this->assertSame(
+            [['group' => 'range-staff', 'role' => 'lab-builder', 'state' => org_roles::ROLE_OK]],
+            org_roles::group_role_report()
+        );
+    }
+
+    /**
+     * A mapping naming no role grants nothing, and the report says so.
+     *
+     * The sync only mentions this in cron output, where nobody looks.
+     */
+    public function test_the_report_names_a_missing_role(): void {
+        $this->set_group_roles(['range-staff' => 'no-such-role']);
+
+        $report = org_roles::group_role_report();
+
+        $this->assertSame(org_roles::ROLE_MISSING, $report[0]['state']);
+    }
+
+    /**
+     * A role nobody allowed in a category cannot be granted in one, and the report says so.
+     */
+    public function test_the_report_names_a_role_not_allowed_in_a_category(): void {
+        $roleid = create_role('Course Only', 'course-only', 'Test role');
+        set_role_contextlevels($roleid, [CONTEXT_COURSE]);
+        $this->set_group_roles(['range-staff' => 'course-only']);
+
+        $report = org_roles::group_role_report();
+
+        $this->assertSame(org_roles::ROLE_NOTINCATEGORY, $report[0]['state']);
+    }
 }

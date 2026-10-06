@@ -389,4 +389,62 @@ final class settings_test extends \advanced_testcase {
     public function test_the_alias_setting_is_always_present(): void {
         $this->assertContains('orgcategoryaliases', $this->setting_names());
     }
+
+    /**
+     * The group role mapping setting is always offered.
+     */
+    public function test_the_group_role_mapping_setting_is_always_present(): void {
+        $this->assertContains('grouprolemap', $this->setting_names());
+    }
+
+    /**
+     * The report lists each mapping and whether its role can be granted.
+     */
+    public function test_the_group_role_report_lists_each_mapping(): void {
+        $roleid = create_role('Lab Builder', 'lab-builder', 'Test role');
+        set_role_contextlevels($roleid, [CONTEXT_COURSECAT]);
+        set_config('grouprolemap', 'range-staff|lab-builder', 'block_crucible');
+
+        $description = $this->settings_on_page()['grouprolereport']->description ?? '';
+
+        $this->assertStringContainsString('range-staff', $description);
+        $this->assertStringContainsString(get_string('grouprole_ok', 'block_crucible'), $description);
+    }
+
+    /**
+     * A mapping whose role does not exist is reported as granting nothing.
+     */
+    public function test_the_group_role_report_names_a_missing_role(): void {
+        set_config('grouprolemap', 'range-staff|no-such-role', 'block_crucible');
+
+        $description = $this->settings_on_page()['grouprolereport']->description ?? '';
+
+        $this->assertStringContainsString(get_string('grouprole_missing', 'block_crucible'), $description);
+    }
+
+    /**
+     * Clearing the mappings while the sync is on is warned about.
+     *
+     * It is expressible on purpose, but far more likely a cleared box than a decision, and
+     * the next sync run takes back every role the feature granted.
+     */
+    public function test_an_empty_mapping_list_is_warned_about_when_the_sync_is_on(): void {
+        set_config('enableorgrolesync', 1, 'block_crucible');
+        set_config('grouprolemap', '', 'block_crucible');
+
+        $names = $this->setting_names();
+
+        $this->assertContains('grouprolemapempty', $names);
+        $this->assertNotContains('grouprolereport', $names);
+    }
+
+    /**
+     * With the sync off there is nothing to warn about - no roles are being granted anyway.
+     */
+    public function test_an_empty_mapping_list_is_not_warned_about_when_the_sync_is_off(): void {
+        set_config('enableorgrolesync', 0, 'block_crucible');
+        set_config('grouprolemap', '', 'block_crucible');
+
+        $this->assertNotContains('grouprolemapempty', $this->setting_names());
+    }
 }

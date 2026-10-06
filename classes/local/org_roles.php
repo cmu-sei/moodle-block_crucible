@@ -82,22 +82,119 @@ class org_roles {
     /** @var string Nothing represents this org. */
     const RESOLVE_UNMATCHED = 'unmatched';
 
+    /** @var string The mapped role exists and may be assigned in a category. */
+    const ROLE_OK = 'ok';
+
+    /** @var string The mapped role shortname names no role. */
+    const ROLE_MISSING = 'missing';
+
+    /** @var string The mapped role exists but is not allowed in a category context. */
+    const ROLE_NOTINCATEGORY = 'notincategory';
+
+    /**
+     * The group to role mappings a site gets before it configures any of its own.
+     *
+     * These shipped hardcoded, so they are what every existing site is already running on.
+     *
+     * @var array<string, string>
+     */
+    const DEFAULT_GROUP_ROLES = [
+        'cyber-managers' => 'cyber-manager',
+        'lab-builders' => 'lab-builder',
+        'curriculum-developers' => 'curriculum-developer',
+    ];
+
     /** @var array<string, array> org name => resolution result, for the life of the request. */
     private static $categorycache = [];
 
     /**
      * Keycloak group name => Moodle role shortname.
      *
-     * The roles must already exist; a missing role is logged and that pair skipped.
+     * Configured per site, one mapping to a line as "group|role". The roles must already
+     * exist; a missing role is logged and that pair skipped.
      *
-     * @return array
+     * An unset setting means the mappings this plugin shipped with, because that is what
+     * every site already running has and an upgrade must not change who holds what. A
+     * setting that is present but names no mapping means exactly that - no group grants
+     * anything - rather than quietly restoring the defaults. "No mappings" has to be
+     * expressible: otherwise the only way to stop granting one role would be to turn the
+     * whole feature off, which revokes the others too. The settings page warns when the
+     * list is empty while the sync is on, since that is far more likely a mistake than a
+     * decision.
+     *
+     * Note that the separator is also the list delimiter, so a group name cannot contain
+     * it - there is no line that would express one. That is what lets the user sync store
+     * group names without the unstorable-value guard the organization values need.
+     *
+     * @return array<string, string>
      */
     public static function group_role_map(): array {
-        return [
-            'cyber-managers' => 'cyber-manager',
-            'lab-builders' => 'lab-builder',
-            'curriculum-developers' => 'curriculum-developer',
-        ];
+        $raw = get_config('block_crucible', 'grouprolemap');
+        if ($raw === false || $raw === null) {
+            return self::DEFAULT_GROUP_ROLES;
+        }
+
+        $map = [];
+        foreach (preg_split('/\R/', (string)$raw) as $line) {
+            if (strpos($line, self::DELIM) === false) {
+                continue;
+            }
+            [$group, $role] = explode(self::DELIM, $line, 2);
+            $group = trim($group);
+            $role = trim($role);
+            if ($group !== '' && $role !== '') {
+                $map[$group] = $role;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * The default mappings as the setting's own text, so the box shows what it is doing.
+     *
+     * An empty default box that silently means "the three built-in mappings" would be the
+     * worst of both: an administrator could neither see what was in force nor tell an unset
+     * setting from a cleared one.
+     *
+     * @return string
+     */
+    public static function default_group_role_setting(): string {
+        $lines = [];
+        foreach (self::DEFAULT_GROUP_ROLES as $group => $role) {
+            $lines[] = $group . self::DELIM . $role;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Each configured mapping and whether its role can actually be granted.
+     *
+     * A mapping naming a role that does not exist, or one an administrator has not allowed
+     * in a category, grants nothing. The sync traces that into cron output, where nobody
+     * looks, so the settings page reads it back instead.
+     *
+     * @return array<int, array{group: string, role: string, state: string}> state is one of
+     *         the ROLE_* values
+     */
+    public static function group_role_report(): array {
+        global $DB;
+
+        $rows = [];
+        foreach (self::group_role_map() as $group => $shortname) {
+            $roleid = (int)$DB->get_field('role', 'id', ['shortname' => $shortname], IGNORE_MISSING);
+            if (!$roleid) {
+                $state = self::ROLE_MISSING;
+            } else if (!in_array(CONTEXT_COURSECAT, array_map('intval', get_role_contextlevels($roleid)), true)) {
+                $state = self::ROLE_NOTINCATEGORY;
+            } else {
+                $state = self::ROLE_OK;
+            }
+            $rows[] = ['group' => $group, 'role' => $shortname, 'state' => $state];
+        }
+
+        return $rows;
     }
 
     /**

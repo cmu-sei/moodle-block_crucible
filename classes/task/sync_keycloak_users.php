@@ -239,8 +239,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     // in none of the mapped groups, which is a fact, so write it. No
                     // unstorable-value guard is needed here, unlike the org above:
                     // fetch_group_membership() only records groups whose name is a
-                    // group_role_map() key, and those are fixed slugs with no delimiter in
-                    // them. Change that if the map ever takes its names from configuration.
+                    // group_role_map() key, and a key cannot contain the delimiter even now
+                    // the map is configured - the delimiter is what separates the two halves
+                    // of a mapping line, so no line expresses such a name.
                     $encoded = org_roles::join_list($groupmembers[$kcid] ?? []);
                     $fields[profile_fields::GROUPSLIST] = $encoded;
                     $fields[profile_fields::GROUPS] = org_roles::join_display($encoded);
