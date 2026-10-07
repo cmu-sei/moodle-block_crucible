@@ -65,6 +65,15 @@ class keycloak {
     /** @var int Stop reusing a token this long before it expires. */
     const TOKEN_MARGIN_SECONDS = 30;
 
+    /** @var int How long the realm's group list is reused for, in seconds. */
+    const GROUPS_CACHE_SECONDS = 600;
+
+    /** @var int Maximum total duration of a whole group-list read, in seconds. */
+    const GROUPS_BUDGET_SECONDS = 10;
+
+    /** @var int Groups to ask Keycloak for at a time. */
+    const GROUPS_PAGE_SIZE = 200;
+
     /** @var float Unix time the read in progress must be finished by; 0.0 outside a read. */
     private float $deadline = 0.0;
 
@@ -273,6 +282,72 @@ class keycloak {
             RequestOptions::CONNECT_TIMEOUT => min((float)self::CONNECT_TIMEOUT_SECONDS, $remaining),
             RequestOptions::TIMEOUT => min((float)self::TIMEOUT_SECONDS, $remaining),
         ];
+    }
+
+    /**
+     * Every top-level group name in the realm, for an administrator to choose from.
+     *
+     * Cached, because this runs while a settings page renders and a realm's group list
+     * changes far less often than that page is opened. The refresh is the page's own button:
+     * without one, a group just created in Keycloak would not be selectable until the cache
+     * expired, and nothing would distinguish that from a group that does not exist.
+     *
+     * The login path's failure stamp is deliberately not consulted or set here. They are
+     * different concerns, and letting them share would mean one administrator opening a
+     * settings page could suppress the login-time read for everybody.
+     *
+     * @param bool $refresh Ignore any cached list and ask Keycloak again.
+     * @return string[]|null Sorted group names, or null when the realm could not be read.
+     */
+    public function group_names(bool $refresh = false): ?array {
+        $cache = \cache::make('block_crucible', 'keycloak');
+
+        if (!$refresh) {
+            $cached = $cache->get('groups');
+            if (is_array($cached) && ($cached['expires'] ?? 0) > time()) {
+                return $cached['names'];
+            }
+        }
+
+        $realm = self::realm();
+        if ($realm === null) {
+            return null;
+        }
+
+        $this->deadline = microtime(true) + self::GROUPS_BUDGET_SECONDS;
+
+        $token = $this->token($realm);
+        if ($token === null) {
+            return null;
+        }
+
+        $base = rtrim($realm['adminbase'], '/') . '/groups?briefRepresentation=true';
+        $names = [];
+        $first = 0;
+        do {
+            $page = $this->get_json($base . '&first=' . $first . '&max=' . self::GROUPS_PAGE_SIZE, $token);
+            if ($page === null) {
+                // Including when the budget ran out mid-walk. Returning what was read so far
+                // would be worse than returning nothing: a group that exists would be absent
+                // from the list, and the page would present that as "no such group".
+                return null;
+            }
+
+            foreach ($page as $node) {
+                if (!empty($node['name'])) {
+                    $names[] = (string)$node['name'];
+                }
+            }
+
+            $count = count($page);
+            $first += $count;
+        } while ($count === self::GROUPS_PAGE_SIZE);
+
+        $names = array_values(array_unique($names));
+        sort($names, SORT_NATURAL | SORT_FLAG_CASE);
+        $cache->set('groups', ['names' => $names, 'expires' => time() + self::GROUPS_CACHE_SECONDS]);
+
+        return $names;
     }
 
     /**

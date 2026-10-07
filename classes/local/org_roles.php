@@ -182,6 +182,44 @@ class org_roles {
     }
 
     /**
+     * Store a mapping, in the same text the setting holds.
+     *
+     * One storage format with two editors, rather than the picker inventing a second one:
+     * group_role_map() stays the only parse, so the two cannot disagree about what is
+     * configured, and nothing that reads the map has to know which editor wrote it.
+     *
+     * @param array<string, string> $mapping group name => role shortname
+     */
+    public static function set_group_role_map(array $mapping): void {
+        global $CFG;
+
+        $lines = [];
+        foreach ($mapping as $group => $role) {
+            $group = trim((string)$group);
+            $role = trim((string)$role);
+            if ($group === '' || $role === '' || strpos($group, self::DELIM) !== false) {
+                continue;
+            }
+            $lines[] = $group . self::DELIM . $role;
+        }
+
+        $new = implode("\n", $lines);
+        $old = get_config('block_crucible', 'grouprolemap');
+        if ($new === ($old === false ? null : $old)) {
+            return;
+        }
+
+        // This setting decides who is granted which role, and the config log is how a change
+        // to that gets dated afterwards. The admin settings writer logs its own saves, so a
+        // save made through the setting is already recorded; set_config() on its own is not,
+        // which would make the picker the one way to change this and leave no trace.
+        require_once($CFG->libdir . '/adminlib.php');
+        add_to_config_log('grouprolemap', $old, $new, 'block_crucible');
+
+        set_config('grouprolemap', $new, 'block_crucible');
+    }
+
+    /**
      * Record which configured groups the realm turned out not to have.
      *
      * A typo in the group half of a mapping is the dangerous one, and it looks like nothing:

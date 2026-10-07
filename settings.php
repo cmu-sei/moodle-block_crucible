@@ -53,6 +53,13 @@ if ($hassiteconfig) {
         new moodle_url('/blocks/crucible/manage_apps.php'),
         'moodle/site:config'
     ));
+
+    $ADMIN->add('blocksettings', new admin_externalpage(
+        'block_crucible_managerolemap',
+        get_string('managerolemap', 'block_crucible'),
+        new moodle_url('/blocks/crucible/manage_rolemap.php'),
+        'moodle/site:config'
+    ));
 }
 
 if ($ADMIN->fulltree) {
@@ -175,6 +182,18 @@ if ($ADMIN->fulltree) {
         PARAM_RAW,
         60,
         5
+    ));
+
+    // The picker edits this same value. Offered alongside rather than instead of the box: the
+    // box is the only editor that works when Keycloak cannot be reached, and the only sane way
+    // to paste a long mapping in.
+    $settings->add(new admin_setting_description(
+        'block_crucible/grouprolemappicker',
+        '',
+        html_writer::link(
+            new moodle_url('/blocks/crucible/manage_rolemap.php'),
+            get_string('grouprolemappickerlink', 'block_crucible')
+        )
     ));
 
     // What each mapping currently grants, if anything. A mapping naming a role that does not
