@@ -403,6 +403,84 @@ final class keycloak_test extends \advanced_testcase {
     }
 
     /**
+     * The realm's group list is read for the picker, sorted and de-duplicated.
+     */
+    public function test_the_group_list_is_read_for_the_picker(): void {
+        $client = $this->create_client(null, [['name' => 'range-staff'], ['name' => 'analysts']]);
+
+        $this->assertSame(['analysts', 'range-staff'], $client->group_names());
+    }
+
+    /**
+     * The group list is cached, because it is read while a settings page renders.
+     */
+    public function test_the_group_list_is_cached(): void {
+        $this->create_client(null, [['name' => 'range-staff']])->group_names();
+
+        $client = $this->create_client(null, [['name' => 'something-else']]);
+
+        $this->assertSame(['range-staff'], $client->group_names());
+        $this->assertSame([], $this->requests);
+    }
+
+    /**
+     * The refresh button ignores the cache, which is the only reason it exists.
+     */
+    public function test_a_refresh_ignores_the_cached_group_list(): void {
+        $this->create_client(null, [['name' => 'range-staff']])->group_names();
+
+        $client = $this->create_client(null, [['name' => 'something-else']]);
+
+        $this->assertSame(['something-else'], $client->group_names(true));
+    }
+
+    /**
+     * An unreadable realm gives no list rather than an empty one.
+     *
+     * An empty list is indistinguishable from a realm with no groups, and a picker built
+     * from it would offer nothing while looking like it had asked successfully.
+     */
+    public function test_an_unreadable_realm_gives_no_group_list(): void {
+        $client = new testable_keycloak();
+        $client->set_handler(function (RequestInterface $request, array $options): PromiseInterface {
+            $this->requests[] = ['request' => $request, 'options' => $options];
+            if (str_ends_with($request->getUri()->getPath(), '/protocol/openid-connect/token')) {
+                return $this->json(['access_token' => 'kc-token', 'expires_in' => 60]);
+            }
+
+            return Create::promiseFor(new Response(500, [], 'boom'));
+        });
+
+        $this->assertNull($client->group_names());
+        $this->assertDebuggingCalled();
+    }
+
+    /**
+     * Reading the group list does not suppress the login-time read.
+     *
+     * They are different concerns. Sharing the failure stamp would let one administrator
+     * opening a settings page stop every login reading Keycloak for the next few minutes.
+     */
+    public function test_a_group_list_failure_does_not_suppress_the_login_read(): void {
+        $userid = $this->create_linked_user();
+        $failing = new testable_keycloak();
+        $failing->set_handler(function (RequestInterface $request, array $options): PromiseInterface {
+            if (str_ends_with($request->getUri()->getPath(), '/protocol/openid-connect/token')) {
+                return $this->json(['access_token' => 'kc-token', 'expires_in' => 60]);
+            }
+
+            return Create::promiseFor(new Response(500, [], 'boom'));
+        });
+        $this->assertNull($failing->group_names());
+        $this->assertDebuggingCalled();
+
+        $client = $this->create_client(['id' => 'kc-1'], [['name' => 'cyber-managers']]);
+
+        $this->assertTrue($client->refresh_user($userid));
+        $this->assertSame('|cyber-managers|', $this->profile_value($userid, profile_fields::GROUPSLIST));
+    }
+
+    /**
      * The admin API base is derived from the issuer's token endpoint, not configured twice.
      */
     public function test_the_admin_base_comes_from_the_issuer(): void {

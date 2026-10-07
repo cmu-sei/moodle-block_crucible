@@ -182,6 +182,29 @@ class org_roles {
     }
 
     /**
+     * Store a mapping, in the same text the setting holds.
+     *
+     * One storage format with two editors, rather than the picker inventing a second one:
+     * group_role_map() stays the only parse, so the two cannot disagree about what is
+     * configured, and nothing that reads the map has to know which editor wrote it.
+     *
+     * @param array<string, string> $mapping group name => role shortname
+     */
+    public static function set_group_role_map(array $mapping): void {
+        $lines = [];
+        foreach ($mapping as $group => $role) {
+            $group = trim((string)$group);
+            $role = trim((string)$role);
+            if ($group === '' || $role === '' || strpos($group, self::DELIM) !== false) {
+                continue;
+            }
+            $lines[] = $group . self::DELIM . $role;
+        }
+
+        set_config('grouprolemap', implode("\n", $lines), 'block_crucible');
+    }
+
+    /**
      * Record which configured groups the realm turned out not to have.
      *
      * A typo in the group half of a mapping is the dangerous one, and it looks like nothing:
