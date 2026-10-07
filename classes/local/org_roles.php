@@ -191,6 +191,8 @@ class org_roles {
      * @param array<string, string> $mapping group name => role shortname
      */
     public static function set_group_role_map(array $mapping): void {
+        global $CFG;
+
         $lines = [];
         foreach ($mapping as $group => $role) {
             $group = trim((string)$group);
@@ -201,7 +203,20 @@ class org_roles {
             $lines[] = $group . self::DELIM . $role;
         }
 
-        set_config('grouprolemap', implode("\n", $lines), 'block_crucible');
+        $new = implode("\n", $lines);
+        $old = get_config('block_crucible', 'grouprolemap');
+        if ($new === ($old === false ? null : $old)) {
+            return;
+        }
+
+        // This setting decides who is granted which role, and the config log is how a change
+        // to that gets dated afterwards. The admin settings writer logs its own saves, so a
+        // save made through the setting is already recorded; set_config() on its own is not,
+        // which would make the picker the one way to change this and leave no trace.
+        require_once($CFG->libdir . '/adminlib.php');
+        add_to_config_log('grouprolemap', $old, $new, 'block_crucible');
+
+        set_config('grouprolemap', $new, 'block_crucible');
     }
 
     /**

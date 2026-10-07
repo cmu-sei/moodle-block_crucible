@@ -149,6 +149,66 @@ final class rolemap_form_test extends \advanced_testcase {
     }
 
     /**
+     * A stored role that cannot be assigned in a category is still offered.
+     *
+     * The dropdown lists only category-assignable roles, so such a row would otherwise load
+     * blank - and saving would then fail "half a mapping" against a row the administrator
+     * never touched, with no way to save the page until they worked out which row and why.
+     * These are exactly the rows the report flags as granting nothing.
+     */
+    public function test_a_stored_role_not_assignable_in_a_category_is_still_offered(): void {
+        $roleid = create_role('Course Only', 'course-only', 'Test role');
+        set_role_contextlevels($roleid, [CONTEXT_COURSE]);
+        $form = $this->create_form(['range-staff'], ['range-staff' => 'course-only']);
+
+        $html = $form->render();
+
+        $this->assertStringContainsString('course-only', $html);
+        $this->assertStringContainsString(
+            get_string('grouprolemaprolenotincategory', 'block_crucible'),
+            $html
+        );
+    }
+
+    /**
+     * A stored role that no longer exists at all is still offered, and said to be missing.
+     */
+    public function test_a_stored_role_that_does_not_exist_is_still_offered(): void {
+        $form = $this->create_form(['range-staff'], ['range-staff' => 'deleted-role']);
+
+        $html = $form->render();
+
+        $this->assertStringContainsString('deleted-role', $html);
+        $this->assertStringContainsString(get_string('grouprolemaprolemissing', 'block_crucible'), $html);
+    }
+
+    /**
+     * A mapping whose role is not assignable in a category saves unchanged.
+     *
+     * The whole point of keeping it selectable: an administrator editing some other row must
+     * not have this one silently emptied, or be blocked from saving by it.
+     */
+    public function test_a_row_with_an_unassignable_role_saves_unchanged(): void {
+        $roleid = create_role('Course Only', 'course-only', 'Test role');
+        set_role_contextlevels($roleid, [CONTEXT_COURSE]);
+        $form = $this->create_form(['range-staff', 'range-leads'], ['range-staff' => 'course-only']);
+
+        $errors = $form->validation(
+            ['mapgroup' => ['range-staff', 'range-leads'], 'maprole' => ['course-only', 'lab-builder']],
+            []
+        );
+
+        $this->assertSame([], $errors);
+        $this->assertSame(
+            ['range-staff' => 'course-only', 'range-leads' => 'lab-builder'],
+            rolemap_form::submitted_mapping((object)[
+                'mapgroup' => ['range-staff', 'range-leads'],
+                'maprole' => ['course-only', 'lab-builder'],
+            ])
+        );
+    }
+
+    /**
      * The submitted pairs become a group => role map, dropping the empty rows.
      */
     public function test_the_submitted_pairs_become_a_mapping(): void {
@@ -186,6 +246,82 @@ final class rolemap_form_test extends \advanced_testcase {
         org_roles::set_group_role_map([]);
 
         $this->assertSame([], org_roles::group_role_map());
+    }
+
+    /**
+     * A save through the picker is recorded in the config log.
+     *
+     * The admin settings writer logs its own saves, so a change made through the setting is
+     * already dated. set_config() on its own is not, which would make the picker the one way
+     * to change who gets which role and leave no trace of it.
+     */
+    public function test_a_save_is_written_to_the_config_log(): void {
+        // Counted as a delta, not an absolute: installing the site applies this setting's
+        // default and logs that, so there is already one row before any test runs.
+        $before = $this->config_log_count();
+
+        org_roles::set_group_role_map(['range-staff' => 'lab-builder']);
+
+        $this->assertSame($before + 1, $this->config_log_count());
+        $this->assertSame('range-staff|lab-builder', $this->latest_config_log()->value);
+    }
+
+    /**
+     * Clearing the mapping is recorded too, since that is the change worth dating.
+     */
+    public function test_clearing_the_mapping_is_written_to_the_config_log(): void {
+        $before = $this->config_log_count();
+
+        org_roles::set_group_role_map(['range-staff' => 'lab-builder']);
+        org_roles::set_group_role_map([]);
+
+        $this->assertSame($before + 2, $this->config_log_count());
+        $latest = $this->latest_config_log();
+        $this->assertSame('', $latest->value);
+        $this->assertSame('range-staff|lab-builder', $latest->oldvalue);
+    }
+
+    /**
+     * Saving the same mapping again logs nothing, so the log stays a list of real changes.
+     */
+    public function test_saving_an_unchanged_mapping_logs_nothing(): void {
+        org_roles::set_group_role_map(['range-staff' => 'lab-builder']);
+        $before = $this->config_log_count();
+
+        org_roles::set_group_role_map(['range-staff' => 'lab-builder']);
+
+        $this->assertSame($before, $this->config_log_count());
+    }
+
+    /**
+     * How many times this setting has been logged as changing.
+     *
+     * @return int
+     */
+    private function config_log_count(): int {
+        global $DB;
+
+        return $DB->count_records('config_log', ['plugin' => 'block_crucible', 'name' => 'grouprolemap']);
+    }
+
+    /**
+     * The most recent config log row for this setting.
+     *
+     * @return \stdClass
+     */
+    private function latest_config_log(): \stdClass {
+        global $DB;
+
+        $rows = $DB->get_records(
+            'config_log',
+            ['plugin' => 'block_crucible', 'name' => 'grouprolemap'],
+            'id DESC',
+            '*',
+            0,
+            1
+        );
+
+        return reset($rows);
     }
 
     /**

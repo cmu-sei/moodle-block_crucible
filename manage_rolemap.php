@@ -33,6 +33,7 @@ admin_externalpage_setup('block_crucible_managerolemap');
 
 $pageurl = new moodle_url('/blocks/crucible/manage_rolemap.php');
 $refresh = optional_param('refresh', 0, PARAM_BOOL);
+$clearall = optional_param('clearall', 0, PARAM_BOOL);
 
 if ($refresh) {
     require_sesskey();
@@ -40,6 +41,12 @@ if ($refresh) {
     // group created in Keycloak a moment ago is exactly when this button gets pressed.
     \core\di::get(keycloak::class)->group_names(true);
     redirect($pageurl);
+}
+
+if ($clearall) {
+    require_sesskey();
+    org_roles::set_group_role_map([]);
+    redirect($pageurl, get_string('grouprolemapsaved', 'block_crucible'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
 $mapping = org_roles::group_role_map();
@@ -52,14 +59,29 @@ $groups = \core\di::get(keycloak::class)->group_names();
 $readonly = $groups === null;
 
 $form = null;
+$confirmclear = false;
 if (!$readonly) {
     $form = new rolemap_form($pageurl->out(false), ['groups' => $groups, 'mapping' => $mapping]);
 
     if ($form->is_cancelled()) {
         redirect($pageurl);
     } else if ($data = $form->get_data()) {
-        org_roles::set_group_role_map(rolemap_form::submitted_mapping($data));
-        redirect($pageurl, get_string('grouprolemapsaved', 'block_crucible'), null, \core\output\notification::NOTIFY_SUCCESS);
+        $submitted = rolemap_form::submitted_mapping($data);
+        if (!$submitted && $mapping && org_roles::is_enabled()) {
+            // Emptying the map takes every role this feature granted back on the next sync
+            // run. The setting warns about that state on the settings page, but only once it
+            // is already saved; here it can be asked first. Nothing has to be carried through
+            // the confirmation, because the state being confirmed is "no mappings at all".
+            $confirmclear = true;
+        } else {
+            org_roles::set_group_role_map($submitted);
+            redirect(
+                $pageurl,
+                get_string('grouprolemapsaved', 'block_crucible'),
+                null,
+                \core\output\notification::NOTIFY_SUCCESS
+            );
+        }
     }
 
     $defaults = ['mapgroup' => [], 'maprole' => []];
@@ -72,6 +94,16 @@ if (!$readonly) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('managerolemap', 'block_crucible'));
+
+if ($confirmclear) {
+    echo $OUTPUT->confirm(
+        get_string('grouprolemapclearconfirm', 'block_crucible'),
+        new moodle_url($pageurl, ['clearall' => 1, 'sesskey' => sesskey()]),
+        $pageurl
+    );
+    echo $OUTPUT->footer();
+    die();
+}
 
 if ($readonly) {
     echo $OUTPUT->notification(get_string('grouprolemapnorealm', 'block_crucible'), \core\output\notification::NOTIFY_ERROR);

@@ -60,9 +60,21 @@ class rolemap_form extends \moodleform {
             $groupoptions[$name] = $name;
         }
 
+        // Stored roles need the same protection as stored groups above, and for the same
+        // reason. The dropdown lists only roles assignable in a category, so a stored mapping
+        // naming one that is missing or course-only - exactly the rows the report flags as
+        // granting nothing - would load its dropdown blank. Saving would then fail with "half
+        // a mapping" against a row the administrator never touched, and the page could not be
+        // saved at all until they worked out which row and why.
         $roleoptions = ['' => get_string('choosedots')];
-        foreach (self::category_roles() as $shortname => $label) {
+        $assignable = self::category_roles();
+        foreach ($assignable as $shortname => $label) {
             $roleoptions[$shortname] = $label;
+        }
+        foreach (array_unique(array_values($mapping)) as $shortname) {
+            if (!isset($roleoptions[$shortname])) {
+                $roleoptions[$shortname] = self::unassignable_role_label($shortname);
+            }
         }
 
         // One more than is stored, so there is always an empty pair to fill in without
@@ -107,6 +119,26 @@ class rolemap_form extends \moodleform {
         \core_collator::asort($roles);
 
         return $roles;
+    }
+
+    /**
+     * How a stored role the dropdown would not otherwise offer is labelled.
+     *
+     * It stays selectable so the row can be saved, but it says what is wrong with it, since
+     * choosing it again grants nothing.
+     *
+     * @param string $shortname
+     * @return string
+     */
+    private static function unassignable_role_label(string $shortname): string {
+        global $DB;
+
+        $exists = $DB->record_exists('role', ['shortname' => $shortname]);
+
+        return $shortname . ' ' . get_string(
+            $exists ? 'grouprolemaprolenotincategory' : 'grouprolemaprolemissing',
+            'block_crucible'
+        );
     }
 
     /**
