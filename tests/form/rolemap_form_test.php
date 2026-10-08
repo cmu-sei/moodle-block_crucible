@@ -87,7 +87,7 @@ final class rolemap_form_test extends \advanced_testcase {
 
         $errors = $form->validation(['mapgroup' => ['range-staff'], 'maprole' => ['']], []);
 
-        $this->assertArrayHasKey('mapgroup[0]', $errors);
+        $this->assertArrayHasKey('mapping[0]', $errors);
     }
 
     /**
@@ -115,8 +115,8 @@ final class rolemap_form_test extends \advanced_testcase {
             []
         );
 
-        $this->assertArrayHasKey('mapgroup[1]', $errors);
-        $this->assertArrayNotHasKey('mapgroup[0]', $errors);
+        $this->assertArrayHasKey('mapping[1]', $errors);
+        $this->assertArrayNotHasKey('mapping[0]', $errors);
     }
 
     /**
@@ -131,7 +131,25 @@ final class rolemap_form_test extends \advanced_testcase {
 
         $errors = $form->validation(['mapgroup' => [$name], 'maprole' => ['lab-builder']], []);
 
-        $this->assertArrayHasKey('mapgroup[0]', $errors);
+        $this->assertArrayHasKey('mapping[0]', $errors);
+    }
+
+    /**
+     * Each group and its role render as one numbered row under one column header.
+     *
+     * Two unlabelled-looking dropdowns per mapping, stacked, made it hard to see where one
+     * mapping ended and the next began.
+     */
+    public function test_each_pair_renders_as_one_numbered_row(): void {
+        $form = $this->create_form(['range-staff'], ['range-staff' => 'lab-builder']);
+
+        $html = $form->render();
+
+        $this->assertStringContainsString(get_string('grouprolecategoryrole', 'block_crucible'), $html);
+        $this->assertStringContainsString('Mapping 1', $html);
+        $this->assertStringContainsString('Mapping 2', $html);
+        $this->assertStringContainsString('name="mapgroup[0]"', $html);
+        $this->assertStringContainsString('name="maprole[0]"', $html);
     }
 
     /**
