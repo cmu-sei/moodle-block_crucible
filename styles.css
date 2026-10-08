@@ -735,3 +735,12 @@
 [data-bs-theme="dark"] .crucible-success-notice a:focus {
   background: #218948 !important;
 }
+
+/* Group role mappings: header and dropdowns share a width so the columns line up. */
+.block-crucible-mapcol,
+#page-admin-blocks-crucible-manage_rolemap select[name^="mapgroup["],
+#page-admin-blocks-crucible-manage_rolemap select[name^="maprole["] {
+  display: inline-block;
+  width: 20rem;
+  max-width: 100%;
+}

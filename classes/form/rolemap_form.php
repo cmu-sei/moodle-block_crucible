@@ -81,12 +81,25 @@ class rolemap_form extends \moodleform {
         // having to press the button first.
         $repeats = max(count($mapping) + 1, 1);
 
-        $elements = [
-            $mform->createElement('select', 'mapgroup', get_string('grouprolegroup', 'block_crucible'), $groupoptions),
-            $mform->createElement('select', 'maprole', get_string('grouprolerole', 'block_crucible'), $roleoptions),
-        ];
+        // Each pair is one row under a single header, so the mappings read as a table rather
+        // than as a run of identical-looking dropdowns. The column labels stay on each
+        // dropdown for screen readers. The children keep their own names, so the submitted
+        // data is the same two arrays either way.
+        $grouplabel = get_string('grouprolegroup', 'block_crucible');
+        $rolelabel = get_string('grouprolecategoryrole', 'block_crucible');
+        $mform->addElement('group', 'mapheader', '', [
+            $mform->createElement('static', 'mapheadgroup', '', \html_writer::span($grouplabel, 'block-crucible-mapcol fw-bold')),
+            $mform->createElement('static', 'mapheadrole', '', \html_writer::span($rolelabel, 'block-crucible-mapcol fw-bold')),
+        ], ' ', false);
+
+        $groupselect = $mform->createElement('select', 'mapgroup', $grouplabel, $groupoptions);
+        $groupselect->setHiddenLabel(true);
+        $roleselect = $mform->createElement('select', 'maprole', $rolelabel, $roleoptions);
+        $roleselect->setHiddenLabel(true);
+        $pairlabel = get_string('grouprolemapping', 'block_crucible');
+        $pair = $mform->createElement('group', 'mapping', $pairlabel, [$groupselect, $roleselect], ' ', false);
         $this->repeat_elements(
-            $elements,
+            [$pair],
             $repeats,
             [],
             'maprepeats',
@@ -113,7 +126,7 @@ class rolemap_form extends \moodleform {
         foreach (get_roles_for_contextlevels(CONTEXT_COURSECAT) as $roleid) {
             if (isset($all[$roleid])) {
                 $role = $all[$roleid];
-                $roles[$role->shortname] = role_get_name($role) . ' (' . $role->shortname . ')';
+                $roles[$role->shortname] = role_get_name($role);
             }
         }
         \core_collator::asort($roles);
@@ -146,7 +159,7 @@ class rolemap_form extends \moodleform {
      *
      * @param array $data
      * @param array $files
-     * @return array errors keyed by element name
+     * @return array errors keyed by the row's group name
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
@@ -164,13 +177,13 @@ class rolemap_form extends \moodleform {
             }
             if ($group === '' || $role === '') {
                 // Half a mapping grants nothing and reads as though it should.
-                $errors['mapgroup[' . $index . ']'] = get_string('grouprolemaphalf', 'block_crucible');
+                $errors['mapping[' . $index . ']'] = get_string('grouprolemaphalf', 'block_crucible');
                 continue;
             }
             // The dropdown does not remove this check: the name comes from Keycloak, and a
             // group whose name carries the delimiter cannot be stored at all.
             if (strpos($group, org_roles::DELIM) !== false) {
-                $errors['mapgroup[' . $index . ']'] = get_string(
+                $errors['mapping[' . $index . ']'] = get_string(
                     'grouprolemapdelimiter',
                     'block_crucible',
                     org_roles::DELIM
@@ -180,7 +193,7 @@ class rolemap_form extends \moodleform {
             if (isset($seen[$group])) {
                 // One group cannot grant two roles. The stored format silently keeps the
                 // last, which is worth refusing here rather than reporting afterwards.
-                $errors['mapgroup[' . $index . ']'] = get_string('grouprolemapduplicate', 'block_crucible');
+                $errors['mapping[' . $index . ']'] = get_string('grouprolemapduplicate', 'block_crucible');
                 continue;
             }
             $seen[$group] = true;
