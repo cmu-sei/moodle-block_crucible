@@ -355,5 +355,26 @@ function xmldb_block_crucible_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026100300, 'crucible');
     }
 
+    if ($oldversion < 2026100900) {
+        // The ssorole description said the sync maintains it from a Keycloak attribute. It
+        // does neither: an OAuth 2 login mapping fills it from a token claim. The text was
+        // copied into the field when it was created, so only a new lang string would leave
+        // existing sites showing the old claim. Replaced only where it is still the original
+        // wording, so a site that wrote its own keeps it.
+        $field = $DB->get_record(
+            'user_info_field',
+            ['shortname' => \block_crucible\local\profile_fields::ROLE],
+            'id, description'
+        );
+        $original = 'Roles from the user\'s Keycloak <em>moodle_roles</em> attribute. '
+            . 'Maintained by the Crucible user sync task; do not edit.';
+        if ($field && $field->description === $original) {
+            $description = get_string('profilefield_ssorole_desc', 'block_crucible');
+            $DB->set_field('user_info_field', 'description', $description, ['id' => $field->id]);
+        }
+
+        upgrade_block_savepoint(true, 2026100900, 'crucible');
+    }
+
     return true;
 }

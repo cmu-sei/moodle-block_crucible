@@ -192,9 +192,11 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                 // Multi-valued attributes are kept whole; taking only the first value
                 // made a user's org silently switch when the first one was removed.
                 //
-                // ssorole is deliberately absent: nothing reads it, and writing it here
-                // blanked the value an OAuth 2 login field mapping had stored, because no
-                // realm actually carries a moodle_roles attribute.
+                // ssorole is deliberately absent and must stay so. An OAuth 2 login field
+                // mapping fills it from the moodle_roles token claim, which is a client-role
+                // mapper, not a user attribute - so the sync would read nothing and blank it.
+                // Sites build cohort rules on it, including the one that grants admin, so
+                // blanking it takes that away from everyone on the next run.
                 $fields = [];
                 foreach (self::ATTRIBUTE_FIELDS as $short => $attribute) {
                     if (!$this->kc_has_attr($kc, $attribute)) {

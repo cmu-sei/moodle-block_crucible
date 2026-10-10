@@ -105,8 +105,9 @@ class profile_fields {
      * The subset of those fields the Keycloak user sync actually writes.
      *
      * Deliberately narrower than all(). ssorole is in all() because the plugin owns the
-     * field and creates it, but nothing populates it any more: the sync stopped writing it,
-     * because deriving it from an attribute no realm carries blanked it for every user.
+     * field and creates it, but only an OAuth 2 login field mapping populates it: the sync
+     * stopped writing it, because deriving it from an attribute no realm carries blanked it
+     * for every user.
      *
      * The distinction matters wherever the plugin makes a claim to an administrator about
      * what the sync keeps populated. Telling someone to remove the only writer of a field
