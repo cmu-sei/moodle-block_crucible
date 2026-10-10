@@ -413,4 +413,40 @@ final class upgrade_test extends \advanced_testcase {
             'timemodified' => time(),
         ]);
     }
+
+    /**
+     * The ssorole description that claimed the sync maintains it is corrected.
+     *
+     * It is copied into the field when the field is created, so a new lang string alone
+     * would leave every existing site showing the old claim.
+     */
+    public function test_the_original_ssorole_description_is_corrected(): void {
+        global $DB;
+
+        $DB->set_field('user_info_field', 'description', 'Roles from the user\'s Keycloak <em>moodle_roles</em> '
+            . 'attribute. Maintained by the Crucible user sync task; do not edit.', ['shortname' => profile_fields::ROLE]);
+
+        $this->run_upgrade();
+
+        $this->assertSame(
+            get_string('profilefield_ssorole_desc', 'block_crucible'),
+            $DB->get_field('user_info_field', 'description', ['shortname' => profile_fields::ROLE])
+        );
+    }
+
+    /**
+     * A site that wrote its own ssorole description keeps it.
+     */
+    public function test_an_edited_ssorole_description_is_kept(): void {
+        global $DB;
+
+        $DB->set_field('user_info_field', 'description', 'Written by this site.', ['shortname' => profile_fields::ROLE]);
+
+        $this->run_upgrade();
+
+        $this->assertSame(
+            'Written by this site.',
+            $DB->get_field('user_info_field', 'description', ['shortname' => profile_fields::ROLE])
+        );
+    }
 }
