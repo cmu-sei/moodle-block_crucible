@@ -387,6 +387,15 @@ class sync_org_roles extends \core\task\scheduled_task {
 
         try {
             $rule = \tool_dynamic_cohorts\rule::get_record(['id' => $ruleid]);
+            // A rule flagged broken is skipped by process_rule() without its conditions being
+            // looked at again, and only saving the rule's own form clears the flag. The conditions were
+            // just rewritten here, so a rule flagged broken by what they used to say - a field
+            // that did not exist yet, say - would otherwise never be processed again. A rule
+            // still broken is caught and re-flagged by process_rule() itself.
+            if ($rule->is_broken() && !$rule->is_broken(true)) {
+                $rule->mark_unbroken();
+                $trace("  cleared the broken flag on rule '{$rule->get('name')}' (id: {$ruleid}).");
+            }
             \tool_dynamic_cohorts\rule_manager::process_rule($rule);
         } catch (\Throwable $e) {
             $trace('  WARNING: failed to process cohort rule synchronously: ' . $e->getMessage());

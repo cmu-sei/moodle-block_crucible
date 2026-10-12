@@ -308,6 +308,35 @@ final class sync_org_roles_test extends \advanced_testcase {
     }
 
     /**
+     * A rule flagged broken is processed again once its conditions have been rewritten.
+     *
+     * tool_dynamic_cohorts never re-checks a flagged rule by itself, so a rule broken by a
+     * condition this task has since corrected would otherwise fill its cohort never again.
+     */
+    public function test_a_rule_flagged_broken_is_processed_again(): void {
+        global $DB;
+
+        $this->require_dynamic_cohorts();
+
+        $this->getDataGenerator()->create_category(['name' => 'Demo Org', 'parent' => 0]);
+        org_roles::reset_caches();
+        $userid = $this->create_sso_user(['Demo Org'], ['cyber-managers']);
+        $this->run_task();
+
+        $cohortid = $DB->get_field('cohort', 'id', ['idnumber' => 'demo-org-cyber-managers']);
+        $ruleid = $DB->get_field('tool_dynamic_cohorts', 'id', ['cohortid' => $cohortid]);
+        // Flagged broken the way tool_dynamic_cohorts does it, and emptied.
+        $DB->update_record('tool_dynamic_cohorts', (object)['id' => $ruleid, 'broken' => 1, 'enabled' => 0]);
+        $DB->delete_records('cohort_members', ['cohortid' => $cohortid]);
+        \cache_helper::purge_by_event('ruleschanged');
+
+        $this->run_task();
+
+        $this->assertSame('0', (string)$DB->get_field('tool_dynamic_cohorts', 'broken', ['id' => $ruleid]));
+        $this->assertTrue($DB->record_exists('cohort_members', ['cohortid' => $cohortid, 'userid' => $userid]));
+    }
+
+    /**
      * The task still assigns roles when the optional cohort plugin is absent.
      */
     public function test_the_task_reports_a_missing_cohort_plugin_without_stopping(): void {
