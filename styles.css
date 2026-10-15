@@ -427,15 +427,21 @@
  * Boost Dark provides a palette but not all Bootstrap semantic variables.
  * Keep these values scoped to Crucible block components so they do not alter
  * the rest of Moodle's page.
+ *
+ * Do not build these from the --bs-gray-* scale. Moodle 5.3's native colour
+ * modes invert it under [data-bs-theme="dark"] (--bs-gray-900 becomes #f8f9fa,
+ * --bs-gray-200 becomes #292e33), which turned the cards white and the titles
+ * dark. Boost Dark on 5.0-5.2 leaves it alone. Use a semantic variable where one
+ * matches, otherwise the literal dark value.
  */
 [data-bs-theme="dark"] :is(.crucible-card, .crucible-template-view) {
-  --crucible-surface: var(--bs-gray-900, #2e3134);
+  --crucible-surface: #2e3134;
   --crucible-surface-muted: var(--bs-secondary-bg, #343a40);
   --crucible-surface-subtle: var(--bs-tertiary-bg, #393e4f);
-  --crucible-border: var(--bs-gray-700, #495057);
+  --crucible-border: var(--bs-border-color, #495057);
   --crucible-text: var(--bs-body-color, #cbd0d4);
-  --crucible-text-strong: var(--bs-gray-200, #e9ecef);
-  --crucible-text-muted: var(--bs-gray-400, #ced4da);
+  --crucible-text-strong: #e9ecef;
+  --crucible-text-muted: #ced4da;
   --crucible-link: var(--bs-link-color, #8fc4ff);
   --crucible-link-hover: var(--bs-link-hover-color, #b5daff);
 }
