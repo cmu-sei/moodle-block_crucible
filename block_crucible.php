@@ -213,7 +213,6 @@ class block_crucible extends block_base
             if ($enabledApp) {
                 $crucible = new \block_crucible\crucible();
             } else {
-                debugging("Applications block plugin has not been enabled", DEBUG_DEVELOPER);
                 $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
                 // Render the no_oauth template with $datafiltered
                 $this->content->text = $OUTPUT->render_from_template('block_crucible/not_enabled', $datafiltered);
@@ -238,12 +237,8 @@ class block_crucible extends block_base
                 $data->player = $playerurl;
                 $data->playerDescription = get_string('playerdescription', 'block_crucible');
                 $data->playerLogo  = $OUTPUT->image_url('crucible-icon-player', 'block_crucible');
-            } else if ($views === 0) {
-                debugging("No views found on Player for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($views === false) {
                 debugging("Unable to connect to Player API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($views === null) {
-                debugging("Player not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // ALLOY/////////////////////////////
@@ -259,8 +254,6 @@ class block_crucible extends block_base
                 $data->alloy = get_config('block_crucible', 'alloyappurl');
                 $data->alloyDescription = get_string('alloydescription', 'block_crucible');
                 $data->alloyLogo  = $OUTPUT->image_url('crucible-icon-alloy', 'block_crucible');
-            } else if ($userperms === 0) {
-                debugging("No permissions found on Alloy for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($userperms === false) {
                 debugging("Unable to verify user permissions. Check Keycloak connectivity and configuration.", DEBUG_DEVELOPER);
             }
@@ -279,12 +272,8 @@ class block_crucible extends block_base
                 $data->blueprint = $blueprinturl;
                 $data->blueprintDescription = get_string('blueprintdescription', 'block_crucible');
                 $data->blueprintLogo = $OUTPUT->image_url('crucible-icon-blueprint', 'block_crucible');
-            } else if ($userperms === 0 || $msels === 0) {
-                debugging("No user data found on Blueprint for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($userperms === false || $msels === false) {
                 debugging("Unable to connect to Blueprint API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($userperms === null && $msels === null) {
-                debugging("Blueprint not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // CASTER/////////////////////////////
@@ -299,12 +288,8 @@ class block_crucible extends block_base
                 $data->caster = $casterurl;
                 $data->casterDescription = get_string('casterdescription', 'block_crucible');
                 $data->casterLogo  = $OUTPUT->image_url('crucible-icon-caster', 'block_crucible');
-            } else if ($userperms === 0) {
-                debugging("No user data found on Caster for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($userperms === false) {
                 debugging("Unable to verify user permissions. Check Keycloak connectivity and configuration.", DEBUG_DEVELOPER);
-            } else if ($userperms === null) {
-                debugging("User permissions not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // CITE/////////////////////////////
@@ -321,12 +306,8 @@ class block_crucible extends block_base
                 $data->cite = $citeurl;
                 $data->citeDescription = get_string('citedescription', 'block_crucible');
                 $data->citeLogo  = $OUTPUT->image_url('crucible-icon-cite', 'block_crucible');
-            } else if ($userperms === 0 || $evalscite === 0) {
-                debugging("No user data found on CITE for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($userperms === false || $evalscite === false) {
                 debugging("Unable to connect to CITE API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($evalscite === null && $userperms === null) {
-                debugging("CITE not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // GALLERY/////////////////////////////
@@ -343,12 +324,8 @@ class block_crucible extends block_base
                 $data->gallery = $galleryurl;
                 $data->galleryDescription = get_string('gallerydescription', 'block_crucible');
                 $data->galleryLogo  = $OUTPUT->image_url('crucible-icon-gallery', 'block_crucible');
-            } else if ($userperms === 0 || $exhibitsgallery === 0) {
-                debugging("No user data found on Gallery for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($userperms === false || $exhibitsgallery === false) {
                 debugging("Unable to connect to Gallery API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($userperms === null && $exhibitsgallery === null) {
-                debugging("Gallery not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // STEAMFITTER/////////////////////////////
@@ -363,12 +340,8 @@ class block_crucible extends block_base
                 $data->steamfitter = $steamfitterurl;
                 $data->steamfitterDescription = get_string('steamfitterdescription', 'block_crucible');
                 $data->steamfitterLogo  = $OUTPUT->image_url('crucible-icon-steamfitter', 'block_crucible');
-            } else if ($userperms === 0) {
-                debugging("No user data found on Steamfitter for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($userperms === false) {
                 debugging("Unable to verify user permissions. Check Keycloak connectivity and configuration.", DEBUG_DEVELOPER);
-            } else if ($userperms === null) {
-                debugging("User permissions not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // TOPOMOJO////////////////////////////
@@ -385,12 +358,8 @@ class block_crucible extends block_base
                 $data->topomojo = $topomojourl;
                 $data->topomojoDescription = get_string('topomojodescription', 'block_crucible');
                 $data->topomojoLogo  = $OUTPUT->image_url('topomojo-logo', 'block_crucible');
-            } else if ($permstopomojo === 0 || $userperms == 0) {
-                debugging("No user data found on Topomojo for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($permstopomojo === false || $userperms === false) {
                 debugging("Unable to connect to Topomojo API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($permstopomojo === null || $userperms === null) {
-                debugging("Topomojo not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // GAMEBOARD/////////////////////////////
@@ -409,12 +378,8 @@ class block_crucible extends block_base
                 $data->gameboard = $gameboardurl;
                 $data->gameboardDescription = get_string('gameboarddescription', 'block_crucible');
                 $data->gameboardLogo  = $OUTPUT->image_url('gameboard-icon', 'block_crucible');
-            } else if ($permsgameboard === 0 || $activechallenges === 0 || $userperms === 0) {
-                debugging("No user data found on Gameboard for User: " . $userid, DEBUG_DEVELOPER);
             } else if ($permsgameboard === false || $activechallenges === false || $userperms === false) {
                 debugging("Unable to connect to Gameboard API. Check network connectivity and API configuration.", DEBUG_DEVELOPER);
-            } else if ($permsgameboard === null && $activechallenges === null || $userperms === null) {
-                debugging("Gameboard not configured. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // Welcome Message/////////////////////////////
@@ -474,8 +439,6 @@ class block_crucible extends block_base
                     $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                     $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
                 }
-            } else {
-                debugging("Keycloak not enabled. Configure plugin settings to enable this application.", DEBUG_DEVELOPER);
             }
 
             // List only the keys that represent real (hardcoded) apps.

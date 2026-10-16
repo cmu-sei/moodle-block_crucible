@@ -153,7 +153,8 @@ final class keycloak_client_test extends \advanced_testcase {
         $crucible = $this->create_crucible(['records' => [200, '[]']]);
 
         $this->assertSame(0, $crucible->get_keycloak_groups());
-        $this->assertDebuggingCalled();
+        // An account with no groups is an ordinary answer, not a fault.
+        $this->assertDebuggingNotCalled();
     }
 
     public function test_role_names_come_from_the_realm_role_mappings(): void {
@@ -191,7 +192,8 @@ final class keycloak_client_test extends \advanced_testcase {
 
         $this->assertSame(0, $crucible->get_keycloak_groups());
         $this->assertCount(2, $this->requests);
-        $this->assertDebuggingCalled();
+        // A Moodle account with no Keycloak counterpart is ordinary, not a fault.
+        $this->assertDebuggingNotCalled();
     }
 
     public function test_keycloak_requests_carry_the_token_and_are_time_bounded(): void {
