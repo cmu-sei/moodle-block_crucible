@@ -190,7 +190,6 @@ class crucible
             return null;
         }
         if (!$userid) {
-            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -264,7 +263,6 @@ class crucible
         }
 
         if (!$userid) {
-            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -329,7 +327,6 @@ class crucible
         }
 
         if (!$userid) {
-            debugging("User has no idnumber.", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -390,7 +387,6 @@ class crucible
             return null;
         }
         if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -459,7 +455,6 @@ class crucible
         }
 
         if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -522,7 +517,6 @@ class crucible
             return null;
         }
         if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -586,7 +580,6 @@ class crucible
             return null;
         }
         if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -622,7 +615,6 @@ class crucible
         $r = json_decode($response);
 
         if (isset($r->message) && strpos($r->message, "ResourceNotFound") !== false) {
-            debugging("Topomojo exception: " . $r->message, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -656,7 +648,6 @@ class crucible
             return null;
         }
         if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -692,7 +683,6 @@ class crucible
         $r = json_decode($response);
 
         if (isset($r->message) && strpos($r->message, "Couldn't find resource") !== false) {
-            debugging("Gameboard validation exception: " . $r->message, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -733,7 +723,6 @@ class crucible
             return null;
         }
         if (!$userid) {
-            debugging("User has no idnumber", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -768,7 +757,6 @@ class crucible
 
         $r = json_decode($response);
         if (isset($r->message) && strpos($r->message, 'GAMEBOARD VALIDATION EXCEPTION') !== false) {
-            debugging("Gameboard validation exception: " . $r->message, DEBUG_DEVELOPER);
             return 0;
         }
 
@@ -789,7 +777,6 @@ class crucible
             return $names;
         }
         if (empty($names)) {
-            debugging("No groups found or invalid response format.", DEBUG_DEVELOPER);
             return 0;
         }
         return $names;
@@ -806,7 +793,6 @@ class crucible
             return $names;
         }
         if (empty($names)) {
-            debugging("No roles found or invalid response format.", DEBUG_DEVELOPER);
             return 0;
         }
         return $names;
@@ -861,7 +847,6 @@ class crucible
                     $token
                 );
                 if (!is_array($userlist) || empty($userlist) || empty($userlist[0]['id'])) {
-                    debugging("No users found in Keycloak matching email: {$USER->email}", DEBUG_DEVELOPER);
                     return null;
                 }
                 return $userlist[0]['id'];
