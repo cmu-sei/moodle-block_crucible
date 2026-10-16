@@ -8,9 +8,10 @@ Feature: The Applications block can be placed, configured and administered on a 
     Given the following "users" exist:
       | username | firstname | lastname | email             |
       | user1    | User      | One      | user1@example.com |
+    # On user1's own Dashboard: user1 cannot change the settings of a System-context block.
     And the following "blocks" exist:
       | blockname | contextlevel | reference | pagetypepattern | defaultregion |
-      | crucible  | System       | 1         | my-index        | content       |
+      | crucible  | User         | user1     | my-index        | content       |
 
   @javascript
   Scenario: An unconfigured block asks to be configured on the Dashboard
@@ -43,6 +44,8 @@ Feature: The Applications block can be placed, configured and administered on a 
     When I visit "/admin/settings.php?section=blocksettingcrucible"
     Then I should see "Crucible Applications"
     And I should see "Organization Role Sync"
+    # Core only reports "Changes saved" when a value actually changes.
+    And I set the field "Show All Apps to Users" to "1"
     And I press "Save changes"
     And I should see "Changes saved"
     And I follow "Add or edit applications"
