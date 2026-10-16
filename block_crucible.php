@@ -247,7 +247,7 @@ class block_crucible extends block_base
             }
 
             // ALLOY/////////////////////////////
-            $alloyurl = get_config('block_crucible', 'playerappurl');
+            $alloyurl = get_config('block_crucible', 'alloyappurl');
 
             $showalloy = null;
 
