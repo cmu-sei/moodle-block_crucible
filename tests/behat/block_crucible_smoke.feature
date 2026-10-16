@@ -29,6 +29,15 @@ Feature: The Applications block can be placed, configured and administered on a 
     Then I should see "No competencies are currently mapped to courses or activities." in the "block_crucible" "block"
     And I should not see "This block needs to be configured." in the "block_crucible" "block"
 
+  Scenario: Choosing the Applications view on a site that has not enabled it says so
+    Given I log in as "user1"
+    And I turn editing mode on
+    When I follow "Configure this block"
+    And I set the field "Choose view" to "Applications"
+    And I press "Save changes"
+    Then I should see "The Applications plugin has not been enabled" in the "block_crucible" "block"
+    And I should see "Please contact your system administrator to configure and enable the plugin." in the "block_crucible" "block"
+
   Scenario: The site settings page loads, saves, and links to the application list
     Given I log in as "admin"
     When I visit "/admin/settings.php?section=blocksettingcrucible"
