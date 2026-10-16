@@ -217,7 +217,7 @@ class block_crucible extends block_base
                 $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
                 // Render the no_oauth template with $datafiltered
                 $this->content->text = $OUTPUT->render_from_template('block_crucible/not_enabled', $datafiltered);
-                return false;
+                return $this->content;
             }
             $crucible->setup_system();
             $userid = $USER->idnumber;
