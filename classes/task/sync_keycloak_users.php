@@ -293,7 +293,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     }
 
                     if ($needs) {
-                        user_update_user($u, false, false);
+                        $this->update_user($u);
                         profile_save_data($u);
                         $updated++;
                         if ($profilechanged) {
@@ -327,7 +327,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                 }
 
                 try {
-                    $newid = user_create_user($new, false, false);
+                    $newid = $this->create_user($new);
                     $new->id = $newid;
                     profile_save_data($new);
                     $created++;
@@ -564,7 +564,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
 
             if ($suspending) {
                 $u->suspended = 1;
-                user_update_user($u, false, false);
+                $this->update_user($u);
             }
             profile_save_data($u);
             $touched[] = (int)$candidate->id;
@@ -847,5 +847,45 @@ class sync_keycloak_users extends \core\task\scheduled_task {
      */
     private function kc_attr_text(array $kc, string $name): string {
         return implode(', ', $this->kc_attr_values($kc, $name));
+    }
+
+    /**
+     * Create a user through whichever core API this Moodle version provides.
+     *
+     * Moodle 5.3 added \core\user::create_user() and deprecated the global
+     * user_create_user() (MDL-82650). The global still works - it is not finally
+     * deprecated until Moodle 6.0 - but on 5.3 it emits a deprecation notice, which
+     * PHPUnit then reports against every test that syncs a user. Moodle 5.0 and 5.2
+     * have \core\user but no create_user() on it, so the call cannot simply be
+     * switched over while those versions are still supported.
+     *
+     * The (object) cast mirrors what the deprecated wrapper did, so a caller passing
+     * an array keeps working.
+     *
+     * @param \stdClass|array $user The user to create.
+     * @return int id of the newly created user.
+     */
+    private function create_user($user): int {
+        if (method_exists(\core\user::class, 'create_user')) {
+            return \core\user::create_user((object) $user, false, false);
+        }
+        return user_create_user((object) $user, false, false);
+    }
+
+    /**
+     * Update a user through whichever core API this Moodle version provides.
+     *
+     * The 5.3 counterpart of create_user() above; see that method for why these calls
+     * are gated rather than simply replaced.
+     *
+     * @param \stdClass|array $user The user to update, identified by its id.
+     * @return void
+     */
+    private function update_user($user): void {
+        if (method_exists(\core\user::class, 'update_user')) {
+            \core\user::update_user((object) $user, false, false);
+            return;
+        }
+        user_update_user((object) $user, false, false);
     }
 }
