@@ -176,7 +176,20 @@ $string['configuserredirect'] = 'When enabled, redirects all users to the same p
 
 
 // privacy
-$string['privacy:metadata'] = 'The Crucible block plugin shows data stored in other locations';
+$string['privacy:metadata:blueprint'] = 'The block reads the user\'s MSELs from Blueprint.';
+$string['privacy:metadata:cite'] = 'The block reads the user\'s permissions and evaluations from CITE.';
+$string['privacy:metadata:core_cohort'] = 'The organization role sync creates cohorts whose members are the users of each organization.';
+$string['privacy:metadata:core_role'] = 'The organization role sync assigns and removes roles according to the user\'s Keycloak organization and groups.';
+$string['privacy:metadata:core_user'] = 'The Keycloak user sync creates and updates user accounts, and stores the user\'s organization and groups in profile fields.';
+$string['privacy:metadata:crucibleapp:idnumber'] = 'The user\'s ID number, which identifies the user to the application.';
+$string['privacy:metadata:gallery'] = 'The block reads the user\'s exhibits from Gallery.';
+$string['privacy:metadata:gameboard'] = 'The block reads the user\'s permissions and active challenges from Gameboard.';
+$string['privacy:metadata:keycloak'] = 'The block looks the user up in Keycloak to read their roles, groups and organization.';
+$string['privacy:metadata:keycloak:email'] = 'The user\'s email address, used to find their Keycloak account when reading their roles and groups.';
+$string['privacy:metadata:keycloak:idnumber'] = 'The user\'s ID number, which is their Keycloak user ID.';
+$string['privacy:metadata:player'] = 'The block reads the user\'s view memberships from Player.';
+$string['privacy:metadata:preference:apporder'] = 'The order in which the user has arranged the application tiles.';
+$string['privacy:metadata:topomojo'] = 'The block reads the user\'s permissions from TopoMojo.';
 
 // lp
 $string['config_viewtype'] = 'Choose view';
