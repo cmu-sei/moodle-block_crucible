@@ -42,22 +42,69 @@ DM24-1176
 
 namespace block_crucible\privacy;
 
-defined('MOODLE_INTERNAL') || die();
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\writer;
 
 /**
- * Privacy Subsystem for block_crucible implementing null_provider.
+ * Privacy Subsystem for block_crucible.
+ *
+ * The block stores one user preference itself. Everything else it touches about a user is
+ * either held by a core subsystem - the profile fields, roles and cohorts the Keycloak sync
+ * writes - or sent to an external service to identify the user there.
  *
  * @copyright  Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class provider implements
+    \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\user_preference_provider {
+    /** @var string The preference holding the user's application tile order. */
+    const PREFERENCE_APP_ORDER = 'block_crucible_app_order';
+
+    /** @var string[] The Crucible applications whose APIs are sent the user's ID number. */
+    const CRUCIBLE_APPS = ['player', 'blueprint', 'cite', 'gallery', 'topomojo', 'gameboard'];
+
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
+     * Describe the data this plugin stores and sends.
      *
-     * @return  string
+     * @param collection $collection
+     * @return collection
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        $collection->add_user_preference(self::PREFERENCE_APP_ORDER, 'privacy:metadata:preference:apporder');
+
+        $collection->add_external_location_link('keycloak', [
+            'idnumber' => 'privacy:metadata:keycloak:idnumber',
+            'email' => 'privacy:metadata:keycloak:email',
+        ], 'privacy:metadata:keycloak');
+
+        foreach (self::CRUCIBLE_APPS as $app) {
+            $collection->add_external_location_link($app, [
+                'idnumber' => 'privacy:metadata:crucibleapp:idnumber',
+            ], 'privacy:metadata:' . $app);
+        }
+
+        $collection->add_subsystem_link('core_user', [], 'privacy:metadata:core_user');
+        $collection->add_subsystem_link('core_role', [], 'privacy:metadata:core_role');
+        $collection->add_subsystem_link('core_cohort', [], 'privacy:metadata:core_cohort');
+
+        return $collection;
+    }
+
+    /**
+     * Export the user's preferences for this plugin.
+     *
+     * @param int $userid
+     */
+    public static function export_user_preferences(int $userid) {
+        $order = get_user_preferences(self::PREFERENCE_APP_ORDER, null, $userid);
+        if ($order !== null) {
+            writer::export_user_preference(
+                'block_crucible',
+                self::PREFERENCE_APP_ORDER,
+                $order,
+                get_string('privacy:metadata:preference:apporder', 'block_crucible')
+            );
+        }
     }
 }
