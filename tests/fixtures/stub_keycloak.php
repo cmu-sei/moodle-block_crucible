@@ -37,27 +37,45 @@ class stub_keycloak extends keycloak {
     /** @var callable|null Called with the user id, or null to read nothing. */
     private $onrefresh;
 
+    /** @var callable|null Returns what a read of the user returns, or null for a failed read. */
+    private $onread;
+
     /**
      * Build a stub that does what the test says a login-time read does.
      *
      * @param callable|null $onrefresh Called with the user id, or null to read nothing.
+     * @param callable|null $onread Called with the user id, returning the read's state - an
+     *        array carrying 'sitegroups' - or null for a read that failed.
      */
-    public function __construct(?callable $onrefresh = null) {
+    public function __construct(?callable $onrefresh = null, ?callable $onread = null) {
         $this->onrefresh = $onrefresh;
+        $this->onread = $onread;
     }
 
     /**
      * Do whatever the test said a read does.
      *
      * @param int $userid
+     * @param array|null $state set to what read_user() returns
      * @return bool whether anything was written
      */
-    public function refresh_user(int $userid): bool {
+    public function refresh_user(int $userid, ?array &$state = null): bool {
+        $state = $this->read_user($userid);
         if ($this->onrefresh === null) {
             return false;
         }
         ($this->onrefresh)($userid);
 
         return true;
+    }
+
+    /**
+     * Return whatever the test said a read returns.
+     *
+     * @param int $userid
+     * @return array|null
+     */
+    public function read_user(int $userid): ?array {
+        return $this->onread === null ? null : ($this->onread)($userid);
     }
 }

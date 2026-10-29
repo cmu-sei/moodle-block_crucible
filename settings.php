@@ -369,6 +369,71 @@ if ($ADMIN->fulltree) {
         ));
     }
 
+    // Site-level roles, granted at the system context from Keycloak group membership read
+    // directly from the admin API. Kept apart from the category map above because nothing
+    // here reads a profile field, and because the org role sync switch does not govern it.
+    $settings->add(new admin_setting_heading(
+        'block_crucible/siterolesectionheading',
+        get_string('siterolesectionheading', 'block_crucible'),
+        get_string('siterolesectiondesc', 'block_crucible')
+    ));
+
+    $settings->add(new admin_setting_configtextarea(
+        'block_crucible/siterolemap',
+        get_string('siterolemap', 'block_crucible'),
+        get_string('configsiterolemap', 'block_crucible'),
+        '',
+        PARAM_RAW,
+        60,
+        5
+    ));
+
+    $settings->add(new admin_setting_description(
+        'block_crucible/siterolemappicker',
+        '',
+        html_writer::link(
+            new moodle_url('/blocks/crucible/manage_rolemap.php', ['map' => 'site']),
+            get_string('siterolemappickerlink', 'block_crucible')
+        )
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'block_crucible/siterolemaxrevoke',
+        get_string('siterolemaxrevoke', 'block_crucible'),
+        get_string('configsiterolemaxrevoke', 'block_crucible'),
+        \block_crucible\local\site_roles::DEFAULT_MAX_REVOCATIONS,
+        PARAM_INT,
+        5
+    ));
+
+    $siterolereport = \block_crucible\local\site_roles::report();
+    if ($siterolereport) {
+        $table = new html_table();
+        $table->head = [
+            get_string('grouprolegroup', 'block_crucible'),
+            get_string('grouprolerole', 'block_crucible'),
+            get_string('grouprolestate', 'block_crucible'),
+        ];
+        foreach ($siterolereport as $row) {
+            $table->data[] = [
+                s($row['group']),
+                s($row['role']),
+                get_string('siterole_' . $row['state'], 'block_crucible'),
+            ];
+        }
+        $description = get_string('siterolereportdesc', 'block_crucible');
+        $checkedat = (int)get_config('block_crucible', 'siterolecheckedat');
+        $description .= ' ' . ($checkedat
+            ? get_string('grouprolereportchecked', 'block_crucible', format_time(time() - $checkedat))
+            : get_string('grouprolereportunchecked', 'block_crucible'));
+
+        $settings->add(new admin_setting_description(
+            'block_crucible/siterolereport',
+            get_string('siterolereport', 'block_crucible'),
+            $description . html_writer::table($table)
+        ));
+    }
+
     // Alloy
     $settings->add(new admin_setting_heading(
         'block_crucible/alloysectionheading',
