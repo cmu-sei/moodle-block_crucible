@@ -51,6 +51,8 @@ class rolemap_form extends \moodleform {
         $mform = $this->_form;
         $groups = $this->_customdata['groups'] ?? [];
         $mapping = $this->_customdata['mapping'] ?? [];
+        // The site role map edits through this same form; only the roles offered differ.
+        $contextlevel = $this->_customdata['contextlevel'] ?? CONTEXT_COURSECAT;
 
         // A group named in the stored mapping but absent from the realm has to stay
         // selectable, or saving the form would silently drop it. It is offered, and the
@@ -67,13 +69,13 @@ class rolemap_form extends \moodleform {
         // a mapping" against a row the administrator never touched, and the page could not be
         // saved at all until they worked out which row and why.
         $roleoptions = ['' => get_string('choosedots')];
-        $assignable = self::category_roles();
+        $assignable = self::roles_for($contextlevel);
         foreach ($assignable as $shortname => $label) {
             $roleoptions[$shortname] = $label;
         }
         foreach (array_unique(array_values($mapping)) as $shortname) {
             if (!isset($roleoptions[$shortname])) {
-                $roleoptions[$shortname] = self::unassignable_role_label($shortname);
+                $roleoptions[$shortname] = self::unassignable_role_label($shortname, $contextlevel);
             }
         }
 
@@ -86,7 +88,10 @@ class rolemap_form extends \moodleform {
         // dropdown for screen readers. The children keep their own names, so the submitted
         // data is the same two arrays either way.
         $grouplabel = get_string('grouprolegroup', 'block_crucible');
-        $rolelabel = get_string('grouprolecategoryrole', 'block_crucible');
+        $rolelabel = get_string(
+            $contextlevel == CONTEXT_SYSTEM ? 'grouprolesiterole' : 'grouprolecategoryrole',
+            'block_crucible'
+        );
         $mform->addElement('group', 'mapheader', '', [
             $mform->createElement('static', 'mapheadgroup', '', \html_writer::span($grouplabel, 'block-crucible-mapcol fw-bold')),
             $mform->createElement('static', 'mapheadrole', '', \html_writer::span($rolelabel, 'block-crucible-mapcol fw-bold')),
@@ -121,9 +126,19 @@ class rolemap_form extends \moodleform {
      * @return array<string, string> shortname => display name
      */
     public static function category_roles(): array {
+        return self::roles_for(CONTEXT_COURSECAT);
+    }
+
+    /**
+     * Roles that can be granted at a context level, by shortname.
+     *
+     * @param int $contextlevel CONTEXT_COURSECAT or CONTEXT_SYSTEM
+     * @return array<string, string> shortname => display name
+     */
+    public static function roles_for(int $contextlevel): array {
         $all = get_all_roles();
         $roles = [];
-        foreach (get_roles_for_contextlevels(CONTEXT_COURSECAT) as $roleid) {
+        foreach (get_roles_for_contextlevels($contextlevel) as $roleid) {
             if (isset($all[$roleid])) {
                 $role = $all[$roleid];
                 $roles[$role->shortname] = role_get_name($role);
@@ -141,15 +156,18 @@ class rolemap_form extends \moodleform {
      * choosing it again grants nothing.
      *
      * @param string $shortname
+     * @param int $contextlevel the level the map grants at
      * @return string
      */
-    private static function unassignable_role_label(string $shortname): string {
+    private static function unassignable_role_label(string $shortname, int $contextlevel): string {
         global $DB;
 
-        $exists = $DB->record_exists('role', ['shortname' => $shortname]);
+        if (!$DB->record_exists('role', ['shortname' => $shortname])) {
+            return $shortname . ' ' . get_string('grouprolemaprolemissing', 'block_crucible');
+        }
 
         return $shortname . ' ' . get_string(
-            $exists ? 'grouprolemaprolenotincategory' : 'grouprolemaprolemissing',
+            $contextlevel == CONTEXT_SYSTEM ? 'grouprolemaprolenotinsystem' : 'grouprolemaprolenotincategory',
             'block_crucible'
         );
     }

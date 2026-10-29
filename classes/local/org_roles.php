@@ -156,9 +156,9 @@ class org_roles {
      */
     private static function group_role_lines(): array {
         $raw = get_config('block_crucible', 'grouprolemap');
-        $lines = [];
 
         if ($raw === false || $raw === null) {
+            $lines = [];
             foreach (self::DEFAULT_GROUP_ROLES as $group => $role) {
                 $lines[] = ['group' => $group, 'role' => $role];
             }
@@ -166,7 +166,21 @@ class org_roles {
             return $lines;
         }
 
-        foreach (preg_split('/\R/', (string)$raw) as $line) {
+        return self::parse_map_lines((string)$raw);
+    }
+
+    /**
+     * Parse a "group|role" setting into its lines, in the order written, duplicates included.
+     *
+     * Shared with the site role map, so the two settings cannot disagree about what a line
+     * means.
+     *
+     * @param string $raw stored setting text
+     * @return array<int, array{group: string, role: string}>
+     */
+    public static function parse_map_lines(string $raw): array {
+        $lines = [];
+        foreach (preg_split('/\R/', $raw) as $line) {
             if (strpos($line, self::DELIM) === false) {
                 continue;
             }
@@ -191,6 +205,16 @@ class org_roles {
      * @param array<string, string> $mapping group name => role shortname
      */
     public static function set_group_role_map(array $mapping): void {
+        self::store_map('grouprolemap', $mapping);
+    }
+
+    /**
+     * Store a group to role mapping under one of this plugin's map settings.
+     *
+     * @param string $setting config name, grouprolemap or siterolemap
+     * @param array<string, string> $mapping group name => role shortname
+     */
+    public static function store_map(string $setting, array $mapping): void {
         global $CFG;
 
         $lines = [];
@@ -204,7 +228,7 @@ class org_roles {
         }
 
         $new = implode("\n", $lines);
-        $old = get_config('block_crucible', 'grouprolemap');
+        $old = get_config('block_crucible', $setting);
         if ($new === ($old === false ? null : $old)) {
             return;
         }
@@ -214,9 +238,9 @@ class org_roles {
         // save made through the setting is already recorded; set_config() on its own is not,
         // which would make the picker the one way to change this and leave no trace.
         require_once($CFG->libdir . '/adminlib.php');
-        add_to_config_log('grouprolemap', $old, $new, 'block_crucible');
+        add_to_config_log($setting, $old, $new, 'block_crucible');
 
-        set_config('grouprolemap', $new, 'block_crucible');
+        set_config($setting, $new, 'block_crucible');
     }
 
     /**
@@ -516,11 +540,15 @@ class org_roles {
         // Everything this plugin has granted these users, wherever it lives. Comparing
         // against all of it - rather than only the contexts we manage to resolve this
         // run - is what cleans up after a renamed or deleted org category.
+        //
+        // Except the system context, which belongs to site_roles. Those grants come from
+        // Keycloak group membership read directly, never from these profile fields, and
+        // this reconcile would otherwise revoke every one of them as "not desired".
         $existing = [];
         $rows = $DB->get_records_select(
             'role_assignments',
-            "userid {$insql} AND component = :component AND itemid = 0",
-            $inparams + ['component' => self::COMPONENT]
+            "userid {$insql} AND component = :component AND itemid = 0 AND contextid <> :sysctx",
+            $inparams + ['component' => self::COMPONENT, 'sysctx' => \context_system::instance()->id]
         );
         foreach ($rows as $row) {
             $existing[(int)$row->userid][(int)$row->roleid . ':' . (int)$row->contextid] = $row;
@@ -585,10 +613,11 @@ class org_roles {
     }
 
     /**
-     * Remove every role assignment this plugin owns, site-wide.
+     * Remove every category role assignment this plugin owns, site-wide.
      *
      * Used when the feature is turned off: disabling org role sync should give back
-     * what it granted, not freeze it in place.
+     * what it granted, not freeze it in place. System-context grants are left alone:
+     * they belong to the site role map, which this switch does not govern.
      *
      * @param callable|null $trace optional logger, called with one string per line
      * @return int number of assignments removed
@@ -596,12 +625,25 @@ class org_roles {
     public static function revoke_all(?callable $trace = null): int {
         global $DB;
 
-        $count = $DB->count_records('role_assignments', ['component' => self::COMPONENT]);
-        if (!$count) {
+        $sysctx = \context_system::instance()->id;
+        $contextids = $DB->get_fieldset_select(
+            'role_assignments',
+            'DISTINCT contextid',
+            'component = ? AND contextid <> ?',
+            [self::COMPONENT, $sysctx]
+        );
+        if (!$contextids) {
             return 0;
         }
 
-        role_unassign_all(['component' => self::COMPONENT]);
+        $count = 0;
+        foreach ($contextids as $contextid) {
+            $count += $DB->count_records('role_assignments', [
+                'component' => self::COMPONENT,
+                'contextid' => (int)$contextid,
+            ]);
+            role_unassign_all(['component' => self::COMPONENT, 'contextid' => (int)$contextid]);
+        }
         \cache_helper::purge_by_event('changesincapabilities');
 
         if ($trace) {
@@ -625,8 +667,8 @@ class org_roles {
         $ids = $DB->get_fieldset_select(
             'role_assignments',
             'DISTINCT userid',
-            'component = ?',
-            [self::COMPONENT]
+            'component = ? AND contextid <> ?',
+            [self::COMPONENT, \context_system::instance()->id]
         );
 
         $orgfieldid = profile_fields::field_id(profile_fields::ORGLIST);

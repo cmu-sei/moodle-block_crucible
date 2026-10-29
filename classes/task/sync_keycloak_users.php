@@ -27,6 +27,7 @@ namespace block_crucible\task;
 use block_crucible\local\keycloak;
 use block_crucible\local\org_roles;
 use block_crucible\local\profile_fields;
+use block_crucible\local\site_roles;
 use core\http_client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
@@ -132,10 +133,26 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         // /users carries attributes but not group membership, so ask the groups
         // endpoint instead: a few paged calls for the whole realm, rather than the one
         // call per user that /users/{id}/groups would cost.
-        $groupmembers = $this->fetch_group_membership($adminbase, $token);
+        //
+        // One read serves both maps. The category groups are written to ssogroups as before;
+        // the site groups are never written anywhere a profile edit could reach, and go
+        // straight to the site reconcile at the end of the run.
+        $categorygroups = array_keys(org_roles::group_role_map());
+        $sitegroups = array_keys(site_roles::map());
+        $groupmembers = $this->fetch_group_membership(
+            $adminbase,
+            $token,
+            array_values(array_unique(array_merge($categorygroups, $sitegroups))),
+            $missinggroups
+        );
         if ($groupmembers === null) {
             mtrace('[crucible] group membership fetch failed - leaving ssogroups untouched this run '
                 . 'so a transient error cannot revoke every role.');
+        } else {
+            org_roles::record_missing_groups(array_values(array_intersect($categorygroups, $missinggroups)));
+            if ($sitegroups) {
+                site_roles::record_missing_groups(array_values(array_intersect($sitegroups, $missinggroups)));
+            }
         }
 
         $created = 0;
@@ -244,7 +261,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     // group_role_map() key, and a key cannot contain the delimiter even now
                     // the map is configured - the delimiter is what separates the two halves
                     // of a mapping line, so no line expresses such a name.
-                    $encoded = org_roles::join_list($groupmembers[$kcid] ?? []);
+                    $encoded = org_roles::join_list(array_intersect($groupmembers[$kcid] ?? [], $categorygroups));
                     $fields[profile_fields::GROUPSLIST] = $encoded;
                     $fields[profile_fields::GROUPS] = org_roles::join_display($encoded);
                 }
@@ -366,6 +383,71 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         if ($touched && org_roles::is_enabled()) {
             $counts = org_roles::reconcile_users($touched);
             mtrace("[crucible] org roles: +{$counts['assigned']} assigned, -{$counts['unassigned']} removed.");
+        }
+
+        // Last, so that an account created above is granted its site role in this same run.
+        $this->sync_site_roles($groupmembers, $sitegroups, $missinggroups ?? []);
+    }
+
+    /**
+     * Reconcile site-level roles from the group membership this run read.
+     *
+     * Fails closed. Without a complete membership read nothing changes at site level, and a
+     * mapped group the realm does not have stops the pass too: that is far more often a
+     * renamed group than a decision to strip everyone who was in it.
+     *
+     * @param array|null $groupmembers Keycloak id => group names, or null when the read failed
+     * @param string[] $sitegroups the site-mapped group names
+     * @param string[] $missinggroups mapped group names the realm had no group for
+     */
+    private function sync_site_roles(?array $groupmembers, array $sitegroups, array $missinggroups): void {
+        global $DB;
+
+        if (!site_roles::is_active()) {
+            return;
+        }
+        if ($groupmembers === null) {
+            mtrace('[crucible] site roles: group membership could not be read - no site-level change this run.');
+            return;
+        }
+        $absent = array_values(array_intersect($sitegroups, $missinggroups));
+        if ($absent) {
+            mtrace("[crucible] site roles: mapped group(s) '" . implode("', '", $absent) . "' not found in"
+                . ' Keycloak - no site-level change this run. Fix the group name or the site role mappings.');
+            return;
+        }
+
+        $byuser = [];
+        $kcids = [];
+        foreach ($groupmembers as $kcid => $groups) {
+            $groups = array_values(array_intersect($groups, $sitegroups));
+            if ($groups) {
+                $kcids[(string)$kcid] = $groups;
+            }
+        }
+        foreach (array_chunk(array_keys($kcids), 500) as $chunk) {
+            [$insql, $params] = $DB->get_in_or_equal(array_map('strval', $chunk), SQL_PARAMS_NAMED, 'kc');
+            $rows = $DB->get_records_select_menu(
+                'user',
+                "idnumber {$insql} AND deleted = 0 AND auth = :auth",
+                $params + ['auth' => org_roles::AUTH],
+                '',
+                'id, idnumber'
+            );
+            foreach ($rows as $userid => $kcid) {
+                // A case-insensitive collation can match an idnumber that differs only in case
+                // from the Keycloak id. That is not this account, so it gets nothing.
+                if (isset($kcids[$kcid])) {
+                    $byuser[(int)$userid] = $kcids[$kcid];
+                }
+            }
+        }
+
+        $counts = site_roles::reconcile($byuser, null, static function (string $line): void {
+            mtrace('[crucible] ' . $line);
+        });
+        if (!$counts['blocked']) {
+            mtrace("[crucible] site roles: +{$counts['assigned']} assigned, -{$counts['unassigned']} removed.");
         }
     }
 
@@ -632,18 +714,29 @@ class sync_keycloak_users extends \core\task\scheduled_task {
     }
 
     /**
-     * Build Keycloak id => mapped group names for every group in the role mapping.
+     * Build Keycloak id => mapped group names for every group in the role mappings.
      *
      * Group membership is not part of the /users representation, and asking
      * /users/{id}/groups would be one request per user. Asking each mapped group for its
      * members is a handful of paged requests for the whole realm instead.
      *
+     * A disabled member is left out. The /users read only returns enabled accounts, so a
+     * disabled one never had its groups written anyway; leaving it out here is what stops it
+     * keeping a site role.
+     *
      * @param string $adminbase Admin API base URL
      * @param string $token Access token
+     * @param string[] $wanted group names to read the members of
+     * @param string[]|null $missinggroups set to the wanted names the realm has no group for
      * @return array|null keycloak user id => group names, or null when any request failed
      */
-    private function fetch_group_membership(string $adminbase, string $token): ?array {
-        $wanted = array_keys(org_roles::group_role_map());
+    private function fetch_group_membership(
+        string $adminbase,
+        string $token,
+        array $wanted,
+        ?array &$missinggroups = null
+    ): ?array {
+        $missinggroups = [];
         $adminbase = rtrim($adminbase, '/');
 
         // /groups is paged like every other admin collection, so read it to the end: a
@@ -680,9 +773,9 @@ class sync_keycloak_users extends \core\task\scheduled_task {
         // mistyped group name, and that mistake revokes every role the mapping granted - so
         // the settings page reads this back instead of asking Keycloak on every page render.
         // Safe to treat as complete: a failed page returns above, so reaching here means the
-        // whole group list was read.
+        // whole group list was read. The caller does the recording, split per map, because
+        // only it knows which map each name came from.
         $missinggroups = array_values(array_diff($wanted, array_keys($groupids)));
-        org_roles::record_missing_groups($missinggroups);
         foreach ($missinggroups as $missing) {
             mtrace("[crucible] Keycloak group '{$missing}' does not exist - nobody matches it.");
         }
@@ -701,7 +794,7 @@ class sync_keycloak_users extends \core\task\scheduled_task {
                     return null;
                 }
                 foreach ($page as $member) {
-                    if (!empty($member['id'])) {
+                    if (!empty($member['id']) && ($member['enabled'] ?? true) !== false) {
                         $membership[$member['id']][] = $name;
                     }
                 }

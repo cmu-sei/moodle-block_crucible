@@ -28,10 +28,20 @@ require_once($CFG->libdir . '/adminlib.php');
 use block_crucible\form\rolemap_form;
 use block_crucible\local\keycloak;
 use block_crucible\local\org_roles;
+use block_crucible\local\site_roles;
 
-admin_externalpage_setup('block_crucible_managerolemap');
+// One page, two maps: the category map, and the site map that grants at the system context.
+// They share the picker and the stored format, and differ in which roles are offered and in
+// what the page reports underneath.
+$site = optional_param('map', '', PARAM_ALPHA) === 'site';
+$urlparams = $site ? ['map' => 'site'] : [];
 
-$pageurl = new moodle_url('/blocks/crucible/manage_rolemap.php');
+admin_externalpage_setup('block_crucible_managerolemap', '', $urlparams);
+if ($site) {
+    $PAGE->set_title(get_string('managesiterolemap', 'block_crucible'));
+}
+
+$pageurl = new moodle_url('/blocks/crucible/manage_rolemap.php', $urlparams);
 $refresh = optional_param('refresh', 0, PARAM_BOOL);
 $clearall = optional_param('clearall', 0, PARAM_BOOL);
 
@@ -45,11 +55,11 @@ if ($refresh) {
 
 if ($clearall) {
     require_sesskey();
-    org_roles::set_group_role_map([]);
+    $site ? site_roles::set_map([]) : org_roles::set_group_role_map([]);
     redirect($pageurl, get_string('grouprolemapsaved', 'block_crucible'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
-$mapping = org_roles::group_role_map();
+$mapping = $site ? site_roles::map() : org_roles::group_role_map();
 $groups = \core\di::get(keycloak::class)->group_names();
 
 // Keycloak unreachable, or no issuer configured. Showing a picker built from an empty group
@@ -61,20 +71,24 @@ $readonly = $groups === null;
 $form = null;
 $confirmclear = false;
 if (!$readonly) {
-    $form = new rolemap_form($pageurl->out(false), ['groups' => $groups, 'mapping' => $mapping]);
+    $form = new rolemap_form($pageurl->out(false), [
+        'groups' => $groups,
+        'mapping' => $mapping,
+        'contextlevel' => $site ? CONTEXT_SYSTEM : CONTEXT_COURSECAT,
+    ]);
 
     if ($form->is_cancelled()) {
         redirect($pageurl);
     } else if ($data = $form->get_data()) {
         $submitted = rolemap_form::submitted_mapping($data);
-        if (!$submitted && $mapping && org_roles::is_enabled()) {
+        if (!$submitted && $mapping && ($site || org_roles::is_enabled())) {
             // Emptying the map takes every role this feature granted back on the next sync
             // run. The setting warns about that state on the settings page, but only once it
             // is already saved; here it can be asked first. Nothing has to be carried through
             // the confirmation, because the state being confirmed is "no mappings at all".
             $confirmclear = true;
         } else {
-            org_roles::set_group_role_map($submitted);
+            $site ? site_roles::set_map($submitted) : org_roles::set_group_role_map($submitted);
             redirect(
                 $pageurl,
                 get_string('grouprolemapsaved', 'block_crucible'),
@@ -93,11 +107,11 @@ if (!$readonly) {
 }
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('managerolemap', 'block_crucible'));
+echo $OUTPUT->heading(get_string($site ? 'managesiterolemap' : 'managerolemap', 'block_crucible'));
 
 if ($confirmclear) {
     echo $OUTPUT->confirm(
-        get_string('grouprolemapclearconfirm', 'block_crucible'),
+        get_string($site ? 'siterolemapclearconfirm' : 'grouprolemapclearconfirm', 'block_crucible'),
         new moodle_url($pageurl, ['clearall' => 1, 'sesskey' => sesskey()]),
         $pageurl
     );
@@ -111,10 +125,13 @@ if ($readonly) {
 
 // What is stored, whatever state the realm is in. On the read-only path this is the whole
 // page; otherwise it is the reference the form is edited against.
-echo $OUTPUT->heading(get_string('grouprolereport', 'block_crucible'), 3);
-$report = org_roles::group_role_report();
+echo $OUTPUT->heading(get_string($site ? 'siterolereport' : 'grouprolereport', 'block_crucible'), 3);
+$report = $site ? site_roles::report() : org_roles::group_role_report();
 if (!$report) {
-    echo $OUTPUT->notification(get_string('grouprolemapemptydesc', 'block_crucible'), \core\output\notification::NOTIFY_WARNING);
+    echo $OUTPUT->notification(
+        get_string($site ? 'siterolemapemptydesc' : 'grouprolemapemptydesc', 'block_crucible'),
+        $site ? \core\output\notification::NOTIFY_INFO : \core\output\notification::NOTIFY_WARNING
+    );
 } else {
     $table = new html_table();
     $table->head = [
@@ -123,7 +140,7 @@ if (!$report) {
         get_string('grouprolestate', 'block_crucible'),
     ];
     foreach ($report as $row) {
-        $state = get_string('grouprole_' . $row['state'], 'block_crucible');
+        $state = get_string(($site ? 'siterole_' : 'grouprole_') . $row['state'], 'block_crucible');
         // A row that grants nothing is the reason to look at this page at all, so it is not
         // left to be spotted in a column of similar-looking text.
         $table->data[] = [
@@ -135,6 +152,30 @@ if (!$report) {
         ];
     }
     echo html_writer::table($table);
+}
+
+if ($site) {
+    // Who holds each mapped role at site level, and who holds it some other way. The second
+    // list is the clean-up work for a site moving onto this map: a manual or cohort grant of
+    // the same role is not something the map can see or take back.
+    foreach (site_roles::holders() as $shortname => $holders) {
+        echo $OUTPUT->heading(get_string('siteroleholders', 'block_crucible', s($shortname)), 4);
+        foreach (['managed', 'other'] as $kind) {
+            echo html_writer::tag('p', get_string('siteroleholders' . $kind, 'block_crucible'), ['class' => 'fw-bold mb-1']);
+            if (!$holders[$kind]) {
+                echo html_writer::tag('p', get_string('siteroleholdersnone', 'block_crucible'));
+                continue;
+            }
+            $items = [];
+            foreach ($holders[$kind] as $user) {
+                $items[] = html_writer::link(
+                    new moodle_url('/user/profile.php', ['id' => $user->id]),
+                    fullname($user)
+                ) . ' (' . s($user->username) . ')';
+            }
+            echo html_writer::alist($items);
+        }
+    }
 }
 
 if ($readonly) {

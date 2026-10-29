@@ -1011,4 +1011,140 @@ final class sync_keycloak_users_test extends \advanced_testcase {
 
         $task->execute();
     }
+
+    /**
+     * Map platform-admins to a site-assignable role.
+     *
+     * @return int the role id
+     */
+    private function enable_site_roles(): int {
+        $roleid = (int)create_role('SSO Administrator', 'ssoadmin', 'Test role');
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
+        set_config('siterolemap', 'platform-admins|ssoadmin', 'block_crucible');
+
+        return $roleid;
+    }
+
+    /**
+     * Whether the user with a Keycloak id holds the plugin's site-level ssoadmin grant.
+     *
+     * @param string $kcid
+     * @param int $roleid
+     * @return bool
+     */
+    private function holds_site_role(string $kcid, int $roleid): bool {
+        global $DB;
+
+        $userid = $DB->get_field('user', 'id', ['idnumber' => $kcid, 'deleted' => 0]);
+        $this->assertNotEmpty($userid, "no Moodle user for Keycloak id {$kcid}");
+
+        return $DB->record_exists('role_assignments', [
+            'userid' => (int)$userid,
+            'roleid' => $roleid,
+            'contextid' => \context_system::instance()->id,
+            'component' => org_roles::COMPONENT,
+        ]);
+    }
+
+    /**
+     * A member of a site-mapped group gets the role in the same run that creates the account,
+     * and loses it in the run after they leave.
+     */
+    public function test_site_group_membership_grants_and_revokes_the_site_role(): void {
+        $this->prepare_site();
+        $roleid = $this->enable_site_roles();
+        $users = [$this->kc_user('kc-1'), $this->kc_user('kc-2')];
+        $tree = [['id' => 'g-pa', 'name' => 'platform-admins']];
+
+        $output = $this->run_task($this->create_realm_task($users, $tree, ['g-pa' => [['id' => 'kc-1']]]));
+
+        $this->assertTrue($this->holds_site_role('kc-1', $roleid));
+        $this->assertFalse($this->holds_site_role('kc-2', $roleid));
+        $this->assertStringContainsString("site roles: granted 'ssoadmin'", $output);
+
+        $output = $this->run_task($this->create_realm_task($users, $tree, ['g-pa' => []]));
+
+        $this->assertFalse($this->holds_site_role('kc-1', $roleid));
+        $this->assertStringContainsString("site roles: revoked 'ssoadmin'", $output);
+    }
+
+    /**
+     * Site groups are never written into the editable ssogroups fields.
+     */
+    public function test_site_groups_are_not_written_to_the_profile(): void {
+        $this->prepare_site();
+        $this->enable_site_roles();
+        $tree = [['id' => 'g-pa', 'name' => 'platform-admins'], ['id' => 'g-cm', 'name' => 'cyber-managers']];
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1')],
+            $tree,
+            ['g-pa' => [['id' => 'kc-1']], 'g-cm' => [['id' => 'kc-1']]]
+        ));
+
+        $this->assertSame('|cyber-managers|', $this->profile_value('kc-1', profile_fields::GROUPSLIST));
+    }
+
+    /**
+     * A failed group read makes no site-level change and says so.
+     */
+    public function test_a_failed_group_read_leaves_site_roles_alone(): void {
+        $this->prepare_site();
+        $roleid = $this->enable_site_roles();
+        $users = [$this->kc_user('kc-1')];
+        $this->run_task($this->create_realm_task($users, [['id' => 'g-pa', 'name' => 'platform-admins']], [
+            'g-pa' => [['id' => 'kc-1']],
+        ]));
+        $this->assertTrue($this->holds_site_role('kc-1', $roleid));
+
+        $output = $this->run_task($this->create_realm_task($users, null));
+
+        $this->assertTrue($this->holds_site_role('kc-1', $roleid));
+        $this->assertStringContainsString('site roles: group membership could not be read', $output);
+    }
+
+    /**
+     * A site-mapped group missing from the realm stops the pass rather than revoking everyone.
+     */
+    public function test_a_missing_site_group_leaves_site_roles_alone(): void {
+        $this->prepare_site();
+        $roleid = $this->enable_site_roles();
+        $users = [$this->kc_user('kc-1')];
+        $this->run_task($this->create_realm_task($users, [['id' => 'g-pa', 'name' => 'platform-admins']], [
+            'g-pa' => [['id' => 'kc-1']],
+        ]));
+
+        $output = $this->run_task($this->create_realm_task($users, [['id' => 'g-x', 'name' => 'renamed-admins']]));
+
+        $this->assertTrue($this->holds_site_role('kc-1', $roleid));
+        $this->assertStringContainsString("mapped group(s) 'platform-admins' not found", $output);
+        $this->assertSame(['platform-admins'], \block_crucible\local\site_roles::missing_groups());
+    }
+
+    /**
+     * A disabled member of a site-mapped group is not granted the role.
+     */
+    public function test_a_disabled_member_gets_no_site_role(): void {
+        $this->prepare_site();
+        $roleid = $this->enable_site_roles();
+
+        $this->run_task($this->create_realm_task(
+            [$this->kc_user('kc-1')],
+            [['id' => 'g-pa', 'name' => 'platform-admins']],
+            ['g-pa' => [['id' => 'kc-1', 'enabled' => false]]]
+        ));
+
+        $this->assertFalse($this->holds_site_role('kc-1', $roleid));
+    }
+
+    /**
+     * With no site map the run reports nothing about site roles.
+     */
+    public function test_no_site_map_means_no_site_pass(): void {
+        $this->prepare_site();
+
+        $output = $this->run_task($this->create_realm_task([$this->kc_user('kc-1')]));
+
+        $this->assertStringNotContainsString('site roles', $output);
+    }
 }

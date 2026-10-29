@@ -12,6 +12,7 @@
 4. [Configuration](#2-configuration)  
    - [Global Settings](#21-global-settings)  
    - [Application Display Settings](#22-application-display-settings)  
+   - [Site Role Sync](#23-site-role-sync)  
 5. [Usage Guide](#3-usage-guide)  
    - [How Users See the Landing Page](#31-how-users-see-the-landing-page)  
    - [Alternative Displays for Specific Scenarios](#32-alternative-displays-for-specific-scenarios)  
@@ -314,6 +315,24 @@ If the required URLs are added, the TopoMojo block will be added to the Applicat
 - **TopoMojo API:** Enter the API URL for Steamfitter.
 - **TopoMojo UI:** Enter the main URL for Steamfitter.
 </details>
+
+### 2.3 Site Role Sync
+**Site role mappings** grant Moodle roles at site level from Keycloak group membership, one mapping to a line as `group|role`:
+
+```
+platform-admins|ssoadmin
+support-admins|manager
+moodle-managers|manager
+```
+
+- The group must be a top-level group in the realm, and the role must exist and be allowed in the system context. The **Site role mappings in force** table on the settings page flags any line that grants nothing.
+- Membership is read from the Keycloak admin API by the **Sync Keycloak Users to Moodle** task and at every login. It is never read from a profile field, so editing `ssogroups` or `ssorole` in Moodle changes nothing.
+- The plugin owns the assignments it makes, so they can't be removed in Moodle's role pages. Site-level assignments it didn't make are left alone.
+- If the group membership can't be read, or a mapped group isn't in the realm, nothing changes at site level for that run. A run that would remove more than the **Site role revocation limit** (default 2) changes nothing and says why in the task output.
+- If Keycloak can't be read at login, the user keeps their current site-level roles.
+- The **Choose site groups and roles from a list instead** link opens a picker. It also lists who holds each mapped role through the plugin, and who holds it some other way (a manual or cohort grant) — the grants to clean up by hand.
+
+This is independent of **Enable Organization Role Sync**, and an empty mapping leaves the plugin behaving as it did before.
 
 ## 3. Usage Guide
 ### 3.1 How Users See the Landing Page

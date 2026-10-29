@@ -501,4 +501,63 @@ final class keycloak_test extends \advanced_testcase {
         $this->assertNull(keycloak::realm());
         $this->assertDebuggingCalled();
     }
+
+    /**
+     * Only a top-level group counts toward a site role, as only those are what the hourly sync sees.
+     */
+    public function test_site_groups_are_top_level_only(): void {
+        set_config('siterolemap', 'platform-admins|ssoadmin', 'block_crucible');
+        $userid = $this->create_linked_user();
+
+        $state = $this->create_client(['id' => 'kc-1', 'enabled' => true], [
+            ['name' => 'platform-admins', 'path' => '/org/platform-admins'],
+        ])->read_user($userid);
+        $this->assertSame([], $state['sitegroups']);
+
+        $state = $this->create_client(['id' => 'kc-1', 'enabled' => true], [
+            ['name' => 'platform-admins', 'path' => '/platform-admins'],
+        ])->read_user($userid);
+        $this->assertSame(['platform-admins'], $state['sitegroups']);
+    }
+
+    /**
+     * A disabled account is in no site group.
+     */
+    public function test_a_disabled_account_has_no_site_groups(): void {
+        set_config('siterolemap', 'platform-admins|ssoadmin', 'block_crucible');
+        $userid = $this->create_linked_user();
+
+        $state = $this->create_client(['id' => 'kc-1', 'enabled' => false], [
+            ['name' => 'platform-admins', 'path' => '/platform-admins'],
+        ])->read_user($userid);
+
+        $this->assertSame([], $state['sitegroups']);
+    }
+
+    /**
+     * Site groups never reach the editable profile fields.
+     */
+    public function test_a_refresh_does_not_write_site_groups(): void {
+        set_config('siterolemap', 'platform-admins|ssoadmin', 'block_crucible');
+        $userid = $this->create_linked_user();
+
+        $this->create_client(['id' => 'kc-1'], [
+            ['name' => 'platform-admins', 'path' => '/platform-admins'],
+            ['name' => 'cyber-managers', 'path' => '/cyber-managers'],
+        ])->refresh_user($userid, $state);
+
+        $this->assertSame('|cyber-managers|', $this->profile_value($userid, profile_fields::GROUPSLIST));
+        $this->assertSame(['platform-admins'], $state['sitegroups']);
+    }
+
+    /**
+     * An unlinked account is not asked about at all.
+     */
+    public function test_read_user_skips_an_unlinked_account(): void {
+        $userid = (int)$this->getDataGenerator()->create_user(['auth' => 'manual', 'idnumber' => 'kc-1'])->id;
+        $client = $this->create_client(['id' => 'kc-1']);
+
+        $this->assertNull($client->read_user($userid));
+        $this->assertSame([], $this->requests);
+    }
 }

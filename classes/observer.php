@@ -36,6 +36,7 @@ namespace block_crucible;
 
 use block_crucible\local\keycloak;
 use block_crucible\local\org_roles;
+use block_crucible\local\site_roles;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -63,44 +64,90 @@ class observer {
      * hourly run. It is one account's worth of request, it fails soft, and the throttle below
      * means repeated logins do not each make it - see \block_crucible\local\keycloak.
      *
+     * Site-level roles are reconciled on every login, throttle or not, from the groups that
+     * read returned rather than from any profile field: a removed administrator has to lose
+     * the role at once. A read that fails leaves their site-level roles exactly as they are.
+     *
      * @param \core\event\user_loggedin $event
      */
     public static function user_loggedin(\core\event\user_loggedin $event) {
-        global $CFG;
+        global $CFG, $DB;
 
-        if (!org_roles::is_enabled()) {
+        $orgenabled = org_roles::is_enabled();
+        $siteactive = site_roles::is_active();
+        if (!$orgenabled && !$siteactive) {
             return;
         }
 
         $userid = (int)$event->userid;
+        require_once($CFG->libdir . '/accesslib.php');
+
+        $state = null;
+        $read = false;
 
         // Throttle: several logins in quick succession should not each reconcile.
         $cachekey = 'org_role_sync_' . $userid;
         $cache = \cache::make('block_crucible', 'org_role_sync');
         $lastsync = $cache->get($cachekey);
-        if ($lastsync && (time() - $lastsync) < self::THROTTLE) {
+        if ($orgenabled && !($lastsync && (time() - $lastsync) < self::THROTTLE)) {
+            // Separately, because the reconcile has to happen either way: it is the part that
+            // takes a lost role back, and it reads what Moodle already holds.
+            try {
+                $read = true;
+                \core\di::get(keycloak::class)->refresh_user($userid, $state);
+            } catch (\Throwable $e) {
+                $state = null;
+                debugging(
+                    'block_crucible: could not read user ' . $userid . ' from Keycloak: ' . $e->getMessage(),
+                    DEBUG_DEVELOPER
+                );
+            }
+
+            try {
+                org_roles::reconcile_user($userid);
+                $cache->set($cachekey, time());
+            } catch (\Exception $e) {
+                debugging(
+                    'block_crucible: Failed to sync org roles for user ' . $userid . ': ' . $e->getMessage(),
+                    DEBUG_DEVELOPER
+                );
+            }
+        }
+
+        if (!$siteactive) {
             return;
         }
 
-        require_once($CFG->libdir . '/accesslib.php');
-
-        // Separately, because the reconcile has to happen either way: it is the part that
-        // takes a lost role back, and it reads what Moodle already holds.
-        try {
-            \core\di::get(keycloak::class)->refresh_user($userid);
-        } catch (\Throwable $e) {
-            debugging(
-                'block_crucible: could not read user ' . $userid . ' from Keycloak: ' . $e->getMessage(),
-                DEBUG_DEVELOPER
-            );
+        // Only a linked OAuth 2 account has anything in Keycloak to read. Anyone else holds no
+        // grant the site map could make, and saying "no read" for every manual login is noise.
+        $user = $DB->get_record('user', ['id' => $userid], 'id, auth, idnumber', IGNORE_MISSING);
+        if (!$user || $user->auth !== org_roles::AUTH || trim((string)$user->idnumber) === '') {
+            return;
         }
 
         try {
-            org_roles::reconcile_user($userid);
-            $cache->set($cachekey, time());
-        } catch (\Exception $e) {
+            if (!$read) {
+                $state = \core\di::get(keycloak::class)->read_user($userid);
+            }
+            if (!is_array($state) || !isset($state['sitegroups']) || !is_array($state['sitegroups'])) {
+                debugging(
+                    'block_crucible: no Keycloak read for user ' . $userid . ' - site-level roles left unchanged.',
+                    DEBUG_DEVELOPER
+                );
+                return;
+            }
+            // One account's groups cannot show that a mapped group has been renamed away - it
+            // just looks like the user left it. The hourly run sees the whole realm, so while
+            // its last check had a mapped group missing, a login grants but never revokes.
+            site_roles::reconcile(
+                [$userid => $state['sitegroups']],
+                [$userid],
+                null,
+                (bool)site_roles::missing_groups()
+            );
+        } catch (\Throwable $e) {
             debugging(
-                'block_crucible: Failed to sync org roles for user ' . $userid . ': ' . $e->getMessage(),
+                'block_crucible: Failed to sync site roles for user ' . $userid . ': ' . $e->getMessage(),
                 DEBUG_DEVELOPER
             );
         }

@@ -81,8 +81,52 @@ final class observer_test extends \advanced_testcase {
      *
      * @param callable|null $onrefresh Called with the user id, or null to read nothing.
      */
-    private function set_keycloak_double(?callable $onrefresh): void {
-        \core\di::set(keycloak::class, new stub_keycloak($onrefresh));
+    private function set_keycloak_double(?callable $onrefresh, ?callable $onread = null): void {
+        \core\di::set(keycloak::class, new stub_keycloak($onrefresh, $onread));
+    }
+
+    /**
+     * Map platform-admins to a site-level role and say what Keycloak reports for it.
+     *
+     * @param array|null $sitegroups the groups a read returns, or null for a failed read
+     * @return int the site role id
+     */
+    private function enable_site_roles(?array $sitegroups): int {
+        $roleid = (int)create_role('SSO Administrator', 'ssoadmin', 'Test role');
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
+        set_config('siterolemap', 'platform-admins|ssoadmin', 'block_crucible');
+        $this->set_site_groups($sitegroups);
+
+        return $roleid;
+    }
+
+    /**
+     * Say what the next login's Keycloak read reports for the site groups.
+     *
+     * @param array|null $sitegroups the groups a read returns, or null for a failed read
+     */
+    private function set_site_groups(?array $sitegroups): void {
+        $this->set_keycloak_double(null, static function (int $userid) use ($sitegroups): ?array {
+            return $sitegroups === null ? null : ['org' => null, 'groups' => [], 'sitegroups' => $sitegroups];
+        });
+    }
+
+    /**
+     * Whether a user holds the plugin's site-level grant of a role.
+     *
+     * @param int $userid
+     * @param int $roleid
+     * @return bool
+     */
+    private function holds_site_role(int $userid, int $roleid): bool {
+        global $DB;
+
+        return $DB->record_exists('role_assignments', [
+            'userid' => $userid,
+            'roleid' => $roleid,
+            'contextid' => \context_system::instance()->id,
+            'component' => org_roles::COMPONENT,
+        ]);
     }
 
     /**
@@ -92,7 +136,7 @@ final class observer_test extends \advanced_testcase {
      * @return \stdClass user record
      */
     private function create_sso_user(array $groups): \stdClass {
-        $user = $this->getDataGenerator()->create_user(['auth' => 'oauth2']);
+        $user = $this->getDataGenerator()->create_user(['auth' => 'oauth2', 'idnumber' => 'kc-' . random_string(8)]);
         $this->set_groups((int)$user->id, $groups);
 
         return $user;
@@ -274,5 +318,94 @@ final class observer_test extends \advanced_testcase {
         $this->log_in($user);
 
         $this->assertSame(['cyber-manager'], $this->managed_roles((int)$user->id));
+    }
+
+    /**
+     * Logging in grants a site role from the groups Keycloak reports, and a later login
+     * inside the throttle window still takes it back.
+     */
+    public function test_login_reconciles_site_roles_every_time(): void {
+        $user = $this->create_sso_user([]);
+        $roleid = $this->enable_site_roles(['platform-admins']);
+
+        $this->log_in($user);
+        $this->assertTrue($this->holds_site_role((int)$user->id, $roleid));
+
+        // No clear_throttle(): a removed administrator loses the role at their next login.
+        $this->set_site_groups([]);
+        $this->log_in($user);
+
+        $this->assertFalse($this->holds_site_role((int)$user->id, $roleid));
+    }
+
+    /**
+     * A failed read keeps the user's current site roles, rather than reading it as "in no group".
+     */
+    public function test_a_failed_read_keeps_site_roles(): void {
+        $user = $this->create_sso_user([]);
+        $roleid = $this->enable_site_roles(['platform-admins']);
+        $this->log_in($user);
+
+        $this->set_site_groups(null);
+        $this->clear_throttle((int)$user->id);
+        $this->log_in($user);
+
+        $this->assertTrue($this->holds_site_role((int)$user->id, $roleid));
+        $this->assertDebuggingCalled();
+    }
+
+    /**
+     * A site group typed into the profile field grants nothing at login.
+     */
+    public function test_the_profile_field_does_not_grant_site_roles(): void {
+        $user = $this->create_sso_user(['platform-admins']);
+        $roleid = $this->enable_site_roles([]);
+
+        $this->log_in($user);
+
+        $this->assertFalse($this->holds_site_role((int)$user->id, $roleid));
+    }
+
+    /**
+     * Site roles work with org role sync switched off.
+     */
+    public function test_site_roles_do_not_need_org_role_sync(): void {
+        set_config('enableorgrolesync', 0, 'block_crucible');
+        $user = $this->create_sso_user(['cyber-managers']);
+        $roleid = $this->enable_site_roles(['platform-admins']);
+
+        $this->log_in($user);
+
+        $this->assertTrue($this->holds_site_role((int)$user->id, $roleid));
+        $this->assertSame([], $this->managed_roles((int)$user->id));
+    }
+
+    /**
+     * While the last hourly check found a mapped group missing, a login grants but never revokes.
+     *
+     * One account's groups cannot tell a renamed group from the user leaving it.
+     */
+    public function test_a_missing_group_stops_login_revocations(): void {
+        $user = $this->create_sso_user([]);
+        $roleid = $this->enable_site_roles(['platform-admins']);
+        $this->log_in($user);
+
+        \block_crucible\local\site_roles::record_missing_groups(['platform-admins']);
+        $this->set_site_groups([]);
+        $this->log_in($user);
+
+        $this->assertTrue($this->holds_site_role((int)$user->id, $roleid));
+    }
+
+    /**
+     * A manual account's login asks Keycloak nothing and says nothing.
+     */
+    public function test_a_manual_login_is_ignored_quietly(): void {
+        $user = $this->getDataGenerator()->create_user(['auth' => 'manual']);
+        $this->enable_site_roles(null);
+
+        $this->log_in($user);
+
+        $this->assertDebuggingNotCalled();
     }
 }

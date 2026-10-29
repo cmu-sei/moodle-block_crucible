@@ -144,19 +144,16 @@ class keycloak {
      * Bring one user's organization and group fields up to date from Keycloak.
      *
      * @param int $userid
+     * @param array|null $state set to what read_user() returned, so a caller that also needs
+     *        the site groups does not ask Keycloak twice
      * @return bool whether anything was written
      */
-    public function refresh_user(int $userid): bool {
-        global $CFG, $DB;
+    public function refresh_user(int $userid, ?array &$state = null): bool {
+        global $CFG;
 
         require_once($CFG->dirroot . '/user/profile/lib.php');
 
-        $user = $DB->get_record('user', ['id' => $userid, 'deleted' => 0], 'id, auth, idnumber', IGNORE_MISSING);
-        if (!$user || $user->auth !== org_roles::AUTH || trim((string)$user->idnumber) === '') {
-            return false;
-        }
-
-        $state = $this->user_lists(trim((string)$user->idnumber));
+        $state = $this->read_user($userid);
         if ($state === null) {
             return false;
         }
@@ -203,11 +200,33 @@ class keycloak {
     }
 
     /**
+     * What Keycloak holds for one Moodle user, if they are a linked OAuth 2 account.
+     *
+     * @param int $userid
+     * @return array|null as user_lists(), or null for an unlinked user or a failed read
+     */
+    public function read_user(int $userid): ?array {
+        global $DB;
+
+        $user = $DB->get_record('user', ['id' => $userid, 'deleted' => 0], 'id, auth, idnumber', IGNORE_MISSING);
+        if (!$user || $user->auth !== org_roles::AUTH || trim((string)$user->idnumber) === '') {
+            return null;
+        }
+
+        return $this->user_lists(trim((string)$user->idnumber));
+    }
+
+    /**
      * The organization values and mapped group names Keycloak holds for one account.
      *
+     * The site groups are matched more strictly than the category ones. Only a top-level group
+     * counts, because that is all the scheduled sync can see, and a login must not grant a
+     * site role the next hourly run would take away. A disabled account is in none, for the
+     * same reason: the scheduled sync never counts a disabled member.
+     *
      * @param string $kcid Keycloak user id, which is the Moodle idnumber
-     * @return array|null ['org' => string[]|null, 'groups' => string[]], or null when Keycloak
-     *                    could not be asked or does not know the account
+     * @return array|null ['org' => string[]|null, 'groups' => string[], 'sitegroups' => string[]],
+     *                    or null when Keycloak could not be asked or does not know the account
      */
     public function user_lists(string $kcid): ?array {
         if ($kcid === '' || $this->recently_failed()) {
@@ -243,10 +262,20 @@ class keycloak {
         }
 
         $wanted = array_keys(org_roles::group_role_map());
+        $sitewanted = array_keys(site_roles::map());
+        $enabled = ($user['enabled'] ?? true) !== false;
         $names = [];
+        $sitenames = [];
         foreach ($groups as $group) {
-            if (isset($group['name']) && in_array($group['name'], $wanted, true)) {
+            if (!isset($group['name'])) {
+                continue;
+            }
+            if (in_array($group['name'], $wanted, true)) {
                 $names[] = $group['name'];
+            }
+            $toplevel = !isset($group['path']) || $group['path'] === '/' . $group['name'];
+            if ($enabled && $toplevel && in_array($group['name'], $sitewanted, true)) {
+                $sitenames[] = $group['name'];
             }
         }
 
@@ -257,6 +286,7 @@ class keycloak {
                 ? $this->attribute_values($attributes['organization'])
                 : null,
             'groups' => $names,
+            'sitegroups' => array_values(array_unique($sitenames)),
         ];
     }
 
