@@ -426,10 +426,10 @@ $string['appenabled']       = 'Enabled';
 $string['appenabled_help']  = 'When checked, this application is visible to users on the applications block. Uncheck to hide it temporarily without deleting it.';
 
 $string['appkeycloakenabled']      = 'Keycloak Role Mapping Enabled?';
-$string['appkeycloakenabled_help'] = 'When checked, this application will only be shown to users who have a specific Keycloak realm role on their token. Enter the required role name in the field below.';
+$string['appkeycloakenabled_help'] = 'When checked, this application will only be shown to users who have a specific Keycloak realm role, whether assigned directly, through a group, or through a composite role. Enter the required role name in the field below.';
 
 $string['appkeycloakrole']         = 'Required Keycloak role(s)';
-$string['appkeycloakrole_help']    = 'One or more Keycloak realm role names, separated by "|" (e.g. "operator|content-developer"). The app will be shown if the user has at least one of the listed roles on their token. This field is required when role mapping is enabled.';
+$string['appkeycloakrole_help']    = 'One or more Keycloak realm role names, separated by "|" (e.g. "operator|content-developer"). The app will be shown if the user has at least one of the listed roles (assigned directly, through a group, or through a composite role). This field is required when role mapping is enabled.';
 $string['appkeycloakrolerequired'] = 'You must specify at least one role when Keycloak role mapping is enabled (or check "Override role permissions" to show the app to everyone).';
 
 $string['appoverriderole']         = 'Override role permissions';

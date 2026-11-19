@@ -785,10 +785,13 @@ class crucible
     /**
      * Get Keycloak roles for current user.
      *
+     * Uses the composite endpoint so roles granted through a group or a composite role count,
+     * not only roles assigned directly to the user.
+     *
      * @return array|null Role names or null on error
      */
     public function get_keycloak_roles() {
-        $names = $this->get_keycloak_user_collection('role-mappings/realm');
+        $names = $this->get_keycloak_user_collection('role-mappings/realm/composite');
         if (!is_array($names)) {
             return $names;
         }

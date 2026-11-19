@@ -157,12 +157,12 @@ final class keycloak_client_test extends \advanced_testcase {
         $this->assertDebuggingNotCalled();
     }
 
-    public function test_role_names_come_from_the_realm_role_mappings(): void {
+    public function test_role_names_include_roles_granted_through_groups_and_composites(): void {
         $crucible = $this->create_crucible(['records' => [200, '[{"name": "admin"}]']]);
 
         $this->assertSame(['admin'], $crucible->get_keycloak_roles());
         $this->assertStringContainsString(
-            '/users/kc-uuid/role-mappings/realm',
+            '/users/kc-uuid/role-mappings/realm/composite',
             (string) end($this->requests)['request']->getUri()
         );
     }
