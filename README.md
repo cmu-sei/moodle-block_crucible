@@ -236,7 +236,7 @@ If enabled, the Keycloak block will be added to the Applications block. If the u
 - **Keycloak User URL:** Specifies the Keycloak URL to which regular users are redirected. Ensure the URL includes the realm component without trailing /.
 - **Keycloak Admin URL:** Specifies the Keycloak URL tto which admins are redirected. Ensure the URL includes the realm component without trailing /.
 - **Admin Keycloak Groups:** Specify groups relevant to Keycloak for role-based permissions.
-- **Admin Keycloak Roles:** Specify roles  relevant to Keycloak for role-based permissions.
+- **Admin Keycloak Roles:** Specify roles relevant to Keycloak for role-based permissions. A role counts whether it is assigned directly, through a group, or through a composite role.
 
 **Additional Configuration Requirements:**
 - **Moodle Client Configuration in Keycloak:** The Keycloak integration will only function correctly if the Moodle client in Keycloak has the `Service Account` configuration enabled. This setup allows the Applications block to authenticate as a service account and access Keycloak's APIs for roles and groups.

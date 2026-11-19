@@ -131,7 +131,7 @@ final class keycloak_client_test extends \advanced_testcase {
         $uris = array_map(static fn($made) => (string) $made['request']->getUri(), $this->requests);
         $this->assertStringContainsString('/protocol/openid-connect/token', $uris[0]);
         $this->assertStringContainsString('exact=true', $uris[1]);
-        $this->assertStringContainsString('/role-mappings/realm', $uris[2]);
+        $this->assertStringContainsString('/role-mappings/realm/composite', $uris[2]);
         $this->assertStringContainsString('/groups', $uris[3]);
     }
 
@@ -157,7 +157,7 @@ final class keycloak_client_test extends \advanced_testcase {
         $this->assertDebuggingNotCalled();
     }
 
-    public function test_role_names_include_roles_granted_through_groups_and_composites(): void {
+    public function test_roles_are_read_from_the_composite_realm_mapping(): void {
         $crucible = $this->create_crucible(['records' => [200, '[{"name": "admin"}]']]);
 
         $this->assertSame(['admin'], $crucible->get_keycloak_roles());
