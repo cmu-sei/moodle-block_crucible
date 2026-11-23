@@ -124,7 +124,7 @@ class crucible
         }
 
         try {
-            $field_mappings = \core\oauth2\api::get_user_field_mappings($issuer);
+            $fieldmappings = \core\oauth2\api::get_user_field_mappings($issuer);
         } catch (Exception $e) {
             debugging("get_user_field_mappings failed with error: " . $e->getMessage(), DEBUG_NORMAL);
             return false; // Exit if an exception occurs
@@ -289,7 +289,11 @@ class crucible
             debugging("Player API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Player API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Player API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -351,7 +355,11 @@ class crucible
             debugging("Blueprint API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Blueprint API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Blueprint API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -412,7 +420,11 @@ class crucible
             debugging("CITE API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -480,7 +492,11 @@ class crucible
             debugging("CITE API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -541,7 +557,11 @@ class crucible
             debugging("Gallery API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Gallery API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Gallery API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -605,7 +625,11 @@ class crucible
             debugging("Topomojo API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Topomojo API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Topomojo API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -673,7 +697,11 @@ class crucible
             debugging("Gameboard API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -748,7 +776,11 @@ class crucible
             debugging("Gameboard API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 

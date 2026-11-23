@@ -56,12 +56,12 @@ class reports
             return $info;
         }
 
-        [$cInSql, $cInParams] = $DB->get_in_or_equal($usercohortids, SQL_PARAMS_NAMED);
-        $cohortRows = $DB->get_records_sql(
-            "SELECT id, name FROM {cohort} WHERE id {$cInSql} ORDER BY name ASC",
-            $cInParams
+        [$cinsql, $cinparams] = $DB->get_in_or_equal($usercohortids, SQL_PARAMS_NAMED);
+        $cohortrows = $DB->get_records_sql(
+            "SELECT id, name FROM {cohort} WHERE id {$cinsql} ORDER BY name ASC",
+            $cinparams
         );
-        if (!$cohortRows) {
+        if (!$cohortrows) {
             return $info;
         }
 
@@ -89,33 +89,33 @@ class reports
             JOIN {user} u            ON u.id = cm.userid
     LEFT JOIN {user_info_data} org  ON (org.userid  = u.id AND org.fieldid  = :orgid)
     LEFT JOIN {user_info_data} work ON (work.userid = u.id AND work.fieldid = :workid)
-        WHERE c.id {$cInSql}
+        WHERE c.id {$cinsql}
             AND u.deleted = 0
             AND u.confirmed = 1
         ORDER BY c.name ASC, u.lastname ASC, u.firstname ASC
         ";
 
-        $params = array_merge($cInParams, $namefields->params, [
+        $params = array_merge($cinparams, $namefields->params, [
             'orgid'  => $orgfieldid,
             'workid' => $workfieldid,
         ]);
         $rows = $DB->get_recordset_sql($sql, $params);
 
         // Group rows by cohort and collect user IDs.
-        $byCohort   = [];
-        $allUserIds = [];
+        $bycohort   = [];
+        $alluserids = [];
 
         foreach ($rows as $r) {
             $cid = (int)$r->cohortid;
-            if (!isset($byCohort[$cid])) {
-                $byCohort[$cid] = [
+            if (!isset($bycohort[$cid])) {
+                $bycohort[$cid] = [
                     'id'    => $cid,
                     'name'  => (string)$r->cohortname,
                     'users' => [],
                 ];
             }
             $uid = (int)$r->userid;
-            if (!isset($byCohort[$cid]['users'][$uid])) {
+            if (!isset($bycohort[$cid]['users'][$uid])) {
                 $user = (object)[
                     'id'           => $uid,
                     'fullname'     => fullname($r),
@@ -126,26 +126,26 @@ class reports
                     'cohortroles'  => '',
                     'profileurl'   => (new \moodle_url('/user/profile.php', ['id' => $uid]))->out(false),
                 ];
-                $byCohort[$cid]['users'][$uid] = $user;
-                $allUserIds[$uid] = true;
+                $bycohort[$cid]['users'][$uid] = $user;
+                $alluserids[$uid] = true;
             }
         }
         $rows->close();
 
-        if (empty($byCohort)) {
+        if (empty($bycohort)) {
             return $info;
         }
 
         // Fetch cohort-configured roles
-        $cohortrolesByCU = []; {
+        $cohortrolesbycu = []; {
             // Cohort IDs
-            $cohortids = array_map('intval', array_keys($byCohort));
+            $cohortids = array_map('intval', array_keys($bycohort));
             // User IDs
-            $userids = array_map('intval', array_keys($allUserIds));
+            $userids = array_map('intval', array_keys($alluserids));
 
         if ($cohortids && $userids) {
-            [$cInSql2, $cParams2] = $DB->get_in_or_equal($cohortids, SQL_PARAMS_NAMED, 'c');
-            [$uInSql2, $uParams2] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'u');
+            [$cinsql2, $cparams2] = $DB->get_in_or_equal($cohortids, SQL_PARAMS_NAMED, 'c');
+            [$uinsql2, $uparams2] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'u');
 
             $sql2 = "
                     SELECT
@@ -154,25 +154,25 @@ class reports
                         COALESCE(NULLIF(r.name, ''), r.shortname) AS roledisplay
                     FROM {tool_cohortroles} tcr
                     JOIN {role} r ON r.id = tcr.roleid
-                    WHERE tcr.cohortid {$cInSql2}
-                    AND tcr.userid  {$uInSql2}
+                    WHERE tcr.cohortid {$cinsql2}
+                    AND tcr.userid  {$uinsql2}
                 ";
-            $rows2 = $DB->get_records_sql($sql2, $cParams2 + $uParams2);
+            $rows2 = $DB->get_records_sql($sql2, $cparams2 + $uparams2);
 
-            $cohortrolesByCU = [];
+            $cohortrolesbycu = [];
             foreach ($rows2 as $row) {
-                $cohortrolesByCU[(int)$row->cohortid][(int)$row->userid][] = trim($row->roledisplay);
+                $cohortrolesbycu[(int)$row->cohortid][(int)$row->userid][] = trim($row->roledisplay);
             }
         }
         }
 
         // Fetch category-level roles assigned by block_crucible org role sync
-        $categoryRolesByUser = [];
+        $categoryrolesbyuser = [];
         {
-            $userids = array_map('intval', array_keys($allUserIds));
+            $userids = array_map('intval', array_keys($alluserids));
 
         if ($userids) {
-            [$uInSql3, $uParams3] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
+            [$uinsql3, $uparams3] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
 
             $sql3 = "
                     SELECT DISTINCT
@@ -183,22 +183,22 @@ class reports
                     JOIN {context} ctx ON ra.contextid = ctx.id
                     WHERE ra.component = 'block_crucible'
                     AND ctx.contextlevel = 40
-                    AND ra.userid {$uInSql3}
+                    AND ra.userid {$uinsql3}
                 ";
-            $rows3 = $DB->get_records_sql($sql3, $uParams3);
+            $rows3 = $DB->get_records_sql($sql3, $uparams3);
 
             foreach ($rows3 as $row) {
-                $categoryRolesByUser[(int)$row->userid][] = trim($row->roledisplay);
+                $categoryrolesbyuser[(int)$row->userid][] = trim($row->roledisplay);
             }
         }
         }
 
-        foreach ($byCohort as &$c) {
+        foreach ($bycohort as &$c) {
             foreach ($c['users'] as $uid => $u) {
                 // Merge cohort roles and category roles
                 $cr = array_merge(
-                    $cohortrolesByCU[$c['id']][$uid] ?? [],
-                    $categoryRolesByUser[$uid] ?? []
+                    $cohortrolesbycu[$c['id']][$uid] ?? [],
+                    $categoryrolesbyuser[$uid] ?? []
                 );
                 if ($cr) {
                     $cr = array_values(array_unique($cr));
@@ -212,7 +212,7 @@ class reports
         unset($c);
 
         // Build final information
-        foreach ($byCohort as $cid => $c) {
+        foreach ($bycohort as $cid => $c) {
             $info->cohorts[] = (object)[
                 'id'       => $c['id'],
                 'name'     => $c['name'],

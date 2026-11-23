@@ -280,10 +280,10 @@ class learningplans {
             $cid = (int)$c->id;
 
             // Courses using this competency.
-            $courseSummaries = \core_competency\api::list_courses_using_competency($cid);
+            $coursesummaries = \core_competency\api::list_courses_using_competency($cid);
             $courseitems = [];
 
-            foreach ($courseSummaries as $cs) {
+            foreach ($coursesummaries as $cs) {
                 $courseid = (int)$cs->id;
 
                 if (!isset($coursecache[$courseid])) {

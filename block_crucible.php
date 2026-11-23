@@ -211,8 +211,8 @@ class block_crucible extends block_base
             $data->username = $USER->firstname;
             $data->cardtitle = $cardtitle;
             $datafiltered = new stdClass();
-            $enabledApp = get_config('block_crucible', 'enabled');
-            if ($enabledApp) {
+            $enabledapp = get_config('block_crucible', 'enabled');
+            if ($enabledapp) {
                 $crucible = new \block_crucible\crucible();
             } else {
                 $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
@@ -391,48 +391,48 @@ class block_crucible extends block_base
             }
 
             // Keycloak/////////////////////////////
-            $groupsArray = \block_crucible\crucible::config_list('keycloakgroups');
+            $groupsarray = \block_crucible\crucible::config_list('keycloakgroups');
 
             $showkeycloak = get_config('block_crucible', 'showkeycloak');
             $userredirect = get_config('block_crucible', 'userredirect');
 
             $keycloakuserurl = get_config('block_crucible', 'keycloakuserurl');
             $keycloakadminurl = get_config('block_crucible', 'keycloakadminurl');
-            $keycloakGroups = [];
-            $keycloakRoles = [];
+            $keycloakgroups = [];
+            $keycloakroles = [];
 
             if ($keycloakuserurl || $keycloakadminurl) {
-                $keycloakGroups = $crucible->get_keycloak_groups();
-                $keycloakRoles = $crucible->get_keycloak_roles();
+                $keycloakgroups = $crucible->get_keycloak_groups();
+                $keycloakroles = $crucible->get_keycloak_roles();
             }
 
-            if (!is_array($keycloakGroups)) {
-                $keycloakGroups = $keycloakGroups ? [$keycloakGroups] : [];
+            if (!is_array($keycloakgroups)) {
+                $keycloakgroups = $keycloakgroups ? [$keycloakgroups] : [];
             }
 
             // Check if the user has any allowed group in their Keycloak groups.
-            $hasAllowedGroup = false;
-            foreach ($keycloakGroups as $group) {
-                if (in_array($group, $groupsArray)) {
-                    $hasAllowedGroup = true;
+            $hasallowedgroup = false;
+            foreach ($keycloakgroups as $group) {
+                if (in_array($group, $groupsarray)) {
+                    $hasallowedgroup = true;
                     break;
                 }
             }
 
-            if (!is_array($keycloakRoles)) {
-                $keycloakRoles = $keycloakRoles ? [$keycloakRoles] : [];
+            if (!is_array($keycloakroles)) {
+                $keycloakroles = $keycloakroles ? [$keycloakroles] : [];
             }
 
             // Check if the user has admin role.
-            $keycloakAdmin = false;
-            $keycloakAdmin = in_array('admin', $keycloakRoles);
+            $keycloakadmin = false;
+            $keycloakadmin = in_array('admin', $keycloakroles);
 
             if ($showkeycloak) {
                 if ($userredirect) {
                     $data->keycloak = $keycloakuserurl;
                     $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                     $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
-                } else if ($hasAllowedGroup || $keycloakAdmin) {
+                } else if ($hasallowedgroup || $keycloakadmin) {
                     $data->keycloak = $keycloakadminurl;
                     $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                     $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');

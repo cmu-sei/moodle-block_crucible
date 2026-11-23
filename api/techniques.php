@@ -104,9 +104,9 @@ try {
 
     // Fetch all competencies mapped to at least one course (no limit).
     $mapped = $svc->list_mapped_courses_only(PHP_INT_MAX, $frameworkid);
-    $mapped_idnumbers = [];
+    $mappedidnumbers = [];
     foreach ($mapped as $comp) {
-        $mapped_idnumbers[$comp->idnumber] = true;
+        $mappedidnumbers[$comp->idnumber] = true;
     }
 
     $ids = optional_param('ids', '', PARAM_RAW);
@@ -117,13 +117,13 @@ try {
         $result = new stdClass();
         foreach ($requested as $tid) {
             if (preg_match('/^T\d{4}(?:\.\d{3})?$/', $tid)) {
-                $result->$tid = isset($mapped_idnumbers[$tid]);
+                $result->$tid = isset($mappedidnumbers[$tid]);
             }
         }
         echo json_encode(['techniques' => $result]);
     } else {
         // List mode: return all mapped technique IDs.
-        echo json_encode(['techniques' => array_keys($mapped_idnumbers)]);
+        echo json_encode(['techniques' => array_keys($mappedidnumbers)]);
     }
 } catch (\Throwable $e) {
     http_response_code(500);
