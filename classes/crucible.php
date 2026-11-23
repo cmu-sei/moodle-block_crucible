@@ -138,8 +138,9 @@ class crucible
             return false; // Exit if an exception occurs
         }
 
-        // Check if the client was successfully created
-        if (!$client) { // Notice the use of !$client instead of $client === false
+        // Check if the client was successfully created.
+        // Notice the use of !$client instead of $client === false.
+        if (!$client) {
             debugging('Cannot connect as system account', DEBUG_NORMAL);
             return false; // Exit if the client is not valid
         }
