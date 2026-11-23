@@ -19,13 +19,15 @@ Crucible Applications Landing Page Block for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS.
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO,
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL.
-CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS"
+BASIS. CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER
+INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM
+USE OF THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM
+PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT. Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June
+2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see
+Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
 
@@ -122,7 +124,7 @@ class crucible
         }
 
         try {
-            $field_mappings = \core\oauth2\api::get_user_field_mappings($issuer);
+            $fieldmappings = \core\oauth2\api::get_user_field_mappings($issuer);
         } catch (Exception $e) {
             debugging("get_user_field_mappings failed with error: " . $e->getMessage(), DEBUG_NORMAL);
             return false; // Exit if an exception occurs
@@ -136,8 +138,9 @@ class crucible
             return false; // Exit if an exception occurs
         }
 
-        // Check if the client was successfully created
-        if (!$client) { // Notice the use of !$client instead of $client === false
+        // Check if the client was successfully created.
+        // Notice the use of !$client instead of $client === false.
+        if (!$client) {
             debugging('Cannot connect as system account', DEBUG_NORMAL);
             return false; // Exit if the client is not valid
         }
@@ -287,7 +290,11 @@ class crucible
             debugging("Player API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Player API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Player API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -349,7 +356,11 @@ class crucible
             debugging("Blueprint API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Blueprint API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Blueprint API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -410,7 +421,11 @@ class crucible
             debugging("CITE API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -478,7 +493,11 @@ class crucible
             debugging("CITE API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to CITE API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -539,7 +558,11 @@ class crucible
             debugging("Gallery API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Gallery API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Gallery API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -603,7 +626,11 @@ class crucible
             debugging("Topomojo API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Topomojo API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Topomojo API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -671,7 +698,11 @@ class crucible
             debugging("Gameboard API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 
@@ -746,7 +777,11 @@ class crucible
             debugging("Gameboard API endpoint not found (404) " . $url . ". Check API URL configuration.", DEBUG_DEVELOPER);
             return false;
         } else if ($this->client->info['http_code'] !== 200) {
-            debugging("Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url . ". Check network connectivity and API status.", DEBUG_DEVELOPER);
+            debugging(
+                "Unable to connect to Gameboard API (HTTP " . $this->client->info['http_code'] . ") at " . $url .
+                    ". Check network connectivity and API status.",
+                DEBUG_DEVELOPER
+            );
             return false;
         }
 

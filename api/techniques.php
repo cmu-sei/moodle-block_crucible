@@ -19,13 +19,15 @@ Crucible Applications Landing Page Block for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS.
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO,
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL.
-CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS"
+BASIS. CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER
+INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM
+USE OF THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM
+PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT. Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June
+2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see
+Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
 
@@ -102,9 +104,9 @@ try {
 
     // Fetch all competencies mapped to at least one course (no limit).
     $mapped = $svc->list_mapped_courses_only(PHP_INT_MAX, $frameworkid);
-    $mapped_idnumbers = [];
+    $mappedidnumbers = [];
     foreach ($mapped as $comp) {
-        $mapped_idnumbers[$comp->idnumber] = true;
+        $mappedidnumbers[$comp->idnumber] = true;
     }
 
     $ids = optional_param('ids', '', PARAM_RAW);
@@ -115,13 +117,13 @@ try {
         $result = new stdClass();
         foreach ($requested as $tid) {
             if (preg_match('/^T\d{4}(?:\.\d{3})?$/', $tid)) {
-                $result->$tid = isset($mapped_idnumbers[$tid]);
+                $result->$tid = isset($mappedidnumbers[$tid]);
             }
         }
         echo json_encode(['techniques' => $result]);
     } else {
         // List mode: return all mapped technique IDs.
-        echo json_encode(['techniques' => array_keys($mapped_idnumbers)]);
+        echo json_encode(['techniques' => array_keys($mappedidnumbers)]);
     }
 } catch (\Throwable $e) {
     http_response_code(500);

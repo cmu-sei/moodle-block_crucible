@@ -19,13 +19,15 @@ Crucible Applications Landing Page Block for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS.
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO,
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL.
-CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS"
+BASIS. CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER
+INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM
+USE OF THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM
+PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT. Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June
+2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see
+Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
 
@@ -209,8 +211,8 @@ class block_crucible extends block_base
             $data->username = $USER->firstname;
             $data->cardtitle = $cardtitle;
             $datafiltered = new stdClass();
-            $enabledApp = get_config('block_crucible', 'enabled');
-            if ($enabledApp) {
+            $enabledapp = get_config('block_crucible', 'enabled');
+            if ($enabledapp) {
                 $crucible = new \block_crucible\crucible();
             } else {
                 $datafiltered->crucibleLogoAuth = $OUTPUT->image_url('crucible-icon', 'block_crucible');
@@ -389,48 +391,48 @@ class block_crucible extends block_base
             }
 
             // Keycloak/////////////////////////////
-            $groupsArray = \block_crucible\crucible::config_list('keycloakgroups');
+            $groupsarray = \block_crucible\crucible::config_list('keycloakgroups');
 
             $showkeycloak = get_config('block_crucible', 'showkeycloak');
             $userredirect = get_config('block_crucible', 'userredirect');
 
             $keycloakuserurl = get_config('block_crucible', 'keycloakuserurl');
             $keycloakadminurl = get_config('block_crucible', 'keycloakadminurl');
-            $keycloakGroups = [];
-            $keycloakRoles = [];
+            $keycloakgroups = [];
+            $keycloakroles = [];
 
             if ($keycloakuserurl || $keycloakadminurl) {
-                $keycloakGroups = $crucible->get_keycloak_groups();
-                $keycloakRoles = $crucible->get_keycloak_roles();
+                $keycloakgroups = $crucible->get_keycloak_groups();
+                $keycloakroles = $crucible->get_keycloak_roles();
             }
 
-            if (!is_array($keycloakGroups)) {
-                $keycloakGroups = $keycloakGroups ? [$keycloakGroups] : [];
+            if (!is_array($keycloakgroups)) {
+                $keycloakgroups = $keycloakgroups ? [$keycloakgroups] : [];
             }
 
             // Check if the user has any allowed group in their Keycloak groups.
-            $hasAllowedGroup = false;
-            foreach ($keycloakGroups as $group) {
-                if (in_array($group, $groupsArray)) {
-                    $hasAllowedGroup = true;
+            $hasallowedgroup = false;
+            foreach ($keycloakgroups as $group) {
+                if (in_array($group, $groupsarray)) {
+                    $hasallowedgroup = true;
                     break;
                 }
             }
 
-            if (!is_array($keycloakRoles)) {
-                $keycloakRoles = $keycloakRoles ? [$keycloakRoles] : [];
+            if (!is_array($keycloakroles)) {
+                $keycloakroles = $keycloakroles ? [$keycloakroles] : [];
             }
 
             // Check if the user has admin role.
-            $keycloakAdmin = false;
-            $keycloakAdmin = in_array('admin', $keycloakRoles);
+            $keycloakadmin = false;
+            $keycloakadmin = in_array('admin', $keycloakroles);
 
             if ($showkeycloak) {
                 if ($userredirect) {
                     $data->keycloak = $keycloakuserurl;
                     $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                     $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
-                } else if ($hasAllowedGroup || $keycloakAdmin) {
+                } else if ($hasallowedgroup || $keycloakadmin) {
                     $data->keycloak = $keycloakadminurl;
                     $data->keycloakDescription = get_string('keycloakdescription', 'block_crucible');
                     $data->keycloakLogo  = $OUTPUT->image_url('keycloak-icon', 'block_crucible');
