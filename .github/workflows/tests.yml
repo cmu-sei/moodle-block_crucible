@@ -164,7 +164,6 @@ jobs:
           retention-days: 7
 
       - name: Moodle code checker
-        continue-on-error: true
         run: moodle-plugin-ci phpcs
 
       - name: PHPDoc
