@@ -140,8 +140,9 @@ jobs:
         # plenty of all three today, and --fail-on-warning would bury a real regression in noise.
         run: moodle-plugin-ci phpunit
 
-      # Behat and the Moodle code checker (phpcs) block. PHPDoc and Mustache below are advisory:
-      # reported, but not blocking. Delete a step's continue-on-error line once the plugin is clean.
+      # Behat and the Moodle code checker (phpcs) block. The PHPDoc, Mustache and Grunt steps below
+      # are advisory: reported, but not blocking. Delete a step's continue-on-error line once the
+      # plugin is clean.
 
       - name: Behat
         id: behat
